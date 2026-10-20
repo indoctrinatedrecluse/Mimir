@@ -21,6 +21,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
+    // Direct WebView2 data and cache away from the project workspace to prevent file lock
+    // collisions with Vite's watcher
+    if std::env::var("WEBVIEW2_USER_DATA_FOLDER").is_err() {
+        let data_dir = std::env::temp_dir().join("mimir_webview2_data");
+        std::env::set_var("WEBVIEW2_USER_DATA_FOLDER", data_dir);
+    }
+
     let event_loop = EventLoop::new();
 
     // Create a modern borderless native window for the Mímir HUD
