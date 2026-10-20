@@ -52,12 +52,17 @@ jobs:
         run: |
           $TAG = "${{ github.ref_name }}"
           if ([string]::IsNullOrEmpty($TAG)) { $TAG = "v0.1.0-alpha" }
+
+          # Download official Microsoft WebView2 Evergreen Bootstrapper for dependency-free distribution
+          Write-Host "Downloading Microsoft Edge WebView2 Evergreen Bootstrapper..."
+          Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile "MicrosoftEdgeWebview2Setup.exe"
           
           # 1. Create Portable Directory Structure
           $PORTABLE_DIR = "mimir-portable"
           New-Item -ItemType Directory -Path $PORTABLE_DIR -Force
           Copy-Item -Path "src-rust/target/release/mimir-core.exe" -Destination "$PORTABLE_DIR/mimir.exe"
           Copy-Item -Path "dist" -Destination "$PORTABLE_DIR/dist" -Recurse
+          Copy-Item -Path "MicrosoftEdgeWebview2Setup.exe" -Destination "$PORTABLE_DIR/"
           Copy-Item -Path "LICENSE" -Destination "$PORTABLE_DIR/"
           Copy-Item -Path "README.md" -Destination "$PORTABLE_DIR/"
 

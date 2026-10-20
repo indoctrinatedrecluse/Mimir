@@ -145,6 +145,33 @@ pub fn show_native_error_dialog(title: &str, message: &str) {
     eprintln!("[ERROR DIALOG] {}: {}", title, message);
 }
 
+/// Displays a native Windows Yes/No dialog. Returns true if user clicked Yes.
+#[cfg(target_os = "windows")]
+pub fn ask_yes_no_dialog(title: &str, message: &str) -> bool {
+    use std::ffi::OsStr;
+    use std::os::windows::ffi::OsStrExt;
+    use windows::core::PCWSTR;
+    use windows::Win32::UI::WindowsAndMessaging::{MessageBoxW, MB_ICONQUESTION, MB_YESNO, IDYES};
+
+    let title_wide: Vec<u16> = OsStr::new(title).encode_wide().chain(std::iter::once(0)).collect();
+    let msg_wide: Vec<u16> = OsStr::new(message).encode_wide().chain(std::iter::once(0)).collect();
+
+    unsafe {
+        let result = MessageBoxW(
+            None,
+            PCWSTR::from_raw(msg_wide.as_ptr()),
+            PCWSTR::from_raw(title_wide.as_ptr()),
+            MB_YESNO | MB_ICONQUESTION,
+        );
+        result == IDYES
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+pub fn ask_yes_no_dialog(_title: &str, _message: &str) -> bool {
+    true
+}
+
 /// Initializes diagnostic logging and the global panic hook.
 pub fn init() {
     let log_path = get_log_path();

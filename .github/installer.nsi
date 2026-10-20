@@ -1,6 +1,7 @@
 ; Mímir Browser NSIS Installer Script
 Unicode True
 !include "MUI2.nsh"
+!include "LogicLib.nsh"
 
 Name "Mímir Browser"
 OutFile "..\mimir-setup.exe"
@@ -34,6 +35,32 @@ Section "Mimir" SecMimir
   SetOutPath "$INSTDIR"
   File "..\LICENSE"
   File "..\README.md"
+
+  ; Check if WebView2 Runtime is installed; if missing, install via bundled Evergreen bootstrapper
+  ReadRegStr $0 HKLM "SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" "pv"
+  ${If} $0 == ""
+    ReadRegStr $0 HKCU "SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" "pv"
+  ${EndIf}
+  ${If} $0 == ""
+    ReadRegStr $0 HKLM "SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" "pv"
+  ${EndIf}
+  ${If} $0 == ""
+    ReadRegStr $0 HKLM "SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-9447-402A-8377-800732A6A5E2}" "pv"
+  ${EndIf}
+  ${If} $0 == ""
+    ReadRegStr $0 HKCU "SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-9447-402A-8377-800732A6A5E2}" "pv"
+  ${EndIf}
+
+  ${If} $0 == ""
+    DetailPrint "Microsoft Edge WebView2 not found. Installing Evergreen Runtime..."
+    IfFileExists "..\MicrosoftEdgeWebview2Setup.exe" 0 +4
+      File "..\MicrosoftEdgeWebview2Setup.exe"
+      ExecWait '"$INSTDIR\MicrosoftEdgeWebview2Setup.exe" /silent /install' $1
+      Delete "$INSTDIR\MicrosoftEdgeWebview2Setup.exe"
+      DetailPrint "WebView2 setup exited with code $1"
+  ${Else}
+    DetailPrint "Microsoft Edge WebView2 detected ($0)."
+  ${EndIf}
 
   ; Create shortcuts
   CreateDirectory "$SMPROGRAMS\Mímir"
