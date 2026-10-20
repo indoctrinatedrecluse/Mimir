@@ -8,11 +8,11 @@ export interface ViewportBounds {
 }
 
 export type IpcCommand =
-  | { type: 'NAVIGATE'; payload: { url: string } }
+  | { type: 'NAVIGATE'; payload: { url: string; tabId?: string } }
   | { type: 'GO_BACK' }
   | { type: 'GO_FORWARD' }
   | { type: 'REFRESH' }
-  | { type: 'CREATE_TAB'; payload: { url?: string; realm: RealmId } }
+  | { type: 'CREATE_TAB'; payload: { tabId?: string; url?: string; realm: RealmId } }
   | { type: 'CLOSE_TAB'; payload: { tabId: string } }
   | { type: 'SWITCH_TAB'; payload: { tabId: string } }
   | { type: 'UPDATE_VIEWPORT_BOUNDS'; payload: ViewportBounds }
@@ -21,29 +21,27 @@ export type IpcCommand =
   | { type: 'WINDOW_CLOSE' };
 
 class MimirIpcBridge {
-  private isNativeWry: boolean = false;
-
-  constructor() {
-    if (typeof window !== 'undefined') {
-      // Check if running inside Wry WebView or Tauri runtime
-      this.isNativeWry = 'ipc' in window || '__TAURI__' in window;
-    }
-  }
-
   public isNative(): boolean {
-    return this.isNativeWry;
+    if (typeof window === 'undefined') return false;
+    const win = window as any;
+    return 'ipc' in win || '__TAURI__' in win || Boolean(win.chrome?.webview?.postMessage);
   }
 
   public send(cmd: IpcCommand) {
     if (typeof window === 'undefined') return;
 
-    if (this.isNativeWry) {
-      // Wry standard IPC channel
-      const ipc = (window as unknown as { ipc?: { postMessage: (msg: string) => void } }).ipc;
-      if (ipc && typeof ipc.postMessage === 'function') {
-        ipc.postMessage(JSON.stringify(cmd));
-        return;
-      }
+    const win = window as any;
+
+    // 1. Wry standard IPC channel
+    if (win.ipc && typeof win.ipc.postMessage === 'function') {
+      win.ipc.postMessage(JSON.stringify(cmd));
+      return;
+    }
+
+    // 2. Direct Windows WebView2 COM channel
+    if (win.chrome?.webview?.postMessage && typeof win.chrome.webview.postMessage === 'function') {
+      win.chrome.webview.postMessage(JSON.stringify(cmd));
+      return;
     }
 
     // In web dev preview mode, log neatly

@@ -60,7 +60,6 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     runicAudio.playChime();
     setIsFocused(false);
     onNavigate(url);
-    mimirIpc.send({ type: 'NAVIGATE', payload: { url } });
   };
 
   const handleSubmit = (e: React.FormEvent) => {

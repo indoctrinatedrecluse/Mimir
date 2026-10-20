@@ -48,10 +48,14 @@ pub enum IpcCommand {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NavigatePayload {
     pub url: String,
+    #[serde(default, rename = "tabId")]
+    pub tab_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateTabPayload {
+    #[serde(default, rename = "tabId")]
+    pub tab_id: Option<String>,
     pub url: Option<String>,
     pub realm: String,
 }

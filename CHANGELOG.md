@@ -59,6 +59,10 @@ The inaugural public alpha proof of concept (POC) for Mímir, the hypermodern, r
 * **Automated CI/CD Release Pipeline**: GitHub Actions workflow packaging both an executable installer and a portable Windows x64 zip bundle on every tag push.
 
 ### Fixed
+* **Live Child Viewport Spawning & Tab IPC Synchronization**:
+  * Implemented `build_as_child` child window attachment in Wry so external web pages (Google, GitHub, DuckDuckGo, etc.) dock seamlessly inside the HUD viewport rather than remaining on the placeholder.
+  * Synchronized initial tab creation on mount and full two-way tab lifecycle (`CREATE_TAB`, `NAVIGATE`, `SWITCH_TAB`, `CLOSE_TAB`) between React HUD and native Rust `TabManager`.
+  * Connected Omnibar navigation, search inquiry, speed dial runestones, and browser history actions (`GO_BACK`, `GO_FORWARD`, `REFRESH`) to active child WebViews.
 * **White Blank Screen & ES Module CORS Bypass**:
   * Replaced fragile `file://` URI loading with an embedded secure custom protocol (`https://mimir.localhost`), completely resolving Chromium's `Origin: null` CORS block on `<script type="module">` assets.
   * Added instant `#05070a` void-obsidian background initialization (`with_background_color`) to eliminate white window flashes before HUD rendering.

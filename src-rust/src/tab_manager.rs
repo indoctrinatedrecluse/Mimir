@@ -35,6 +35,15 @@ impl TabManager {
         }
     }
 
+    pub fn get_effective_bounds(&self) -> ViewportBounds {
+        self.current_bounds.clone().unwrap_or(ViewportBounds {
+            x: 240,
+            y: 78,
+            width: 1040,
+            height: 690,
+        })
+    }
+
     pub fn update_bounds(&mut self, bounds: ViewportBounds) {
         let rect = Self::to_wry_rect(&bounds);
         self.current_bounds = Some(bounds);
@@ -67,37 +76,55 @@ impl TabManager {
                     }
                 }
             }
-            self.tabs.insert(
-                id.clone(),
-                TabInstance {
-                    id: id.clone(),
-                    url,
-                    realm,
-                    webview: None,
-                },
-            );
+            if let Some(tab) = self.tabs.get_mut(&id) {
+                tab.url = url;
+                tab.realm = realm;
+                if let Some(wv) = &mut tab.webview {
+                    let _ = wv.set_visible(false);
+                }
+            } else {
+                self.tabs.insert(
+                    id.clone(),
+                    TabInstance {
+                        id: id.clone(),
+                        url,
+                        realm,
+                        webview: None,
+                    },
+                );
+            }
             self.active_tab_id = Some(id);
+            logger::info("Channeling internal Well of Mímir sanctuary; child webview hidden.");
             return;
         }
 
-        // If tab already exists, update its URL
+        let bounds = self.get_effective_bounds();
+        let rect = Self::to_wry_rect(&bounds);
+
+        // If tab already exists, update its URL and show its child webview
         if let Some(tab) = self.tabs.get_mut(&id) {
             tab.url = url.clone();
+            tab.realm = realm.clone();
+
             if let Some(wv) = &mut tab.webview {
                 let _ = wv.load_url(&url);
-                if let Some(bounds) = &self.current_bounds {
-                    let _ = wv.set_bounds(Self::to_wry_rect(bounds));
-                }
+                let _ = wv.set_bounds(rect);
                 let _ = wv.set_visible(true);
-            } else if let Some(bounds) = &self.current_bounds {
-                // Spawn WebView2 if it was previously an internal tab
+                let _ = wv.focus();
+                logger::info(&format!("Navigated existing child WebView2 for tab {} to {}", id, url));
+            } else {
+                // Spawn child WebView2 docked into viewport bounds
                 match WebViewBuilder::new()
-                    .with_bounds(Self::to_wry_rect(bounds))
+                    .with_bounds(rect)
                     .with_url(&url)
-                    .build(window)
+                    .with_background_color((5, 7, 10, 255))
+                    .with_devtools(true)
+                    .build_as_child(window.as_ref())
                 {
                     Ok(wv) => {
-                        logger::info(&format!("Spawned child WebView2 for tab {}", id));
+                        logger::info(&format!("Spawned child WebView2 for tab {} ({})", id, url));
+                        let _ = wv.set_visible(true);
+                        let _ = wv.focus();
                         tab.webview = Some(wv);
                     }
                     Err(e) => {
@@ -109,7 +136,7 @@ impl TabManager {
             return;
         }
 
-        // Hide previous active tab
+        // Hide previous active tab if different
         if let Some(prev_id) = &self.active_tab_id {
             if let Some(prev_tab) = self.tabs.get_mut(prev_id) {
                 if let Some(wv) = &mut prev_tab.webview {
@@ -119,31 +146,22 @@ impl TabManager {
         }
 
         // Spawn new child WebView2 docked into current_bounds
-        let new_wv = if let Some(bounds) = &self.current_bounds {
-            match WebViewBuilder::new()
-                .with_bounds(Self::to_wry_rect(bounds))
-                .with_url(&url)
-                .build(window)
-            {
-                Ok(wv) => {
-                    logger::info(&format!("Spawned child WebView2 for tab {} ({})", id, url));
-                    Some(wv)
-                }
-                Err(e) => {
-                    logger::error(&format!("Failed to spawn child WebView2 for tab {}: {}", id, e));
-                    None
-                }
+        let new_wv = match WebViewBuilder::new()
+            .with_bounds(rect)
+            .with_url(&url)
+            .with_background_color((5, 7, 10, 255))
+            .with_devtools(true)
+            .build_as_child(window.as_ref())
+        {
+            Ok(wv) => {
+                logger::info(&format!("Spawned new child WebView2 for tab {} ({})", id, url));
+                let _ = wv.set_visible(true);
+                let _ = wv.focus();
+                Some(wv)
             }
-        } else {
-            match WebViewBuilder::new().with_url(&url).build(window) {
-                Ok(wv) => {
-                    logger::info(&format!("Spawned child WebView2 without bounds for tab {} ({})", id, url));
-                    Some(wv)
-                }
-                Err(e) => {
-                    logger::error(&format!("Failed to spawn child WebView2 for tab {}: {}", id, e));
-                    None
-                }
+            Err(e) => {
+                logger::error(&format!("Failed to spawn child WebView2 for tab {}: {}", id, e));
+                None
             }
         };
 
@@ -159,15 +177,20 @@ impl TabManager {
         self.active_tab_id = Some(id);
     }
 
-    pub fn navigate_active(&mut self, window: &Arc<Window>, url: &str) {
-        if let Some(active_id) = self.active_tab_id.clone() {
-            let realm = self
-                .tabs
-                .get(&active_id)
-                .map(|t| t.realm.clone())
-                .unwrap_or_else(|| "midgard".to_string());
-            self.open_or_navigate_tab(window, active_id, url.to_string(), realm);
-        }
+    pub fn navigate_active(&mut self, window: &Arc<Window>, url: &str, target_tab_id: Option<&str>) {
+        let active_id = target_tab_id
+            .map(|s| s.to_string())
+            .or_else(|| self.active_tab_id.clone())
+            .unwrap_or_else(|| "tab-1".to_string());
+
+        let realm = self
+            .tabs
+            .get(&active_id)
+            .map(|t| t.realm.clone())
+            .unwrap_or_else(|| "midgard".to_string());
+
+        logger::info(&format!("Navigating tab {} in realm {} to: {}", active_id, realm, url));
+        self.open_or_navigate_tab(window, active_id, url.to_string(), realm);
     }
 
     pub fn switch_tab(&mut self, id: &str) {
@@ -184,13 +207,19 @@ impl TabManager {
             }
         }
 
+        let bounds = self.get_effective_bounds();
+
         // Show and resize new active tab
         if let Some(new_tab) = self.tabs.get_mut(id) {
+            let is_internal = new_tab.url.is_empty() || new_tab.url == "mimir://newtab" || new_tab.url == "about:blank";
             if let Some(wv) = &mut new_tab.webview {
-                if let Some(bounds) = &self.current_bounds {
-                    let _ = wv.set_bounds(Self::to_wry_rect(bounds));
+                if is_internal {
+                    let _ = wv.set_visible(false);
+                } else {
+                    let _ = wv.set_bounds(Self::to_wry_rect(&bounds));
+                    let _ = wv.set_visible(true);
+                    let _ = wv.focus();
                 }
-                let _ = wv.set_visible(true);
             }
             self.active_tab_id = Some(id.to_string());
         }
@@ -210,6 +239,36 @@ impl TabManager {
                 self.switch_tab(&next);
             } else {
                 self.active_tab_id = None;
+            }
+        }
+    }
+
+    pub fn go_back(&self) {
+        if let Some(active_id) = &self.active_tab_id {
+            if let Some(tab) = self.tabs.get(active_id) {
+                if let Some(wv) = &tab.webview {
+                    let _ = wv.evaluate_script("window.history.back()");
+                }
+            }
+        }
+    }
+
+    pub fn go_forward(&self) {
+        if let Some(active_id) = &self.active_tab_id {
+            if let Some(tab) = self.tabs.get(active_id) {
+                if let Some(wv) = &tab.webview {
+                    let _ = wv.evaluate_script("window.history.forward()");
+                }
+            }
+        }
+    }
+
+    pub fn refresh(&self) {
+        if let Some(active_id) = &self.active_tab_id {
+            if let Some(tab) = self.tabs.get(active_id) {
+                if let Some(wv) = &tab.webview {
+                    let _ = wv.evaluate_script("window.location.reload()");
+                }
             }
         }
     }

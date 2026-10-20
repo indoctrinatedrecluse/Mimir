@@ -77,7 +77,6 @@ export const ContentViewport: React.FC<ContentViewportProps> = ({
     }
     runicAudio.playChime();
     onNavigate(url);
-    mimirIpc.send({ type: 'NAVIGATE', payload: { url } });
   };
 
   const cycleHavamal = () => {

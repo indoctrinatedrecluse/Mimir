@@ -371,22 +371,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         std::process::exit(0);
                     }
                     IpcCommand::UpdateViewportBounds { payload } => {
+                        logger::info(&format!("Updating viewport sanctuary bounds: x={}, y={}, w={}, h={}", payload.x, payload.y, payload.width, payload.height));
                         if let Ok(mut mgr) = tab_mgr_clone.lock() {
                             mgr.update_bounds(payload);
                         }
                     }
                     IpcCommand::Navigate { payload } => {
-                        logger::info(&format!("Commencing navigation across Bifröst: {}", payload.url));
+                        logger::info(&format!("Commencing navigation across Bifröst: {} (target tab: {:?})", payload.url, payload.tab_id));
                         if let Ok(mut mgr) = tab_mgr_clone.lock() {
-                            mgr.navigate_active(&window_clone, &payload.url);
+                            mgr.navigate_active(&window_clone, &payload.url, payload.tab_id.as_deref());
                         }
                     }
                     IpcCommand::CreateTab { payload } => {
-                        logger::info(&format!("Growing new Yggdrasil branch in realm: {}", payload.realm));
+                        let tab_id = payload.tab_id.unwrap_or_else(|| {
+                            format!("tab-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis())
+                        });
+                        logger::info(&format!("Growing new Yggdrasil branch: {} in realm: {}", tab_id, payload.realm));
                         if let Ok(mut mgr) = tab_mgr_clone.lock() {
-                            let new_id = format!("tab-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis());
                             let url = payload.url.unwrap_or_else(|| "mimir://newtab".to_string());
-                            mgr.open_or_navigate_tab(&window_clone, new_id, url, payload.realm);
+                            mgr.open_or_navigate_tab(&window_clone, tab_id, url, payload.realm);
                         }
                     }
                     IpcCommand::CloseTab { payload } => {
@@ -396,18 +399,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         }
                     }
                     IpcCommand::SwitchTab { payload } => {
+                        logger::info(&format!("Switching active thread to: {}", payload.tab_id));
                         if let Ok(mut mgr) = tab_mgr_clone.lock() {
                             mgr.switch_tab(&payload.tab_id);
                         }
                     }
                     IpcCommand::GoBack => {
                         logger::info("Rewinding memory (Back)");
+                        if let Ok(mgr) = tab_mgr_clone.lock() {
+                            mgr.go_back();
+                        }
                     }
                     IpcCommand::GoForward => {
                         logger::info("Advancing vision (Forward)");
+                        if let Ok(mgr) = tab_mgr_clone.lock() {
+                            mgr.go_forward();
+                        }
                     }
                     IpcCommand::Refresh => {
                         logger::info("Refreshing sacred spring (Reload)");
+                        if let Ok(mgr) = tab_mgr_clone.lock() {
+                            mgr.refresh();
+                        }
                     }
                 }
             } else {

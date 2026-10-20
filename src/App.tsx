@@ -47,6 +47,14 @@ export const App: React.FC = () => {
 
   const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0];
 
+  // Synchronize initial tab with native Rust host
+  useEffect(() => {
+    mimirIpc.send({
+      type: 'CREATE_TAB',
+      payload: { tabId: 'tab-1', url: 'mimir://newtab', realm: 'midgard' },
+    });
+  }, []);
+
   // Global keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -80,9 +88,12 @@ export const App: React.FC = () => {
       }))
     );
     setActiveTabId(id);
+    mimirIpc.send({ type: 'SWITCH_TAB', payload: { tabId: id } });
   };
 
   const handleCloseTab = (id: string) => {
+    mimirIpc.send({ type: 'CLOSE_TAB', payload: { tabId: id } });
+
     if (tabs.length === 1) {
       // Don't close last tab, just reset to new tab
       setTabs([
@@ -98,6 +109,10 @@ export const App: React.FC = () => {
         },
       ]);
       setActiveTabId('tab-1');
+      mimirIpc.send({
+        type: 'CREATE_TAB',
+        payload: { tabId: 'tab-1', url: 'mimir://newtab', realm: activeRealm },
+      });
       return;
     }
 
@@ -107,6 +122,7 @@ export const App: React.FC = () => {
       const newActive = nextTabs[Math.max(0, idx - 1)];
       nextTabs.forEach((t) => (t.isActive = t.id === newActive.id));
       setActiveTabId(newActive.id);
+      mimirIpc.send({ type: 'SWITCH_TAB', payload: { tabId: newActive.id } });
     }
     setTabs(nextTabs);
   };
@@ -127,7 +143,7 @@ export const App: React.FC = () => {
 
     setTabs((prev) => prev.map((t) => ({ ...t, isActive: false })).concat(newTab));
     setActiveTabId(newId);
-    mimirIpc.send({ type: 'CREATE_TAB', payload: { url, realm: activeRealm } });
+    mimirIpc.send({ type: 'CREATE_TAB', payload: { tabId: newId, url, realm: activeRealm } });
   };
 
   const handleNavigate = (url: string) => {
@@ -145,7 +161,10 @@ export const App: React.FC = () => {
       })
     );
 
-    // Simulate load completion
+    // Send IPC navigation command with active tabId
+    mimirIpc.send({ type: 'NAVIGATE', payload: { url, tabId: activeTabId } });
+
+    // Clear loading state after delay
     setTimeout(() => {
       setTabs((prev) =>
         prev.map((t) => (t.id === activeTabId ? { ...t, isLoading: false } : t))
