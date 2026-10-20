@@ -16,6 +16,11 @@ use ipc::IpcCommand;
 use tab_manager::TabManager;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    if std::env::args().any(|arg| arg == "--version" || arg == "-V") {
+        println!("Mímir Browser Core v0.1.0 (Runic Conduit)");
+        return Ok(());
+    }
+
     let event_loop = EventLoop::new();
 
     // Create a modern borderless native window for the Mímir HUD
@@ -75,9 +80,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                     IpcCommand::Navigate { payload } => {
                         println!("[ᛗ MÍMIR] Commencing navigation across Bifröst: {}", payload.url);
+                        if let Ok(mut mgr) = tab_mgr_clone.lock() {
+                            mgr.navigate_active(&window_clone, &payload.url);
+                        }
                     }
                     IpcCommand::CreateTab { payload } => {
                         println!("[ᛗ MÍMIR] Growing new Yggdrasil branch in realm: {}", payload.realm);
+                        if let Ok(mut mgr) = tab_mgr_clone.lock() {
+                            let new_id = format!("tab-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis());
+                            let url = payload.url.unwrap_or_else(|| "mimir://newtab".to_string());
+                            mgr.open_or_navigate_tab(&window_clone, new_id, url, payload.realm);
+                        }
                     }
                     IpcCommand::CloseTab { payload } => {
                         if let Ok(mut mgr) = tab_mgr_clone.lock() {
