@@ -4,6 +4,7 @@ use tao::dpi::{LogicalPosition, LogicalSize, Position, Size};
 use tao::window::Window;
 use wry::{Rect, WebView, WebViewBuilder};
 use crate::ipc::ViewportBounds;
+use crate::logger;
 
 pub struct TabInstance {
     pub id: String,
@@ -90,12 +91,18 @@ impl TabManager {
                 let _ = wv.set_visible(true);
             } else if let Some(bounds) = &self.current_bounds {
                 // Spawn WebView2 if it was previously an internal tab
-                if let Ok(wv) = WebViewBuilder::new()
+                match WebViewBuilder::new()
                     .with_bounds(Self::to_wry_rect(bounds))
                     .with_url(&url)
                     .build(window)
                 {
-                    tab.webview = Some(wv);
+                    Ok(wv) => {
+                        logger::info(&format!("Spawned child WebView2 for tab {}", id));
+                        tab.webview = Some(wv);
+                    }
+                    Err(e) => {
+                        logger::error(&format!("Failed to spawn child WebView2 for tab {}: {}", id, e));
+                    }
                 }
             }
             self.active_tab_id = Some(id);
@@ -113,13 +120,31 @@ impl TabManager {
 
         // Spawn new child WebView2 docked into current_bounds
         let new_wv = if let Some(bounds) = &self.current_bounds {
-            WebViewBuilder::new()
+            match WebViewBuilder::new()
                 .with_bounds(Self::to_wry_rect(bounds))
                 .with_url(&url)
                 .build(window)
-                .ok()
+            {
+                Ok(wv) => {
+                    logger::info(&format!("Spawned child WebView2 for tab {} ({})", id, url));
+                    Some(wv)
+                }
+                Err(e) => {
+                    logger::error(&format!("Failed to spawn child WebView2 for tab {}: {}", id, e));
+                    None
+                }
+            }
         } else {
-            WebViewBuilder::new().with_url(&url).build(window).ok()
+            match WebViewBuilder::new().with_url(&url).build(window) {
+                Ok(wv) => {
+                    logger::info(&format!("Spawned child WebView2 without bounds for tab {} ({})", id, url));
+                    Some(wv)
+                }
+                Err(e) => {
+                    logger::error(&format!("Failed to spawn child WebView2 for tab {}: {}", id, e));
+                    None
+                }
+            }
         };
 
         self.tabs.insert(

@@ -58,6 +58,17 @@ The inaugural public alpha proof of concept (POC) for Mímir, the hypermodern, r
 * **Vite Watcher Decoupling**: Explicitly isolated `src-rust/target` and WebView2 GPU cache directories from Vite file watching to prevent Windows `EBUSY` file locking errors.
 * **Automated CI/CD Release Pipeline**: GitHub Actions workflow packaging both an executable installer and a portable Windows x64 zip bundle on every tag push.
 
+### Fixed
+* **Windows Terminal Window Suppression**: Configured `#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]` so running the distributed binary no longer spawns an unwanted separate console window, while seamlessly retaining parent console attachment via `AttachConsole` when invoked from CLI.
+* **UI Loading Failure in Packaged Desktop Environment**:
+  * Set Vite base URL to relative (`base: './'`) in `vite.config.ts` to prevent root-absolute asset path 404s under `file://` schemes.
+  * Implemented multi-tier topology resolution in `resolve_hud_url()` to detect `dist/index.html` relative to the running executable path (`current_exe()`) or current working directory.
+  * Formatted local HTML file paths into RFC 8089 compliant file URIs (`file:///`), stripping Windows verbatim UNC `\\?\` prefixes that caused Chromium URL parser rejection.
+* **Size-Controlled Crash Dump & Diagnostic Telemetry**:
+  * Added dedicated `logger.rs` module writing to `%TEMP%\mimir_crash.log`, easily discoverable by Windows Disk Cleanup.
+  * Enforced a strict 512 KB size ceiling with automatic log rotation/truncation to prevent disk bloat.
+  * Implemented an unhandled panic hook with native Windows `MessageBoxW` error reporting and detailed diagnostic dumps.
+
 ---
 
 [0.1.0]: https://github.com/indoctrinatedrecluse/Mimir/releases/tag/v0.1.0
