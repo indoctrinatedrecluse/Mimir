@@ -3,12 +3,11 @@ Unicode True
 !include "MUI2.nsh"
 
 Name "Mímir Browser"
-OutFile "mimir-setup.exe"
+OutFile "..\mimir-setup.exe"
 InstallDir "$LOCALAPPDATA\Programs\Mimir"
 RequestExecutionLevel user
 
 !define MUI_ABORTWARNING
-; !define MUI_ICON "..\public\favicon.ico"
 
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_DIRECTORY

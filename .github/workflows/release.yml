@@ -31,6 +31,12 @@ jobs:
         with:
           targets: x86_64-pc-windows-msvc
 
+      - name: Install NSIS (Installer Compiler)
+        shell: pwsh
+        run: |
+          choco install nsis -y --no-progress
+          echo "C:\Program Files (x86)\NSIS" >> $env:GITHUB_PATH
+
       - name: Install Frontend Dependencies
         run: npm ci
 
@@ -47,7 +53,7 @@ jobs:
           $TAG = "${{ github.ref_name }}"
           if ([string]::IsNullOrEmpty($TAG)) { $TAG = "v0.1.0-alpha" }
           
-          # Create Portable Directory Structure
+          # 1. Create Portable Directory Structure
           $PORTABLE_DIR = "mimir-portable"
           New-Item -ItemType Directory -Path $PORTABLE_DIR -Force
           Copy-Item -Path "src-rust/target/release/mimir-core.exe" -Destination "$PORTABLE_DIR/mimir.exe"
@@ -55,20 +61,35 @@ jobs:
           Copy-Item -Path "LICENSE" -Destination "$PORTABLE_DIR/"
           Copy-Item -Path "README.md" -Destination "$PORTABLE_DIR/"
 
-          # Package Portable Zip
+          # 2. Package Portable Zip
           $PORTABLE_ZIP = "mimir-$TAG-windows-x64-portable.zip"
           Compress-Archive -Path "$PORTABLE_DIR/*" -DestinationPath $PORTABLE_ZIP -Force
           Write-Host "Created portable archive: $PORTABLE_ZIP"
 
-          # Package Windows Installer via NSIS
+          # 3. Package Windows Installer via NSIS
           $SETUP_EXE = "mimir-$TAG-windows-x64-setup.exe"
-          makensis /DOutFile="$SETUP_EXE" .github/installer.nsi
+          
+          # Find makensis executable
+          $MAKENSIS_CMD = "makensis"
+          if (-not (Get-Command "makensis" -ErrorAction SilentlyContinue)) {
+            $MAKENSIS_CMD = "C:\Program Files (x86)\NSIS\makensis.exe"
+          }
+
+          Write-Host "Compiling installer using: $MAKENSIS_CMD"
+          & $MAKENSIS_CMD .github/installer.nsi
+
           if (Test-Path "mimir-setup.exe") {
             Move-Item -Path "mimir-setup.exe" -Destination $SETUP_EXE -Force
+          } elseif (Test-Path ".github/mimir-setup.exe") {
+            Move-Item -Path ".github/mimir-setup.exe" -Destination $SETUP_EXE -Force
+          }
+
+          if (-not (Test-Path $SETUP_EXE)) {
+            throw "Installer $SETUP_EXE was not generated!"
           }
           Write-Host "Created setup installer: $SETUP_EXE"
 
-          # Export output variables
+          # Export output variables for GitHub release step
           echo "portable_zip=$PORTABLE_ZIP" >> $env:GITHUB_OUTPUT
           echo "setup_exe=$SETUP_EXE" >> $env:GITHUB_OUTPUT
           echo "tag_name=$TAG" >> $env:GITHUB_OUTPUT
