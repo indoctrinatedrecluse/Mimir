@@ -6,9 +6,11 @@ import { ContentViewport } from '@/components/viewport/ContentViewport';
 import { StatusBar } from '@/components/hud/StatusBar';
 import { RealmSelector } from '@/components/realms/RealmSelector';
 import { RunicAtmosphere } from '@/components/hud/RunicAtmosphere';
+import { SplashScreen } from '@/components/splash/SplashScreen';
 import { Tab, RealmId } from '@/types';
 import { runicAudio } from '@/core/audio/runicAudio';
 import { mimirIpc } from '@/core/ipc/bridge';
+import { AnimatePresence } from 'framer-motion';
 
 const INITIAL_TABS: Tab[] = [
   {
@@ -41,6 +43,7 @@ export const App: React.FC = () => {
   const [activeRealm, setActiveRealm] = useState<RealmId>('midgard');
   const [isTabTreeCollapsed, setIsTabTreeCollapsed] = useState(false);
   const [isRealmSelectorOpen, setIsRealmSelectorOpen] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
 
   const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0];
 
@@ -152,6 +155,13 @@ export const App: React.FC = () => {
 
   return (
     <div className="relative flex h-screen w-screen flex-col overflow-hidden bg-[#05070a] text-slate-100 font-sans">
+      {/* Cinematic Splash Screen */}
+      <AnimatePresence>
+        {showSplash && (
+          <SplashScreen onComplete={() => setShowSplash(false)} />
+        )}
+      </AnimatePresence>
+
       {/* Ambient Runic Particles */}
       <RunicAtmosphere activeRealm={activeRealm} />
 

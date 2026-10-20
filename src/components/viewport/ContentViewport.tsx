@@ -4,7 +4,8 @@ import { runicAudio } from '@/core/audio/runicAudio';
 import { Tab, RealmId } from '@/types';
 import { REALMS } from '@/core/realms';
 import { REALM_THEMES } from '@/components/themes/realmThemes';
-import { YggdrasilRootsSvg, NorseKnotworkRibbon, ValknutSvg, AegishjalmrSvg } from '@/components/themes/NorsePatterns';
+import { YggdrasilRootsSvg, ValknutSvg, AegishjalmrSvg } from '@/components/themes/NorsePatterns';
+import { MimirSigil } from '@/components/brand/MimirSigil';
 import { getRandomHavamal, HavamalStanza } from '@/core/havamal';
 import { Compass, Sparkles, Globe, Terminal, Shield, BookOpen, RefreshCw, Feather, Flame, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -184,31 +185,28 @@ export const ContentViewport: React.FC<ContentViewportProps> = ({
 
           {/* Central Sanctum: The Eye of Mímir & Search Pool */}
           <div className="relative z-10 flex flex-col items-center justify-center my-auto w-full max-w-2xl">
-            {/* Glowing Mímir Sigil */}
+            {/* Glowing Animated Mímir Sigil with Concentric Water Ripples */}
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-              className="relative mb-5"
+              className="relative mb-4 flex items-center justify-center"
             >
+              {/* Concentric Living Water Ripples from the Well */}
               <div
-                className="absolute -inset-6 rounded-full blur-2xl opacity-40 animate-pulse"
-                style={{ backgroundColor: theme.accentColor }}
+                className="absolute h-36 w-36 rounded-full border border-dashed opacity-30 animate-ripple pointer-events-none"
+                style={{ borderColor: theme.accentColor }}
               />
               <div
-                className="relative flex h-24 w-24 items-center justify-center rounded-2xl border bg-[#080d18]/90 shadow-2xl backdrop-blur-md"
-                style={{
-                  borderColor: `${theme.accentColor}50`,
-                  boxShadow: `0 0 35px ${theme.glowColor}`,
-                }}
-              >
-                <span
-                  className="text-5xl font-black transition-transform hover:scale-105"
-                  style={{ color: theme.accentColor }}
-                >
-                  {theme.primaryRune}
-                </span>
-              </div>
+                className="absolute h-52 w-52 rounded-full border opacity-20 animate-ripple pointer-events-none"
+                style={{ borderColor: theme.accentColor, animationDelay: '2s' }}
+              />
+              <div
+                className="absolute -inset-8 rounded-full blur-3xl opacity-35 pointer-events-none animate-pulse"
+                style={{ backgroundColor: theme.accentColor }}
+              />
+
+              <MimirSigil size={105} animated={true} showRings={true} />
             </motion.div>
 
             {/* Heading & Lore */}

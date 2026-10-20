@@ -4,8 +4,9 @@ import { mimirIpc } from '@/core/ipc/bridge';
 import { RealmId } from '@/types';
 import { REALMS } from '@/core/realms';
 import { REALM_THEMES } from '@/components/themes/realmThemes';
-import { NorseKnotworkRibbon, ElderFutharkBanner, ValknutSvg, AegishjalmrSvg } from '@/components/themes/NorsePatterns';
-import { Minus, Square, X, Compass, Shield } from 'lucide-react';
+import { NorseKnotworkRibbon, ValknutSvg, AegishjalmrSvg } from '@/components/themes/NorsePatterns';
+import { MimirSigil } from '@/components/brand/MimirSigil';
+import { Minus, Square, X, Compass } from 'lucide-react';
 
 interface TitleBarProps {
   activeRealm: RealmId;
@@ -36,75 +37,67 @@ export const TitleBar: React.FC<TitleBarProps> = ({
     mimirIpc.send({ type: 'WINDOW_CLOSE' });
   };
 
+  const futharkSeq = "ᚠ ᚢ ᚦ ᚨ ᚱ ᚲ ᚷ ᚹ ᚺ ᚾ ᛁ ᛃ ᛇ ᛈ ᛉ ᛋ ᛏ ᛒ ᛖ ᛗ ᛚ ᛜ ᛞ ᛟ ";
+
   return (
     <header
-      className="relative z-30 flex h-10 w-full select-none items-center justify-between border-b border-white/10 px-3 transition-colors duration-500 overflow-hidden shadow-lg"
+      className="relative z-30 flex h-10 w-full select-none items-center justify-between border-b border-white/10 px-3 transition-colors duration-500 overflow-hidden shadow-lg animate-aurora"
       style={{
         background: realmTheme.titlebarBg,
       }}
     >
-      {/* Background Decorative Theme Layer (Firefox-style Norse Banner) */}
+      {/* Background Decorative Theme Layer (Firefox-style Animated Norse Banner) */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {/* Faint Stave Watermark */}
         <div
-          className="absolute -right-6 -top-4 opacity-10 transition-transform duration-700"
+          className="absolute -right-6 -top-4 opacity-15 transition-transform duration-700"
           style={{ color: realmTheme.accentColor }}
         >
           {realmTheme.stave === 'valknut' ? (
-            <ValknutSvg size={100} />
+            <ValknutSvg size={105} />
           ) : (
-            <AegishjalmrSvg size={100} />
+            <AegishjalmrSvg size={105} />
           )}
         </div>
 
-        {/* Engraved Futhark Ribbon across top */}
-        <div className="absolute top-0.5 inset-x-0 opacity-20">
-          <ElderFutharkBanner color={realmTheme.accentColor} />
+        {/* Scrolling Animated Futhark Ribbon across top */}
+        <div className="absolute top-0 inset-x-0 overflow-hidden whitespace-nowrap opacity-25">
+          <div className="inline-block animate-futhark-scroll font-mono text-[10px] tracking-[0.4em]" style={{ color: realmTheme.accentColor }}>
+            {futharkSeq.repeat(6)}
+          </div>
         </div>
 
-        {/* Ambient Realm Glow */}
+        {/* Ambient Realm Glow Pulse */}
         <div
-          className="absolute inset-y-0 left-1/4 w-1/2 blur-2xl opacity-15 pointer-events-none"
+          className="absolute inset-y-0 left-1/3 w-1/3 blur-2xl opacity-20 pointer-events-none"
           style={{ backgroundColor: realmTheme.accentColor }}
         />
 
         {/* Norse Knotwork Ribbon along bottom border */}
         <div className="absolute bottom-0 inset-x-0" style={{ color: realmTheme.knotworkColor }}>
-          <NorseKnotworkRibbon opacity={0.3} />
+          <NorseKnotworkRibbon opacity={0.35} />
         </div>
       </div>
 
       {/* Left: Branding & Realm Conduit */}
       <div className="relative z-10 flex items-center space-x-3">
-        {/* Mímir Sigil with Runic Pulse */}
+        {/* Animated Colorful Mímir Sigil */}
         <div className="flex items-center space-x-2">
-          <div
-            className="flex h-6 w-6 items-center justify-center rounded-sm font-black text-xs shadow-md transition-all duration-300 border"
-            style={{
-              backgroundColor: `${realmTheme.accentColor}18`,
-              borderColor: `${realmTheme.accentColor}60`,
-              color: realmTheme.accentColor,
-              boxShadow: `0 0 10px ${realmTheme.glowColor}`,
-            }}
-          >
-            ᛗ
-          </div>
-          <div className="flex flex-col">
-            <div className="flex items-center space-x-1.5">
-              <span className="text-xs font-black tracking-widest text-slate-100">
-                MÍMIR
-              </span>
-              <span
-                className="rounded px-1.5 py-0.2 text-[8px] font-mono tracking-wider font-semibold border"
-                style={{
-                  backgroundColor: `${realmTheme.accentColor}15`,
-                  borderColor: `${realmTheme.accentColor}40`,
-                  color: realmTheme.accentColor,
-                }}
-              >
-                RUNIC CONDUIT
-              </span>
-            </div>
+          <MimirSigil size={26} animated={true} showRings={false} />
+          <div className="flex items-center space-x-1.5">
+            <span className="text-xs font-black tracking-widest text-slate-100">
+              MÍMIR
+            </span>
+            <span
+              className="rounded px-1.5 py-0.2 text-[8px] font-mono tracking-wider font-semibold border"
+              style={{
+                backgroundColor: `${realmTheme.accentColor}15`,
+                borderColor: `${realmTheme.accentColor}40`,
+                color: realmTheme.accentColor,
+              }}
+            >
+              RUNIC CONDUIT
+            </span>
           </div>
         </div>
 
@@ -151,7 +144,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({
         style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
       >
         <div className="flex items-center space-x-2 opacity-50 hover:opacity-80 transition-opacity">
-          <span className="text-[9px] font-mono tracking-[0.25em] text-slate-400 uppercase">
+          <span className="text-[9px] font-mono tracking-[0.25em] text-slate-300 uppercase">
             ᚱ {realmTheme.subtitle} ᚱ
           </span>
         </div>
