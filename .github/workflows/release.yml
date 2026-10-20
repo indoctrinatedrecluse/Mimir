@@ -63,6 +63,7 @@ jobs:
           Copy-Item -Path "src-rust/target/release/mimir-core.exe" -Destination "$PORTABLE_DIR/mimir.exe"
           Copy-Item -Path "dist" -Destination "$PORTABLE_DIR/dist" -Recurse
           Copy-Item -Path "MicrosoftEdgeWebview2Setup.exe" -Destination "$PORTABLE_DIR/"
+          Copy-Item -Path "mimir.ico" -Destination "$PORTABLE_DIR/"
           Copy-Item -Path "LICENSE" -Destination "$PORTABLE_DIR/"
           Copy-Item -Path "README.md" -Destination "$PORTABLE_DIR/"
 

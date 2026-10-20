@@ -21,3 +21,7 @@ windows = { version = "0.58", features = [
     "Win32_System_Console",
     "Win32_System_Registry",
 ] }
+
+[target.'cfg(target_os = "windows")'.build-dependencies]
+winres = "0.1"
+

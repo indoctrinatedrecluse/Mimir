@@ -55,6 +55,12 @@ The inaugural public alpha proof of concept (POC) for Mímir, the hypermodern, r
 * **Audio SFX Toggle**: Dedicated HUD control in the status bar with persistent state.
 
 #### Developer Experience & Build Automation
+* **Theme-Consistent Native Executable & Installer Icon**:
+  * Embedded multi-resolution runic Mímir icon (`256x256`, `128x128`, `64x64`, `48x48`, `32x32`, `16x16`) directly into `mimir.exe` via Windows PE resource compilation (`winres`).
+  * Configured NSIS setup installer (`mimir-setup.exe`), uninstaller, desktop shortcuts, and Start Menu links with the runic icon, ensuring it permanently locks in when pinned to the Windows Taskbar.
+  * Linked native runtime window icon via Tao's `with_window_icon` for seamless Alt+Tab and taskbar representation.
+* **Installer Launch-on-Finish**:
+  * Integrated `MUI_FINISHPAGE_RUN` into the NSIS setup wizard, providing a checked-by-default "Launch Mímir Browser" option on the completion screen.
 * **Vite Watcher Decoupling**: Explicitly isolated `src-rust/target` and WebView2 GPU cache directories from Vite file watching to prevent Windows `EBUSY` file locking errors.
 * **Automated CI/CD Release Pipeline**: GitHub Actions workflow packaging both an executable installer and a portable Windows x64 zip bundle on every tag push.
 

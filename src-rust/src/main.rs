@@ -12,7 +12,7 @@ use tao::{
     dpi::LogicalSize,
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoopBuilder},
-    window::WindowBuilder,
+    window::{Icon, WindowBuilder},
 };
 use wry::http::{header, Response, StatusCode};
 use wry::WebViewBuilder;
@@ -240,9 +240,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let event_loop = EventLoopBuilder::<IpcCommand>::with_user_event().build();
     let event_loop_proxy = event_loop.create_proxy();
 
+    let icon_bytes = include_bytes!("../icon_64.rgba");
+    let window_icon = Icon::from_rgba(icon_bytes.to_vec(), 64, 64).ok();
+
     // Create a modern borderless native window for the Mímir HUD
     let window = match WindowBuilder::new()
         .with_title("Mímir Browser — Runic Conduit")
+        .with_window_icon(window_icon)
         .with_inner_size(LogicalSize::new(1280.0, 800.0))
         .with_min_inner_size(LogicalSize::new(960.0, 600.0))
         .with_decorations(false) // Custom Norse HUD TitleBar handles window controls
