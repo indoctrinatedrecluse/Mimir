@@ -153,7 +153,7 @@ export const App: React.FC = () => {
   return (
     <div className="relative flex h-screen w-screen flex-col overflow-hidden bg-[#05070a] text-slate-100 font-sans">
       {/* Ambient Runic Particles */}
-      <RunicAtmosphere />
+      <RunicAtmosphere activeRealm={activeRealm} />
 
       {/* Layer 1: TitleBar */}
       <TitleBar
@@ -164,6 +164,7 @@ export const App: React.FC = () => {
       {/* Layer 2: Mímisbrunnr Omnibar */}
       <Omnibar
         currentUrl={activeTab?.url === 'mimir://newtab' ? '' : activeTab?.url || ''}
+        activeRealm={activeRealm}
         onNavigate={handleNavigate}
         isLoading={activeTab?.isLoading}
       />
@@ -185,11 +186,15 @@ export const App: React.FC = () => {
           activeTab={activeTab}
           activeRealm={activeRealm}
           onNavigate={handleNavigate}
+          onSelectRealm={(r) => {
+            setActiveRealm(r);
+            runicAudio.playRunicHum();
+          }}
         />
       </div>
 
       {/* Layer 4: Status Telemetry HUD */}
-      <StatusBar />
+      <StatusBar activeRealm={activeRealm} />
 
       {/* Overlay: Nine Realms Modal */}
       <RealmSelector

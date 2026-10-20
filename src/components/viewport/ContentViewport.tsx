@@ -3,29 +3,39 @@ import { mimirIpc } from '@/core/ipc/bridge';
 import { runicAudio } from '@/core/audio/runicAudio';
 import { Tab, RealmId } from '@/types';
 import { REALMS } from '@/core/realms';
-import { Compass, Sparkles, Globe, Terminal, Shield, BookOpen } from 'lucide-react';
+import { REALM_THEMES } from '@/components/themes/realmThemes';
+import { YggdrasilRootsSvg, NorseKnotworkRibbon, ValknutSvg, AegishjalmrSvg } from '@/components/themes/NorsePatterns';
+import { getRandomHavamal, HavamalStanza } from '@/core/havamal';
+import { Compass, Sparkles, Globe, Terminal, Shield, BookOpen, RefreshCw, Feather, Flame, Search } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface ContentViewportProps {
   activeTab?: Tab;
   activeRealm: RealmId;
   onNavigate: (url: string) => void;
+  onSelectRealm: (realm: RealmId) => void;
 }
 
 const SPEED_DIALS = [
   { name: 'GitHub', norse: 'Forge of Code', url: 'https://github.com', icon: Terminal, rune: 'ᚲ' },
   { name: 'DuckDuckGo', norse: 'Well of Search', url: 'https://duckduckgo.com', icon: Compass, rune: 'ᛗ' },
   { name: 'Rust Docs', norse: 'Iron Lore', url: 'https://doc.rust-lang.org', icon: BookOpen, rune: 'ᚱ' },
-  { name: 'Vite', norse: 'Lightning Speed', url: 'https://vite.dev', icon: Sparkles, rune: 'ᛋ' },
+  { name: 'YouTube', norse: 'Gjallarhorn Stream', url: 'https://youtube.com', icon: Flame, rune: 'ᚹ' },
 ];
 
 export const ContentViewport: React.FC<ContentViewportProps> = ({
   activeTab,
   activeRealm,
   onNavigate,
+  onSelectRealm,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [showIframeInDev, setShowIframeInDev] = useState(false);
+  const [havamal, setHavamal] = useState<HavamalStanza>(getRandomHavamal());
+  const [searchQuery, setSearchQuery] = useState('');
+
   const realm = REALMS[activeRealm];
+  const theme = REALM_THEMES[activeRealm] || REALM_THEMES.midgard;
 
   // Synchronize bounding box with Rust/Wry for native WebView2 positioning
   useEffect(() => {
@@ -53,12 +63,36 @@ export const ContentViewport: React.FC<ContentViewportProps> = ({
     };
   }, []);
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    let url = searchQuery.trim();
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      if (url.includes('.') && !url.includes(' ')) {
+        url = 'https://' + url;
+      } else {
+        url = `https://duckduckgo.com/?q=${encodeURIComponent(url)}`;
+      }
+    }
+    runicAudio.playChime();
+    onNavigate(url);
+    mimirIpc.send({ type: 'NAVIGATE', payload: { url } });
+  };
+
+  const cycleHavamal = () => {
+    runicAudio.playChime();
+    setHavamal(getRandomHavamal());
+  };
+
   const isHome = !activeTab?.url || activeTab.url === 'mimir://newtab' || activeTab.url === 'about:blank';
 
   return (
     <main
       ref={containerRef}
-      className="relative flex-1 overflow-hidden bg-[#05080e]"
+      className="relative flex-1 overflow-hidden select-none"
+      style={{
+        background: theme.portalBg,
+      }}
     >
       {/* If in dev mode and not home, optionally show an iframe preview */}
       {!isHome && showIframeInDev && !mimirIpc.isNative() ? (
@@ -71,83 +105,250 @@ export const ContentViewport: React.FC<ContentViewportProps> = ({
           />
         </div>
       ) : isHome ? (
-        /* The Well of Mímir New Tab Portal */
-        <div className="relative flex h-full w-full flex-col items-center justify-center p-6 text-center select-none overflow-y-auto">
-          {/* Glowing Central Sigil */}
-          <div className="relative mb-6">
-            <div className="absolute -inset-4 rounded-full bg-cyan-500/10 blur-xl animate-pulse" />
-            <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl border border-cyan-500/30 bg-[#0c121e]/80 shadow-[0_0_30px_rgba(0,245,255,0.25)]">
-              <span className="text-4xl font-black text-cyan-400">ᛗ</span>
+        /* The Sacred Well of Mímisbrunnr (New Blank Tab Sanctuary) */
+        <div className="relative flex h-full w-full flex-col items-center justify-between p-6 overflow-y-auto z-10">
+          {/* Background Decorative Layer: Yggdrasil Roots & Ambient Knotwork */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+            {/* Deep subterranean roots */}
+            <div
+              className="absolute bottom-0 inset-x-0 w-full h-80 opacity-30 transition-opacity duration-700"
+              style={{ color: theme.accentColor }}
+            >
+              <YggdrasilRootsSvg className="w-full h-full object-cover" />
+            </div>
+
+            {/* Faint Sacred Stave in Center */}
+            <div
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-5 pointer-events-none scale-150"
+              style={{ color: theme.accentColor }}
+            >
+              {theme.stave === 'valknut' ? (
+                <ValknutSvg size={450} />
+              ) : (
+                <AegishjalmrSvg size={450} />
+              )}
+            </div>
+
+            {/* Radial Concentric Ripple Rings */}
+            <div
+              className="absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 h-96 w-96 rounded-full border border-dashed opacity-10 animate-[spin_60s_linear_infinite]"
+              style={{ borderColor: theme.accentColor }}
+            />
+            <div
+              className="absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 h-[30rem] w-[30rem] rounded-full border opacity-5"
+              style={{ borderColor: theme.accentColor }}
+            />
+          </div>
+
+          {/* Top Section: Hávamál Stanza of Ancient Wisdom */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative z-10 w-full max-w-2xl rounded-xl border border-white/10 bg-[#070b14]/75 p-4 backdrop-blur-xl shadow-xl"
+            style={{
+              borderColor: `${theme.accentColor}25`,
+              boxShadow: `0 8px 30px -10px rgba(0,0,0,0.7), 0 0 15px -3px ${theme.glowColor}`,
+            }}
+          >
+            <div className="flex items-center justify-between border-b border-white/5 pb-2 text-[10px] text-slate-400">
+              <div className="flex items-center space-x-2">
+                <Feather className="h-3 w-3 text-cyan-400" />
+                <span className="font-mono font-bold tracking-wider uppercase text-slate-300">
+                  HÁVAMÁL — Stanza {havamal.stanzaNumber}
+                </span>
+                <span className="rounded bg-white/5 px-1.5 py-0.2 text-[9px] text-slate-400">
+                  {havamal.context}
+                </span>
+              </div>
+
+              <button
+                onClick={cycleHavamal}
+                className="group flex items-center space-x-1 text-slate-400 hover:text-white transition-colors"
+                title="Drink anew from the Well (New Stanza)"
+              >
+                <span className="text-[9px] font-mono">DRINK ANEW</span>
+                <RefreshCw className="h-2.5 w-2.5 transition-transform group-hover:rotate-180" />
+              </button>
+            </div>
+
+            {/* Old Norse Inscription */}
+            <p className="mt-2 text-xs italic font-serif text-slate-300 tracking-wide text-center">
+              "{havamal.oldNorse}"
+            </p>
+
+            {/* English Wisdom */}
+            <p className="mt-1 text-xs text-slate-400 text-center font-sans">
+              {havamal.english}
+            </p>
+          </motion.div>
+
+          {/* Central Sanctum: The Eye of Mímir & Search Pool */}
+          <div className="relative z-10 flex flex-col items-center justify-center my-auto w-full max-w-2xl">
+            {/* Glowing Mímir Sigil */}
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              className="relative mb-5"
+            >
+              <div
+                className="absolute -inset-6 rounded-full blur-2xl opacity-40 animate-pulse"
+                style={{ backgroundColor: theme.accentColor }}
+              />
+              <div
+                className="relative flex h-24 w-24 items-center justify-center rounded-2xl border bg-[#080d18]/90 shadow-2xl backdrop-blur-md"
+                style={{
+                  borderColor: `${theme.accentColor}50`,
+                  boxShadow: `0 0 35px ${theme.glowColor}`,
+                }}
+              >
+                <span
+                  className="text-5xl font-black transition-transform hover:scale-105"
+                  style={{ color: theme.accentColor }}
+                >
+                  {theme.primaryRune}
+                </span>
+              </div>
+            </motion.div>
+
+            {/* Heading & Lore */}
+            <h1 className="text-3xl font-black tracking-[0.25em] text-slate-100 uppercase">
+              MÍMISBRUNNR
+            </h1>
+            <p className="mt-1.5 max-w-lg text-xs tracking-wider text-slate-400 text-center font-mono">
+              THE SACRED WELL OF WISDOM • CONDUIT OF <span style={{ color: theme.accentColor }}>{theme.title.toUpperCase()}</span>
+            </p>
+
+            {/* Search Input Bar */}
+            <form
+              onSubmit={handleSearchSubmit}
+              className="mt-6 w-full relative flex items-center rounded-xl border border-white/10 bg-[#080e1a]/85 p-1 shadow-2xl backdrop-blur-xl transition-all focus-within:border-cyan-500/60"
+              style={{
+                boxShadow: `0 10px 40px -10px rgba(0,0,0,0.8), 0 0 20px -5px ${theme.glowColor}`,
+              }}
+            >
+              <div className="pl-3.5 pr-2" style={{ color: theme.accentColor }}>
+                <Search className="h-4 w-4" />
+              </div>
+
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Inquire of the Well or enter destination URL..."
+                className="h-10 flex-1 bg-transparent text-sm text-slate-100 placeholder:text-slate-500/70 outline-none"
+              />
+
+              <button
+                type="submit"
+                className="flex items-center space-x-1.5 rounded-lg px-4 py-2 text-xs font-bold transition-all active:scale-95"
+                style={{
+                  backgroundColor: `${theme.accentColor}25`,
+                  color: theme.accentColor,
+                  border: `1px solid ${theme.accentColor}40`,
+                }}
+              >
+                <span>CHANNEL</span>
+                <span className="font-mono">ᚱ</span>
+              </button>
+            </form>
+
+            {/* Sacred Runestones (Speed Dials) */}
+            <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4 w-full">
+              {SPEED_DIALS.map((dial) => {
+                const Icon = dial.icon;
+                return (
+                  <button
+                    key={dial.name}
+                    onClick={() => {
+                      runicAudio.playChime();
+                      onNavigate(dial.url);
+                    }}
+                    className="group relative flex flex-col items-center justify-center rounded-xl border border-white/10 bg-[#070c18]/80 p-4 transition-all hover:bg-white/[0.05] hover:scale-102 active:scale-98 overflow-hidden backdrop-blur-md shadow-lg"
+                    style={{
+                      borderColor: 'rgba(255,255,255,0.08)',
+                    }}
+                  >
+                    {/* Corner knotwork accent */}
+                    <div className="absolute top-1 right-2 text-[10px] font-mono text-slate-600 group-hover:text-cyan-400">
+                      {dial.rune}
+                    </div>
+
+                    <div
+                      className="flex h-11 w-11 items-center justify-center rounded-lg border border-white/5 bg-white/[0.03] text-slate-300 transition-all group-hover:scale-110"
+                      style={{
+                        color: theme.accentColor,
+                      }}
+                    >
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <span className="mt-2.5 text-xs font-bold text-slate-200 group-hover:text-white">
+                      {dial.name}
+                    </span>
+                    <span className="text-[10px] text-slate-500 font-mono">
+                      {dial.norse}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* Heading & Subtitle */}
-          <h1 className="text-2xl font-black tracking-widest text-slate-100 uppercase">
-            MÍMISBRUNNR
-          </h1>
-          <p className="mt-1.5 max-w-md text-xs tracking-wide text-slate-400">
-            Conduit active in the realm of <span className="font-semibold text-cyan-400">{realm.name}</span> ({realm.norseName}). All web requests are shielded by the Runic Ward.
-          </p>
-
-          {/* Speed Dial Grid */}
-          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4 max-w-xl w-full">
-            {SPEED_DIALS.map((dial) => {
-              const Icon = dial.icon;
+          {/* Bottom Realm Gateways (Quick Cosmic Switcher) */}
+          <div className="relative z-10 flex flex-wrap items-center justify-center gap-2 pt-6">
+            <span className="text-[10px] font-mono font-bold tracking-widest text-slate-500 uppercase mr-2">
+              REALM PORTALS:
+            </span>
+            {(Object.keys(REALMS) as RealmId[]).map((rId) => {
+              const r = REALMS[rId];
+              const isSelected = rId === activeRealm;
               return (
                 <button
-                  key={dial.name}
+                  key={rId}
                   onClick={() => {
-                    runicAudio.playChime();
-                    onNavigate(dial.url);
+                    runicAudio.playRunicHum();
+                    onSelectRealm(rId);
                   }}
-                  className="group flex flex-col items-center justify-center rounded-lg border border-white/5 bg-[#090e18]/80 p-4 transition-all hover:border-cyan-500/40 hover:bg-cyan-500/10 hover:shadow-[0_0_15px_rgba(0,245,255,0.2)] active:scale-95"
+                  className={`flex items-center space-x-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium transition-all ${
+                    isSelected
+                      ? 'border bg-white/10 text-white shadow-md'
+                      : 'border border-white/5 bg-white/[0.02] text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                  }`}
+                  style={{
+                    borderColor: isSelected ? r.accentColor : undefined,
+                  }}
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-md border border-white/5 bg-white/[0.03] text-cyan-400 group-hover:border-cyan-500/30 group-hover:bg-cyan-500/20 group-hover:shadow-[0_0_10px_rgba(0,245,255,0.4)]">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <span className="mt-2 text-xs font-bold text-slate-200 group-hover:text-cyan-300">
-                    {dial.name}
+                  <span className="font-bold text-xs" style={{ color: r.accentColor }}>
+                    {r.rune}
                   </span>
-                  <span className="text-[10px] text-slate-500">
-                    {dial.norse}
-                  </span>
+                  <span>{r.name}</span>
                 </button>
               );
             })}
-          </div>
-
-          {/* HUD Status Card */}
-          <div className="mt-8 flex items-center space-x-6 rounded-lg border border-white/5 bg-[#070b14]/70 px-4 py-2.5 text-[11px] text-slate-400">
-            <div className="flex items-center space-x-2">
-              <Shield className="h-3.5 w-3.5 text-emerald-400" />
-              <span>Runic Shielding: <strong className="text-emerald-400">Active</strong></span>
-            </div>
-            <div className="h-3 w-[1px] bg-white/10" />
-            <div className="flex items-center space-x-2">
-              <Globe className="h-3.5 w-3.5 text-cyan-400" />
-              <span>Engine: <strong className="text-cyan-400">WebView2 Blink</strong></span>
-            </div>
           </div>
         </div>
       ) : (
         /* Web Viewport Active Placeholder (native Wry overlays child window here) */
         <div className="flex h-full w-full flex-col items-center justify-center p-8 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-cyan-500/30 bg-cyan-500/10 text-cyan-400">
-            <Globe className="h-6 w-6 animate-pulse" />
+          <div
+            className="flex h-14 w-14 items-center justify-center rounded-xl border bg-white/[0.03]"
+            style={{ borderColor: theme.accentColor, color: theme.accentColor }}
+          >
+            <Globe className="h-7 w-7 animate-pulse" />
           </div>
-          <h2 className="mt-3 text-sm font-bold tracking-wide text-slate-200">
-            Viewing: {activeTab?.title || activeTab?.url}
+          <h2 className="mt-4 text-base font-bold tracking-wide text-slate-100">
+            {activeTab?.title || activeTab?.url}
           </h2>
-          <p className="mt-1 text-xs text-slate-500 font-mono">
-            {activeTab?.url}
+          <p className="mt-1 text-xs text-slate-400 font-mono">
+            Conduit active in realm of {realm.name} ({realm.norseName})
           </p>
 
           {!mimirIpc.isNative() && (
             <button
               onClick={() => setShowIframeInDev(!showIframeInDev)}
-              className="mt-4 rounded border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-xs text-cyan-300 hover:bg-cyan-500/20"
+              className="mt-5 rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-4 py-2 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/20 transition-all shadow-md"
             >
-              {showIframeInDev ? 'Switch to HUD View' : 'Toggle Web Preview (IFrame)'}
+              {showIframeInDev ? 'Return to Mímir Sanctum' : 'Toggle Web Preview (IFrame)'}
             </button>
           )}
         </div>

@@ -2,8 +2,10 @@ import React from 'react';
 import { Tab, RealmId } from '@/types';
 import { runicAudio } from '@/core/audio/runicAudio';
 import { mimirIpc } from '@/core/ipc/bridge';
+import { REALM_THEMES } from '@/components/themes/realmThemes';
+import { NorseKnotworkRibbon } from '@/components/themes/NorsePatterns';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X, Volume2, VolumeX, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, X, Volume2, VolumeX, ChevronLeft, ChevronRight, History } from 'lucide-react';
 
 interface TabTreeProps {
   tabs: Tab[];
@@ -19,26 +21,39 @@ interface TabTreeProps {
 export const TabTree: React.FC<TabTreeProps> = ({
   tabs,
   activeTabId,
+  activeRealm,
   onSelectTab,
   onCloseTab,
   onNewTab,
   isCollapsed,
   onToggleCollapse,
 }) => {
+  const theme = REALM_THEMES[activeRealm] || REALM_THEMES.midgard;
+
   return (
     <aside
-      className={`relative z-20 flex flex-col border-r border-white/5 bg-[#070a11]/90 backdrop-blur-xl transition-all duration-300 ${
-        isCollapsed ? 'w-14' : 'w-56'
+      className={`relative z-20 flex flex-col border-r border-white/10 bg-[#060911]/95 backdrop-blur-2xl transition-all duration-300 ${
+        isCollapsed ? 'w-14' : 'w-60'
       }`}
     >
       {/* Top Header: Yggdrasil Tree / Collapse Toggle */}
-      <div className="flex h-10 items-center justify-between border-b border-white/5 px-2.5">
+      <div className="flex h-10 items-center justify-between border-b border-white/5 px-3">
         {!isCollapsed && (
-          <div className="flex items-center space-x-1.5 overflow-hidden">
-            <span className="text-[11px] font-bold tracking-widest text-cyan-400">
-              YGGDRASIL
+          <div className="flex flex-col overflow-hidden">
+            <div className="flex items-center space-x-2">
+              <span
+                className="text-[11px] font-black tracking-widest uppercase"
+                style={{ color: theme.accentColor }}
+              >
+                YGGDRASIL
+              </span>
+              <span className="rounded bg-white/5 px-1 py-0.2 text-[9px] font-mono text-slate-400">
+                {tabs.length}
+              </span>
+            </div>
+            <span className="text-[8px] font-mono tracking-wider text-slate-500 uppercase">
+              Threads of Fate
             </span>
-            <span className="text-[10px] text-slate-500">({tabs.length})</span>
           </div>
         )}
 
@@ -47,7 +62,7 @@ export const TabTree: React.FC<TabTreeProps> = ({
             runicAudio.playClick(500);
             onToggleCollapse();
           }}
-          className={`flex h-6 w-6 items-center justify-center rounded-sm text-slate-500 transition-colors hover:bg-white/5 hover:text-cyan-400 ${
+          className={`flex h-6 w-6 items-center justify-center rounded text-slate-500 transition-colors hover:bg-white/10 hover:text-white ${
             isCollapsed ? 'mx-auto' : ''
           }`}
           title={isCollapsed ? 'Expand Tree' : 'Collapse into Runes'}
@@ -56,8 +71,13 @@ export const TabTree: React.FC<TabTreeProps> = ({
         </button>
       </div>
 
+      {/* Knotwork accent strip */}
+      <div className="h-[2px] w-full opacity-20" style={{ color: theme.accentColor }}>
+        <NorseKnotworkRibbon opacity={0.4} />
+      </div>
+
       {/* Tabs List with Framer Motion Spring Physics */}
-      <div className="flex-1 space-y-1 overflow-y-auto p-1.5">
+      <div className="flex-1 space-y-1.5 overflow-y-auto p-2">
         <AnimatePresence initial={false}>
           {tabs.map((tab) => {
             const isActive = tab.id === activeTabId;
@@ -75,7 +95,12 @@ export const TabTree: React.FC<TabTreeProps> = ({
                 {isActive && (
                   <motion.div
                     layoutId="activeTabGlow"
-                    className="absolute inset-0 rounded-md bg-gradient-to-r from-cyan-500/20 to-cyan-500/5 border border-cyan-500/40 shadow-[0_0_12px_rgba(0,245,255,0.2)]"
+                    className="absolute inset-0 rounded-lg border shadow-lg backdrop-blur-md"
+                    style={{
+                      background: `linear-gradient(90deg, ${theme.accentColor}25 0%, ${theme.accentColor}08 100%)`,
+                      borderColor: `${theme.accentColor}60`,
+                      boxShadow: `0 0 15px ${theme.glowColor}`,
+                    }}
                     transition={{ type: 'spring', stiffness: 450, damping: 30 }}
                   />
                 )}
@@ -88,20 +113,25 @@ export const TabTree: React.FC<TabTreeProps> = ({
                       mimirIpc.send({ type: 'SWITCH_TAB', payload: { tabId: tab.id } });
                     }
                   }}
-                  className={`group relative flex h-9 cursor-pointer items-center rounded-md px-2 text-xs transition-colors ${
+                  className={`group relative flex h-10 cursor-pointer items-center rounded-lg px-2 text-xs transition-colors ${
                     isActive
-                      ? 'text-cyan-300 font-medium'
+                      ? 'text-white font-medium'
                       : 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-200'
                   }`}
                   title={`${tab.title} (${tab.url})`}
                 >
-                  {/* Left Runic Sigil */}
+                  {/* Left Runic Sigil Frame */}
                   <div
-                    className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded text-xs font-bold transition-all ${
+                    className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-xs font-bold transition-all border ${
                       isActive
-                        ? 'bg-cyan-500/20 text-cyan-300 shadow-[0_0_8px_rgba(0,245,255,0.5)]'
-                        : 'bg-white/5 text-slate-500 group-hover:text-slate-300'
+                        ? 'border-cyan-400/50 shadow-md font-black'
+                        : 'border-white/5 bg-white/[0.03] text-slate-500 group-hover:text-slate-300'
                     }`}
+                    style={{
+                      backgroundColor: isActive ? `${theme.accentColor}20` : undefined,
+                      borderColor: isActive ? `${theme.accentColor}60` : undefined,
+                      color: isActive ? theme.accentColor : undefined,
+                    }}
                   >
                     {tab.rune}
                   </div>
@@ -109,9 +139,14 @@ export const TabTree: React.FC<TabTreeProps> = ({
                   {/* Expanded Content: Title & Audio indicator */}
                   {!isCollapsed && (
                     <div className="ml-2.5 flex flex-1 items-center justify-between overflow-hidden">
-                      <span className="truncate text-[11px] tracking-wide">
-                        {tab.title}
-                      </span>
+                      <div className="flex flex-col truncate pr-1">
+                        <span className="truncate text-[11px] font-semibold tracking-wide">
+                          {tab.title}
+                        </span>
+                        <span className="truncate text-[9px] font-mono text-slate-500">
+                          {tab.url.replace(/^https?:\/\//, '') || 'Sacred Spring'}
+                        </span>
+                      </div>
 
                       {/* Right icons: Audio / Close */}
                       <div className="flex items-center space-x-1 pl-1">
@@ -119,7 +154,7 @@ export const TabTree: React.FC<TabTreeProps> = ({
                           <VolumeX className="h-3 w-3 text-slate-500" />
                         )}
                         {!tab.isMuted && isActive && (
-                          <Volume2 className="h-3 w-3 text-cyan-400 animate-pulse" />
+                          <Volume2 className="h-3 w-3 animate-pulse" style={{ color: theme.accentColor }} />
                         )}
 
                         <button
@@ -144,19 +179,36 @@ export const TabTree: React.FC<TabTreeProps> = ({
         </AnimatePresence>
       </div>
 
-      {/* Bottom: "Grow Branch" (+ New Tab) */}
-      <div className="border-t border-white/5 p-1.5">
+      {/* Bottom Section: Muninn History & "Grow Branch" */}
+      <div className="border-t border-white/5 p-2 space-y-1.5">
         <button
           onClick={() => {
             runicAudio.playClick(950);
             onNewTab();
           }}
-          className={`flex h-8 w-full items-center justify-center space-x-1.5 rounded-md border border-dashed border-white/10 text-slate-400 transition-all hover:border-cyan-500/50 hover:bg-cyan-500/10 hover:text-cyan-400 hover:shadow-[0_0_10px_rgba(0,245,255,0.2)] active:scale-98`}
+          className="flex h-9 w-full items-center justify-center space-x-2 rounded-lg border border-dashed border-white/10 text-slate-400 transition-all hover:bg-white/5 hover:text-white active:scale-98"
+          style={{
+            borderColor: `${theme.accentColor}35`,
+          }}
           title="Grow New Branch (+ Tab)"
         >
-          <Plus className="h-3.5 w-3.5" />
-          {!isCollapsed && <span className="text-[11px] font-medium">Grow Branch</span>}
+          <Plus className="h-4 w-4" style={{ color: theme.accentColor }} />
+          {!isCollapsed && (
+            <span className="text-[11px] font-bold tracking-wider">
+              GROW BRANCH
+            </span>
+          )}
         </button>
+
+        {!isCollapsed && (
+          <div className="flex items-center justify-between px-2 pt-1 text-[9px] font-mono text-slate-500">
+            <span className="flex items-center space-x-1">
+              <History className="h-2.5 w-2.5" />
+              <span>MUNINN RECALL</span>
+            </span>
+            <span style={{ color: theme.accentColor }}>{theme.primaryRune}</span>
+          </div>
+        )}
       </div>
     </aside>
   );
