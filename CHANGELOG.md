@@ -59,6 +59,10 @@ The inaugural public alpha proof of concept (POC) for Mímir, the hypermodern, r
 * **Automated CI/CD Release Pipeline**: GitHub Actions workflow packaging both an executable installer and a portable Windows x64 zip bundle on every tag push.
 
 ### Fixed
+* **COM Apartment Re-Entrancy & UI Deadlock Resolution**:
+  * Decoupled `with_ipc_handler` from synchronous tab management and child WebView2 construction using Tao's `EventLoopProxy<IpcCommand>`.
+  * Dispatched IPC messages asynchronously to the top-level Tao event loop, eliminating the COM apartment deadlock where `wait_with_pump` hung indefinitely inside WebView2's `WebMessageReceived` event handler.
+  * Restored complete responsiveness to the HUD window controls (Close, Minimize, Maximize), Tab Tree, Realm Switcher, and Omnibar input during all navigation states.
 * **Live Child Viewport Spawning & Tab IPC Synchronization**:
   * Implemented `build_as_child` child window attachment in Wry so external web pages (Google, GitHub, DuckDuckGo, etc.) dock seamlessly inside the HUD viewport rather than remaining on the placeholder.
   * Synchronized initial tab creation on mount and full two-way tab lifecycle (`CREATE_TAB`, `NAVIGATE`, `SWITCH_TAB`, `CLOSE_TAB`) between React HUD and native Rust `TabManager`.

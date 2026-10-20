@@ -7,11 +7,11 @@ mod tab_manager;
 
 use std::borrow::Cow;
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use tao::{
     dpi::LogicalSize,
     event::{Event, WindowEvent},
-    event_loop::{ControlFlow, EventLoop},
+    event_loop::{ControlFlow, EventLoopBuilder},
     window::WindowBuilder,
 };
 use wry::http::{header, Response, StatusCode};
@@ -237,7 +237,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::env::set_var("WEBVIEW2_USER_DATA_FOLDER", data_dir);
     }
 
-    let event_loop = EventLoop::new();
+    let event_loop = EventLoopBuilder::<IpcCommand>::with_user_event().build();
+    let event_loop_proxy = event_loop.create_proxy();
 
     // Create a modern borderless native window for the Mímir HUD
     let window = match WindowBuilder::new()
@@ -256,11 +257,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    let tab_manager = Arc::new(Mutex::new(TabManager::new()));
     let dist_dir_opt = resolve_dist_dir();
-
-    let window_clone = Arc::clone(&window);
-    let tab_mgr_clone = Arc::clone(&tab_manager);
 
     // Build the primary HUD WebView
     let mut builder = WebViewBuilder::new()
@@ -353,78 +350,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         logger::warn("Dist directory not found or MIMIR_DEV set. Defaulting to live dev server: http://localhost:5173");
     }
 
+    let proxy_clone = event_loop_proxy.clone();
     let _hud_webview = match builder
         .with_url(&hud_url)
         .with_ipc_handler(move |req: wry::http::Request<String>| {
             let msg = req.body();
-            if let Ok(cmd) = serde_json::from_str::<IpcCommand>(msg) {
-                match cmd {
-                    IpcCommand::WindowMinimize => {
-                        window_clone.set_minimized(true);
-                    }
-                    IpcCommand::WindowMaximize => {
-                        let is_max = window_clone.is_maximized();
-                        window_clone.set_maximized(!is_max);
-                    }
-                    IpcCommand::WindowClose => {
-                        logger::info("WindowClose command received from HUD. Shutting down.");
-                        std::process::exit(0);
-                    }
-                    IpcCommand::UpdateViewportBounds { payload } => {
-                        logger::info(&format!("Updating viewport sanctuary bounds: x={}, y={}, w={}, h={}", payload.x, payload.y, payload.width, payload.height));
-                        if let Ok(mut mgr) = tab_mgr_clone.lock() {
-                            mgr.update_bounds(payload);
-                        }
-                    }
-                    IpcCommand::Navigate { payload } => {
-                        logger::info(&format!("Commencing navigation across Bifröst: {} (target tab: {:?})", payload.url, payload.tab_id));
-                        if let Ok(mut mgr) = tab_mgr_clone.lock() {
-                            mgr.navigate_active(&window_clone, &payload.url, payload.tab_id.as_deref());
-                        }
-                    }
-                    IpcCommand::CreateTab { payload } => {
-                        let tab_id = payload.tab_id.unwrap_or_else(|| {
-                            format!("tab-{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis())
-                        });
-                        logger::info(&format!("Growing new Yggdrasil branch: {} in realm: {}", tab_id, payload.realm));
-                        if let Ok(mut mgr) = tab_mgr_clone.lock() {
-                            let url = payload.url.unwrap_or_else(|| "mimir://newtab".to_string());
-                            mgr.open_or_navigate_tab(&window_clone, tab_id, url, payload.realm);
-                        }
-                    }
-                    IpcCommand::CloseTab { payload } => {
-                        logger::info(&format!("Severing Yggdrasil thread: {}", payload.tab_id));
-                        if let Ok(mut mgr) = tab_mgr_clone.lock() {
-                            mgr.remove_tab(&payload.tab_id);
-                        }
-                    }
-                    IpcCommand::SwitchTab { payload } => {
-                        logger::info(&format!("Switching active thread to: {}", payload.tab_id));
-                        if let Ok(mut mgr) = tab_mgr_clone.lock() {
-                            mgr.switch_tab(&payload.tab_id);
-                        }
-                    }
-                    IpcCommand::GoBack => {
-                        logger::info("Rewinding memory (Back)");
-                        if let Ok(mgr) = tab_mgr_clone.lock() {
-                            mgr.go_back();
-                        }
-                    }
-                    IpcCommand::GoForward => {
-                        logger::info("Advancing vision (Forward)");
-                        if let Ok(mgr) = tab_mgr_clone.lock() {
-                            mgr.go_forward();
-                        }
-                    }
-                    IpcCommand::Refresh => {
-                        logger::info("Refreshing sacred spring (Reload)");
-                        if let Ok(mgr) = tab_mgr_clone.lock() {
-                            mgr.refresh();
-                        }
+            match serde_json::from_str::<IpcCommand>(msg) {
+                Ok(cmd) => {
+                    if let Err(e) = proxy_clone.send_event(cmd) {
+                        logger::error(&format!("Failed to post IPC rune to event loop: {}", e));
                     }
                 }
-            } else {
-                logger::warn(&format!("Received unrecognized IPC rune: {}", msg));
+                Err(_e) => {
+                    logger::warn(&format!("Received unrecognized IPC rune: {}", msg));
+                }
             }
         })
         .build(&window)
@@ -444,19 +383,90 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
+    let mut tab_manager = TabManager::new();
+    let window_clone = Arc::clone(&window);
+    let _hud = _hud_webview;
+
     logger::info("Mímir Runic Conduit event loop running.");
 
     // Run Tao event loop
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
+        let _keep_hud = &_hud;
 
         match event {
+            Event::UserEvent(cmd) => match cmd {
+                IpcCommand::WindowMinimize => {
+                    window_clone.set_minimized(true);
+                }
+                IpcCommand::WindowMaximize => {
+                    let is_max = window_clone.is_maximized();
+                    window_clone.set_maximized(!is_max);
+                }
+                IpcCommand::WindowClose => {
+                    logger::info("WindowClose command received from HUD. Shutting down.");
+                    *control_flow = ControlFlow::Exit;
+                    std::process::exit(0);
+                }
+                IpcCommand::UpdateViewportBounds { payload } => {
+                    logger::info(&format!(
+                        "Updating viewport sanctuary bounds: x={}, y={}, w={}, h={}",
+                        payload.x, payload.y, payload.width, payload.height
+                    ));
+                    tab_manager.update_bounds(payload);
+                }
+                IpcCommand::Navigate { payload } => {
+                    logger::info(&format!(
+                        "Commencing navigation across Bifröst: {} (target tab: {:?})",
+                        payload.url, payload.tab_id
+                    ));
+                    tab_manager.navigate_active(&window_clone, &payload.url, payload.tab_id.as_deref());
+                }
+                IpcCommand::CreateTab { payload } => {
+                    let tab_id = payload.tab_id.unwrap_or_else(|| {
+                        format!(
+                            "tab-{}",
+                            std::time::SystemTime::now()
+                                .duration_since(std::time::UNIX_EPOCH)
+                                .unwrap()
+                                .as_millis()
+                        )
+                    });
+                    logger::info(&format!(
+                        "Growing new Yggdrasil branch: {} in realm: {}",
+                        tab_id, payload.realm
+                    ));
+                    let url = payload.url.unwrap_or_else(|| "mimir://newtab".to_string());
+                    tab_manager.open_or_navigate_tab(&window_clone, tab_id, url, payload.realm);
+                }
+                IpcCommand::CloseTab { payload } => {
+                    logger::info(&format!("Severing Yggdrasil thread: {}", payload.tab_id));
+                    tab_manager.remove_tab(&payload.tab_id);
+                }
+                IpcCommand::SwitchTab { payload } => {
+                    logger::info(&format!("Switching active thread to: {}", payload.tab_id));
+                    tab_manager.switch_tab(&payload.tab_id);
+                }
+                IpcCommand::GoBack => {
+                    logger::info("Rewinding memory (Back)");
+                    tab_manager.go_back();
+                }
+                IpcCommand::GoForward => {
+                    logger::info("Advancing vision (Forward)");
+                    tab_manager.go_forward();
+                }
+                IpcCommand::Refresh => {
+                    logger::info("Refreshing sacred spring (Reload)");
+                    tab_manager.refresh();
+                }
+            },
             Event::WindowEvent {
                 event: WindowEvent::CloseRequested,
                 ..
             } => {
                 logger::info("Window close requested. Exiting event loop.");
                 *control_flow = ControlFlow::Exit;
+                std::process::exit(0);
             }
             _ => (),
         }

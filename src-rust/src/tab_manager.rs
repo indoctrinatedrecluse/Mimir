@@ -66,16 +66,20 @@ impl TabManager {
     ) {
         let is_internal = url.is_empty() || url == "mimir://newtab" || url == "about:blank";
 
-        if is_internal {
-            // Internal HUD page (The Well of Mímir) is rendered by the HUD itself,
-            // so we hide any active native child WebView
-            if let Some(active_id) = &self.active_tab_id {
-                if let Some(tab) = self.tabs.get_mut(active_id) {
-                    if let Some(wv) = &mut tab.webview {
+        // Hide previous active tab if different from target tab
+        if let Some(prev_id) = &self.active_tab_id {
+            if prev_id != &id {
+                if let Some(prev_tab) = self.tabs.get_mut(prev_id) {
+                    if let Some(wv) = &mut prev_tab.webview {
                         let _ = wv.set_visible(false);
                     }
                 }
             }
+        }
+
+        if is_internal {
+            // Internal HUD page (The Well of Mímir) is rendered by the HUD itself,
+            // so we hide target child WebView if any
             if let Some(tab) = self.tabs.get_mut(&id) {
                 tab.url = url;
                 tab.realm = realm;
@@ -134,15 +138,6 @@ impl TabManager {
             }
             self.active_tab_id = Some(id);
             return;
-        }
-
-        // Hide previous active tab if different
-        if let Some(prev_id) = &self.active_tab_id {
-            if let Some(prev_tab) = self.tabs.get_mut(prev_id) {
-                if let Some(wv) = &mut prev_tab.webview {
-                    let _ = wv.set_visible(false);
-                }
-            }
         }
 
         // Spawn new child WebView2 docked into current_bounds
