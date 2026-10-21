@@ -80,7 +80,7 @@ pub fn log_entry(level: &str, message: &str) {
     let _guard = LOG_MUTEX.lock().unwrap();
     let log_path = get_log_path();
 
-    let line = format!("[{}] [{}] [Mimir] {}\n", current_timestamp(), level, message);
+    let line = format!("[{}] [{}] [ᛗ MÍMIR] {}\n", current_timestamp(), level, message);
 
     // Also echo to console/stderr if available
     eprint!("{}", line);
@@ -95,7 +95,7 @@ pub fn log_entry(level: &str, message: &str) {
                 }
                 drop(f);
                 if let Ok(mut new_file) = File::create(&log_path) {
-                    let _ = new_file.write_all(b"[... older logs truncated by Mimir log size manager ...]\n");
+                    let _ = new_file.write_all(b"[... older logs truncated by \xe1\x9b\x97 M\xc3\xadmir log size manager ...]\n");
                     let _ = new_file.write_all(&buffer);
                 }
             }
@@ -186,7 +186,7 @@ pub fn init() {
 
     let header = format!(
         "================================================================================\n\
-         MIMIR BROWSER CORE v{} - SESSION LAUNCH\n\
+         ᛗ MÍMIR BROWSER CORE v{} - SESSION LAUNCH\n\
          Timestamp: {}\n\
          Executable: {}\n\
          Current Working Dir: {}\n\
@@ -232,9 +232,9 @@ pub fn init() {
         error(&crash_details);
 
         show_native_error_dialog(
-            "Mimir Browser — Runic Fracture (Crash)",
+            "ᛗ Mímir Browser — Runic Fracture (Crash)",
             &format!(
-                "Mimir encountered a critical runtime error and must close.\n\n\
+                "ᛗ Mímir encountered a critical runtime error and must close.\n\n\
                  Location: {}\n\
                  Detail: {}\n\n\
                  Diagnostic crash telemetry has been saved to:\n\

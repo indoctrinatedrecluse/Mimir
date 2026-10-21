@@ -90,13 +90,13 @@ fn ensure_webview2_installed() -> Result<(), String> {
         .filter(|p| p.exists());
 
     let should_install = logger::ask_yes_no_dialog(
-        "Mimir — Microsoft Edge WebView2 Required",
-        "Mimir requires the Microsoft Edge WebView2 Runtime to explore the web, but it was not detected on this system.\n\n\
-         Would you like Mimir to download and install it automatically now? (Recommended)",
+        "ᛗ Mímir — Microsoft Edge WebView2 Required",
+        "ᛗ Mímir requires the Microsoft Edge WebView2 Runtime to explore the web, but it was not detected on this system.\n\n\
+         Would you like ᛗ Mímir to download and install it automatically now? (Recommended)",
     );
 
     if !should_install {
-        return Err("User declined WebView2 installation. Mimir requires a web runtime to operate.".into());
+        return Err("User declined WebView2 installation. ᛗ Mímir requires a web runtime to operate.".into());
     }
 
     let installer_path = if let Some(path) = bundled_installer {
@@ -218,14 +218,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     logger::init();
 
     if std::env::args().any(|arg| arg == "--version" || arg == "-V") {
-        println!("Mímir Browser Core v{} (Runic Conduit)", env!("CARGO_PKG_VERSION"));
+        println!("ᛗ Mímir Browser Core v{} (Runic Conduit)", env!("CARGO_PKG_VERSION"));
         return Ok(());
     }
 
     // Dependency verification: Ensure Microsoft Edge WebView2 runtime is present
     if let Err(err) = ensure_webview2_installed() {
         logger::error(&format!("Runtime dependency check failed: {}", err));
-        logger::show_native_error_dialog("Mimir — Missing Runtime Dependency", &err);
+        logger::show_native_error_dialog("ᛗ Mímir — Missing Runtime Dependency", &err);
         return Err(err.into());
     }
 
@@ -243,9 +243,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let icon_bytes = include_bytes!("../icon_64.rgba");
     let window_icon = Icon::from_rgba(icon_bytes.to_vec(), 64, 64).ok();
 
-    // Create a modern borderless native window for the Mimir HUD
+    // Create a modern borderless native window for the ᛗ Mímir HUD
     let window = match WindowBuilder::new()
-        .with_title("Mimir Browser — Runic Conduit")
+        .with_title("ᛗ Mímir Browser — Runic Conduit")
         .with_window_icon(window_icon)
         .with_inner_size(LogicalSize::new(1280.0, 800.0))
         .with_min_inner_size(LogicalSize::new(960.0, 600.0))
@@ -254,9 +254,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     {
         Ok(win) => Arc::new(win),
         Err(e) => {
-            let err_msg = format!("Failed to create Mimir window frame: {}", e);
+            let err_msg = format!("Failed to create ᛗ Mímir window frame: {}", e);
             logger::error(&err_msg);
-            logger::show_native_error_dialog("Mimir Window Creation Error", &err_msg);
+            logger::show_native_error_dialog("ᛗ Mímir Window Creation Error", &err_msg);
             return Err(e.into());
         }
     };
@@ -382,7 +382,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 logger::get_log_path().display()
             );
             logger::error(&err_msg);
-            logger::show_native_error_dialog("Mimir Engine Initialization Error", &err_msg);
+            logger::show_native_error_dialog("ᛗ Mímir Engine Initialization Error", &err_msg);
             return Err(e.into());
         }
     };
@@ -391,7 +391,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let window_clone = Arc::clone(&window);
     let _hud = _hud_webview;
 
-    logger::info("Mímir Runic Conduit event loop running.");
+    logger::info("ᛗ Mímir Runic Conduit event loop running.");
 
     // Run Tao event loop
     event_loop.run(move |event, _, control_flow| {

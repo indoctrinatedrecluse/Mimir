@@ -85,8 +85,9 @@ export const TitleBar: React.FC<TitleBarProps> = ({
         <div className="flex items-center space-x-2">
           <MimirSigil size={26} animated={true} showRings={false} />
           <div className="flex items-center space-x-1.5">
-            <span className="text-xs font-black tracking-widest text-slate-100">
-              MÍMIR
+            <span className="text-xs font-black tracking-widest text-slate-100 flex items-center space-x-1">
+              <span className="text-cyan-400 font-mono text-sm">ᛗ</span>
+              <span>MÍMIR</span>
             </span>
             <span
               className="rounded px-1.5 py-0.2 text-[8px] font-mono tracking-wider font-semibold border"
