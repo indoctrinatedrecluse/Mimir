@@ -172,9 +172,10 @@ export const HuginnPanel: React.FC<HuginnPanelProps> = ({
           >
             {/* Ambient Background Silhouette */}
             <div
-              className="absolute inset-0 bg-cover bg-center opacity-10 pointer-events-none"
+              className="absolute inset-0 bg-cover bg-center opacity-25 pointer-events-none"
               style={{ backgroundImage: `url('${realm.bgUrl}')` }}
             />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#060a14]/70 via-[#060a14]/85 to-[#060a14]/95 pointer-events-none" />
 
             {/* Header */}
             <div className="relative z-10 flex items-center justify-between border-b border-white/10 p-4">

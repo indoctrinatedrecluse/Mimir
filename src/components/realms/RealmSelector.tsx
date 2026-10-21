@@ -92,10 +92,10 @@ export const RealmSelector: React.FC<RealmSelectorProps> = ({
                   >
                     {/* Realm Ruler Background Silhouette Thumbnail */}
                     <div
-                      className="absolute inset-0 bg-cover bg-center opacity-20 transition-opacity group-hover:opacity-30 pointer-events-none"
+                      className="absolute inset-0 bg-cover bg-center opacity-45 transition-opacity group-hover:opacity-70 pointer-events-none"
                       style={{ backgroundImage: `url('${realm.bgUrl}')` }}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#070b14] via-[#070b14]/70 to-transparent pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#070b14] via-[#070b14]/50 to-transparent pointer-events-none" />
 
                     {/* Card Content */}
                     <div className="relative z-10 flex items-start justify-between w-full">

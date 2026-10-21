@@ -103,16 +103,20 @@ export const ContentViewport: React.FC<ContentViewportProps> = ({
 
   const renderSanctum = (tab?: Tab, r = realm, th = theme, isPrimary = true) => (
     <div className="relative flex h-full w-full flex-col items-center justify-between p-6 overflow-y-auto z-10">
-      {/* Realm Ruler Cinematic Background Image with Atmospheric Veil */}
+      {/* Realm Ruler Cinematic Background Image with Atmospheric Vignette (Sharp & Prominent) */}
       <div
-        className="absolute inset-0 z-0 bg-cover bg-center transition-all duration-1000 scale-105"
+        className="absolute inset-0 z-0 bg-cover bg-center transition-all duration-1000 scale-100"
         style={{
           backgroundImage: `url('${r.bgUrl}')`,
         }}
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-[#040711]/85 via-[#060914]/80 to-[#03050a]/95 backdrop-blur-[3px]" />
+        {/* Soft radial vignette keeping the center ruler sharp & vibrant while dimming edges */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_20%,rgba(4,7,17,0.35)_60%,rgba(3,5,10,0.85)_100%)] pointer-events-none" />
+        {/* Subtle vertical gradient for header and bottom controls */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#030611]/50 via-transparent to-[#020408]/75 pointer-events-none" />
+        {/* Subtle realm accent color glow */}
         <div
-          className="absolute inset-0 opacity-20 mix-blend-color-dodge transition-opacity duration-700 pointer-events-none"
+          className="absolute inset-0 opacity-15 mix-blend-color-dodge transition-opacity duration-700 pointer-events-none"
           style={{ backgroundColor: th.accentColor }}
         />
       </div>

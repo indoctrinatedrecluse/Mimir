@@ -232,9 +232,9 @@ pub fn init() {
         error(&crash_details);
 
         show_native_error_dialog(
-            "Mímir Browser — Runic Fracture (Crash)",
+            "Mimir Browser — Runic Fracture (Crash)",
             &format!(
-                "Mímir encountered a critical runtime error and must close.\n\n\
+                "Mimir encountered a critical runtime error and must close.\n\n\
                  Location: {}\n\
                  Detail: {}\n\n\
                  Diagnostic crash telemetry has been saved to:\n\

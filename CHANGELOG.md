@@ -79,6 +79,18 @@ Major milestone expansion bringing full realization of the Nine Norse Realms wit
   * Built-in runic presets: *Obsidian Dark Veil* (OLED pure black), *Mímir High-Legibility Typography*, *Cleanse Distractions* (Reader mode), and *Asgard Engineering Monospace*.
   * Custom Inscription Editor with live enable/disable toggles and URL pattern matching.
 
+### Changed & Fixed
+
+* **Sharp & Prominent Realm Background Artwork**:
+  * Removed heavy blur filters and excessive black opacity from the Sacred Well (`ContentViewport.tsx`), Huginn AI drawer, and 3×3 Realm Selector modal.
+  * Implemented subtle, elegant radial vignettes that preserve razor-sharp ruler artwork and vibrant colors in the center while maintaining high contrast for text and search controls.
+* **Standardized ASCII Shell Naming ("Mimir Browser")**:
+  * Resolved character decoding / mojibake mismatches (`MÃ­mir`) across Windows shells by standardizing installer strings, shortcut `.lnk` filenames, and PE metadata to clean ASCII `"Mimir Browser"`.
+  * Embedded `FileDescription`, `ProductName`, `InternalName`, and `OriginalFilename` into the Windows PE resource table via `winres`.
+* **Selectable Desktop Shortcut in Setup Installer**:
+  * Integrated `MUI_PAGE_COMPONENTS` into the NSIS setup wizard, providing users with a dedicated checkbox option to create a Desktop shortcut (`Mimir Browser.lnk`) during installation.
+  * Enhanced uninstaller to cleanly purge both new and legacy desktop and Start Menu shortcuts.
+
 ---
 
 ## [0.1.0] - 2026-10-20 *(Alpha Release — The Genesis of Mímir)*

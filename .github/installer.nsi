@@ -1,9 +1,9 @@
-; Mímir Browser NSIS Installer Script
+; Mimir Browser NSIS Installer Script
 Unicode True
 !include "MUI2.nsh"
 !include "LogicLib.nsh"
 
-Name "Mímir Browser"
+Name "Mimir Browser"
 OutFile "..\mimir-setup.exe"
 InstallDir "$LOCALAPPDATA\Programs\Mimir"
 RequestExecutionLevel user
@@ -14,20 +14,24 @@ RequestExecutionLevel user
 
 ; Launch program option on finish page
 !define MUI_FINISHPAGE_RUN "$INSTDIR\mimir.exe"
-!define MUI_FINISHPAGE_RUN_TEXT "Launch Mímir Browser"
+!define MUI_FINISHPAGE_RUN_TEXT "Launch Mimir Browser"
 !define MUI_FINISHPAGE_RUN_CHECKED
 
+; Installer Pages
 !insertmacro MUI_PAGE_WELCOME
+!insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
 
+; Uninstaller Pages
 !insertmacro MUI_UNPAGE_CONFIRM
 !insertmacro MUI_UNPAGE_INSTFILES
 
 !insertmacro MUI_LANGUAGE "English"
 
-Section "Mimir" SecMimir
+Section "Mimir Browser (required)" SecMimir
+  SectionIn RO
   SetOutPath "$INSTDIR"
   
   ; Executable
@@ -70,18 +74,31 @@ Section "Mimir" SecMimir
     DetailPrint "Microsoft Edge WebView2 detected ($0)."
   ${EndIf}
 
-  ; Create shortcuts
-  CreateDirectory "$SMPROGRAMS\Mímir"
-  CreateShortcut "$SMPROGRAMS\Mímir\Mímir Browser.lnk" "$INSTDIR\mimir.exe" "" "$INSTDIR\mimir.ico" 0
-  CreateShortcut "$DESKTOP\Mímir Browser.lnk" "$INSTDIR\mimir.exe" "" "$INSTDIR\mimir.ico" 0
+  ; Create Start Menu shortcuts
+  CreateDirectory "$SMPROGRAMS\Mimir"
+  CreateShortcut "$SMPROGRAMS\Mimir\Mimir Browser.lnk" "$INSTDIR\mimir.exe" "" "$INSTDIR\mimir.ico" 0
 
   ; Create uninstaller
   WriteUninstaller "$INSTDIR\uninstall.exe"
-  CreateShortcut "$SMPROGRAMS\Mímir\Uninstall Mímir.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
+  CreateShortcut "$SMPROGRAMS\Mimir\Uninstall Mimir.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
 SectionEnd
 
+Section "Create Desktop Shortcut" SecDesktop
+  CreateShortcut "$DESKTOP\Mimir Browser.lnk" "$INSTDIR\mimir.exe" "" "$INSTDIR\mimir.ico" 0
+SectionEnd
+
+; Component Descriptions
+!insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
+  !insertmacro MUI_DESCRIPTION_TEXT ${SecMimir} "Core Mimir Browser binaries, UI sanctuary, and Start Menu entries."
+  !insertmacro MUI_DESCRIPTION_TEXT ${SecDesktop} "Create a shortcut icon for Mimir Browser on your Desktop."
+!insertmacro MUI_FUNCTION_DESCRIPTION_END
+
 Section "Uninstall"
+  Delete "$DESKTOP\Mimir Browser.lnk"
   Delete "$DESKTOP\Mímir Browser.lnk"
+  Delete "$SMPROGRAMS\Mimir\Mimir Browser.lnk"
+  Delete "$SMPROGRAMS\Mimir\Uninstall Mimir.lnk"
+  RMDir "$SMPROGRAMS\Mimir"
   Delete "$SMPROGRAMS\Mímir\Mímir Browser.lnk"
   Delete "$SMPROGRAMS\Mímir\Uninstall Mímir.lnk"
   RMDir "$SMPROGRAMS\Mímir"
