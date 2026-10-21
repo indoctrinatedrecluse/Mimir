@@ -1,10 +1,31 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { runicAudio } from '@/core/audio/runicAudio';
 import { mimirIpc } from '@/core/ipc/bridge';
 import { RealmId } from '@/types';
 import { REALM_THEMES } from '@/components/themes/realmThemes';
-import { ArrowLeft, ArrowRight, RotateCw, Shield, Sparkles, Bookmark, Search, Compass, BookOpen, Terminal, Columns, Feather, Hammer, Network, Volume2, VolumeX } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  RotateCw,
+  Shield,
+  Sparkles,
+  Bookmark,
+  Search,
+  Compass,
+  BookOpen,
+  Terminal,
+  Columns,
+  Feather,
+  Hammer,
+  Network,
+  Volume2,
+  VolumeX,
+  Clock,
+  Globe,
+  ExternalLink,
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getRankedSuggestions, SuggestionItem, cleanDisplayUrl } from '@/core/navigation/autosuggest';
 
 interface OmnibarProps {
   currentUrl: string;
@@ -21,13 +42,6 @@ interface OmnibarProps {
   onToggleForge?: () => void;
   isAmbientPlaying?: boolean;
   onToggleAmbient?: () => void;
-}
-
-interface Suggestion {
-  icon: React.ElementType;
-  title: string;
-  lore: string;
-  action: () => void;
 }
 
 export const Omnibar: React.FC<OmnibarProps> = ({
@@ -49,12 +63,14 @@ export const Omnibar: React.FC<OmnibarProps> = ({
   const [inputVal, setInputVal] = useState(currentUrl);
   const [isFocused, setIsFocused] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const theme = REALM_THEMES[activeRealm] || REALM_THEMES.midgard;
 
   useEffect(() => {
     setInputVal(currentUrl);
+    setSelectedIndex(-1);
   }, [currentUrl]);
 
   // Click outside to close suggestion dropdown
@@ -62,11 +78,17 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setIsFocused(false);
+        setSelectedIndex(-1);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Compute ranked autosuggest items whenever input changes or bar focuses
+  const rankedSuggestions = useMemo(() => {
+    return getRankedSuggestions(inputVal, 7);
+  }, [inputVal, isFocused]);
 
   const handleNavigateTarget = (target: string) => {
     let url = target.trim();
@@ -79,13 +101,50 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     }
     runicAudio.playChime();
     setIsFocused(false);
+    setSelectedIndex(-1);
     onNavigate(url);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (selectedIndex >= 0 && selectedIndex < rankedSuggestions.length) {
+      handleNavigateTarget(rankedSuggestions[selectedIndex].url);
+      return;
+    }
     if (!inputVal.trim()) return;
     handleNavigateTarget(inputVal);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!isFocused || rankedSuggestions.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      runicAudio.playClick(600);
+      const nextIndex = selectedIndex < rankedSuggestions.length - 1 ? selectedIndex + 1 : 0;
+      setSelectedIndex(nextIndex);
+      // Auto-populate input bar with selected clean URL or query
+      const selected = rankedSuggestions[nextIndex];
+      if (selected.type === 'search') {
+        // keep query
+      } else {
+        setInputVal(selected.cleanUrl);
+      }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      runicAudio.playClick(600);
+      const prevIndex = selectedIndex <= 0 ? rankedSuggestions.length - 1 : selectedIndex - 1;
+      setSelectedIndex(prevIndex);
+      const selected = rankedSuggestions[prevIndex];
+      if (selected.type === 'search') {
+        // keep query
+      } else {
+        setInputVal(selected.cleanUrl);
+      }
+    } else if (e.key === 'Escape') {
+      setIsFocused(false);
+      setSelectedIndex(-1);
+    }
   };
 
   const handleBack = () => {
@@ -103,35 +162,33 @@ export const Omnibar: React.FC<OmnibarProps> = ({
     mimirIpc.send({ type: 'REFRESH' });
   };
 
-  const suggestions: Suggestion[] = [
-    {
-      icon: Search,
-      title: inputVal.trim() ? `Search the Nine Realms for "${inputVal}"` : "Explore Mímisbrunnr",
-      lore: "Direct wisdom query via DuckDuckGo",
-      action: () => handleNavigateTarget(inputVal || "https://duckduckgo.com"),
-    },
-    {
-      icon: Terminal,
-      title: "GitHub — Forge of Code",
-      lore: "Repositories, pull requests & code sanctums",
-      action: () => handleNavigateTarget("https://github.com"),
-    },
-    {
-      icon: BookOpen,
-      title: "Rust Documentation — Iron Lore",
-      lore: "Standard library, crates & borrow checker lore",
-      action: () => handleNavigateTarget("https://doc.rust-lang.org"),
-    },
-    {
-      icon: Sparkles,
-      title: "Huginn AI Scout",
-      lore: "Summon the raven of thought to analyze current page",
-      action: () => {
-        runicAudio.playChime();
-        setIsFocused(false);
-      },
-    },
-  ];
+  const getItemIcon = (type: SuggestionItem['type']) => {
+    switch (type) {
+      case 'bookmark':
+        return Bookmark;
+      case 'history':
+        return Clock;
+      case 'gateway':
+        return Globe;
+      case 'search':
+      default:
+        return Search;
+    }
+  };
+
+  const getItemColor = (type: SuggestionItem['type']) => {
+    switch (type) {
+      case 'bookmark':
+        return '#f59e0b'; // amber
+      case 'history':
+        return '#06b6d4'; // cyan
+      case 'gateway':
+        return '#a855f7'; // purple
+      case 'search':
+      default:
+        return theme.accentColor;
+    }
+  };
 
   return (
     <div
@@ -199,12 +256,16 @@ export const Omnibar: React.FC<OmnibarProps> = ({
           <input
             type="text"
             value={inputVal}
-            onChange={(e) => setInputVal(e.target.value)}
+            onChange={(e) => {
+              setInputVal(e.target.value);
+              setSelectedIndex(-1);
+            }}
+            onKeyDown={handleKeyDown}
             onFocus={() => {
               setIsFocused(true);
               runicAudio.playRunicHum();
             }}
-            placeholder="Drink from Mímisbrunnr... (Search or enter realm URL)"
+            placeholder="Drink from Mímisbrunnr... (Search or enter destination URL)"
             className="h-8 flex-1 bg-transparent text-xs tracking-wide text-slate-100 outline-none placeholder:text-slate-500/70"
           />
 
@@ -247,52 +308,96 @@ export const Omnibar: React.FC<OmnibarProps> = ({
           </div>
         </form>
 
-        {/* Echoes from the Well (Suggestion Dropdown) */}
+        {/* Echoes from the Well (Ranked Autosuggest Dropdown) */}
         <AnimatePresence>
-          {isFocused && (
+          {isFocused && rankedSuggestions.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: -4, scale: 0.99 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -4, scale: 0.99 }}
               transition={{ duration: 0.15 }}
-              className="absolute left-0 right-0 top-full mt-1.5 overflow-hidden rounded-lg border border-white/10 bg-[#090e18]/95 p-1.5 shadow-2xl backdrop-blur-2xl"
+              className="absolute left-0 right-0 top-full mt-1.5 overflow-hidden rounded-lg border border-white/10 bg-[#080d17]/98 p-1.5 shadow-2xl backdrop-blur-2xl z-50"
               style={{
                 borderColor: `${theme.accentColor}40`,
-                boxShadow: `0 10px 30px -5px rgba(0, 0, 0, 0.8), 0 0 20px -5px ${theme.glowColor}`,
+                boxShadow: `0 12px 35px -5px rgba(0, 0, 0, 0.85), 0 0 20px -5px ${theme.glowColor}`,
               }}
             >
               <div className="px-2 py-1 text-[9px] font-bold tracking-widest text-slate-500 uppercase flex items-center justify-between border-b border-white/5 mb-1">
-                <span>ECHOES FROM MÍMISBRUNNR</span>
+                <span>ECHOES FROM MÍMISBRUNNR • AUTOSUGGEST</span>
                 <span className="text-[8px] font-mono" style={{ color: theme.accentColor }}>
-                  {theme.primaryRune} SACRED CONDUIT
+                  {theme.primaryRune} FRECENCY RANKED
                 </span>
               </div>
 
-              {suggestions.map((item, idx) => {
-                const Icon = item.icon;
+              {rankedSuggestions.map((item, idx) => {
+                const Icon = getItemIcon(item.type);
+                const itemColor = getItemColor(item.type);
+                const isSelected = selectedIndex === idx;
+
                 return (
                   <button
-                    key={idx}
+                    key={item.id}
                     type="button"
                     onMouseDown={(e) => {
                       e.preventDefault();
-                      item.action();
+                      handleNavigateTarget(item.url);
                     }}
-                    className="group flex w-full items-center space-x-3 rounded-md px-2.5 py-2 text-left transition-all hover:bg-white/[0.06] active:scale-[0.99]"
+                    onMouseEnter={() => setSelectedIndex(idx)}
+                    className={`group flex w-full items-center space-x-3 rounded-md px-2.5 py-2 text-left transition-all ${
+                      isSelected
+                        ? 'bg-white/10 border-l-2'
+                        : 'hover:bg-white/[0.05] border-l-2 border-transparent'
+                    }`}
+                    style={{
+                      borderLeftColor: isSelected ? itemColor : undefined,
+                    }}
                   >
+                    {/* Leading Runic Category Icon */}
                     <div
-                      className="flex h-7 w-7 items-center justify-center rounded border border-white/5 bg-white/[0.03] transition-colors group-hover:border-white/20"
-                      style={{ color: theme.accentColor }}
+                      className="flex h-7 w-7 items-center justify-center rounded border border-white/5 bg-white/[0.03] transition-colors shrink-0"
+                      style={{ color: itemColor }}
                     >
                       <Icon className="h-3.5 w-3.5" />
                     </div>
-                    <div className="flex flex-col overflow-hidden">
-                      <span className="truncate text-xs font-semibold text-slate-200 group-hover:text-white">
-                        {item.title}
-                      </span>
-                      <span className="truncate text-[10px] text-slate-500">
-                        {item.lore}
-                      </span>
+
+                    {/* Information Cluster */}
+                    <div className="flex flex-col flex-1 min-w-0">
+                      <div className="flex items-center space-x-2">
+                        <span className="truncate text-xs font-semibold text-slate-200 group-hover:text-white">
+                          {item.title}
+                        </span>
+                        <span
+                          className="rounded px-1.5 py-0.2 text-[8px] font-bold font-mono tracking-wider shrink-0"
+                          style={{
+                            backgroundColor: `${itemColor}20`,
+                            color: itemColor,
+                            border: `1px solid ${itemColor}40`,
+                          }}
+                        >
+                          {item.badge}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center space-x-2 text-[10px] text-slate-500 font-mono mt-0.5">
+                        <span className="truncate" style={{ color: isSelected ? theme.accentColor : undefined }}>
+                          {item.cleanUrl}
+                        </span>
+                        {item.visitCount && item.visitCount > 1 && (
+                          <span className="shrink-0 text-[9px] text-slate-400">
+                            ({item.visitCount} visits)
+                          </span>
+                        )}
+                        {item.timestamp && (
+                          <span className="shrink-0 text-[9px] text-slate-500">
+                            • {item.timestamp}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Trailing Selection Indicator */}
+                    <div className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <ExternalLink className="h-3 w-3 text-slate-400" />
                     </div>
                   </button>
                 );

@@ -7,6 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.0] - 2026-10-21 *(Mímisbrunnr Autosuggest & Hliðskjálf Command Center)*
+
+Major upgrade introducing intelligent multi-source autosuggestion ranking in the Omnibar, the Hliðskjálf Command Palette in the left navigation pane, and comprehensive layout refinement across realm lore and Hávamál wisdom cards.
+
+### Added
+
+#### Intelligent Omnibar Autosuggest & Ranking Engine (`autosuggest.ts`)
+* **Multi-Source Frecency Ranking Engine**:
+  * Real-time query matching across three distinct data sources:
+    * **Muninn Runestones**: Bookmarked conduits with custom titles, tags, and realm affiliations.
+    * **Threads of Fate**: Visited browsing history with timestamp tracking and visit counts.
+    * **Popular Ancient Gateways**: 14 developer and knowledge portals (GitHub, DuckDuckGo, Wikipedia, Rust Docs, MDN, Stack Overflow, etc.).
+  * **Scoring & Ranking Mechanics**:
+    * Exact domain match bonus (`+150`)
+    * Domain prefix match bonus (`+110`)
+    * Full URL substring match (`+75`)
+    * Title and metadata match (`+55`)
+    * Intent bonus for bookmarked Runestones (`+40`)
+    * Frequency score: `+8` per visit up to `+40` maximum
+    * Recency decay bonus: up to `+25` for pages visited within 24 hours down to `+5` within 30 days
+    * Fallback search suggestion for non-URL queries (`+10`)
+  * **Smart Deduplication & Runic Badging**:
+    * Merges duplicate entries across bookmarks, history, and popular gateways into a single high-priority result with compound badges (`ᛚ RUNESTONE • VISITED`).
+    * Visual badges distinguishing result types: `ᛚ RUNESTONE` (gold), `ᚺ HISTORY` (cyan/blue), `ᛟ GATEWAY` (emerald), and `ᛋ SEARCH` (violet).
+* **Keyboard Navigation & Omnibar Auto-Population**:
+  * Keyboard navigation in suggestion dropdown via `ArrowDown` and `ArrowUp`.
+  * Suggestion auto-population directly into the URL input during keyboard traversal.
+  * Instant execution via `Enter` or mouse click with runic audio click sound cues.
+  * Dismissal via `Escape` key or clicking outside.
+
+#### Hliðskjálf Command Palette (`CommandPalette.tsx`)
+* **Editor-Grade Omnipresent Command Center**:
+  * Accessible from the dedicated trigger button directly above the tab tree on the left pane ("Seek Command... Ctrl+K").
+  * Global hotkeys: `Ctrl+K` and `Ctrl+Shift+P` (standard code editor convention).
+  * Filterable catalog of actions categorized into:
+    * **Tabs & Navigation**: New Tab, Close Tab, Refresh Conduit, Return to Mímisbrunnr Sacred Well, Next/Previous Tab.
+    * **Wisdom & Ravens**: Consult Huginn AI intelligence drawer (`Ctrl+H`), Open Muninn's Vault & Runestones (`Ctrl+M`).
+    * **Viewports & Tools**: Toggle Odin's Split-Gaze dual viewports (`Ctrl+\`), Open Bifröst Proxy Conduit Matrix, Open Brokkr's Extension Forge, Toggle Gjallarhorn Ambient Audio.
+    * **The Nine Realms**: Instant realm shifting to any of the 9 Norse realms (Midgard, Asgard, Vanaheim, Alfheim, Jotunheim, Muspelheim, Niflheim, Nidavellir, Helheim) with real-time accent color indicators.
+    * **System & Wards**: Flush browser cache and clear browsing fate threads.
+  * Keyboard-driven arrow navigation, direct execution, visual category headers, and shortcut badges.
+
+### Fixed
+
+#### Realm Lore & Hávamál Card Text Truncation
+* **Expanded Viewport Lore Layout (`ContentViewport.tsx`)**:
+  * Expanded container maximum width from `max-w-3xl` (768px) to `max-w-5xl` (1024px) for desktop wide displays.
+  * Removed restrictive `truncate` class on Sovereign ruler titles, allowing multi-word Norse titles to display in their entirety.
+  * Removed `line-clamp-1` on sovereign mythological quotes, ensuring the full ancient spoken verses wrap cleanly.
+  * Added the full realm description text below ruler quotes for richer cosmological context.
+  * Removed `line-clamp-2` on English translation stanzas in the Hávamál wisdom card, ensuring ancient philosophical verses from the Poetic Edda are completely legible without truncation.
+
+---
+
 ## [0.2.0] - 2026-10-21 *(The Nine Realms & Sovereign Wisdom)*
 
 Major milestone expansion bringing full realization of the Nine Norse Realms with sovereign ruler artwork, the Huginn AI Copilot, Muninn's Memory Vault, Gjallarhorn Procedural Ambient Soundscapes, Bifröst Proxy Matrix, Odin's Split-Gaze dual viewports, and Brokkr's Extension Forge.
@@ -175,5 +229,6 @@ The inaugural public alpha proof of concept (POC) for Mímir, the hypermodern, r
 
 ---
 
+[0.3.0]: https://github.com/indoctrinatedrecluse/Mimir/releases/tag/v0.3.0
 [0.2.0]: https://github.com/indoctrinatedrecluse/Mimir/releases/tag/v0.2.0
 [0.1.0]: https://github.com/indoctrinatedrecluse/Mimir/releases/tag/v0.1.0

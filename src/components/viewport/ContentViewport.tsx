@@ -142,88 +142,102 @@ export const ContentViewport: React.FC<ContentViewportProps> = ({
         </div>
       </div>
 
-      {/* Top Section: Realm Ruler & Hávamál Stanza */}
-      <div className="relative z-10 w-full max-w-3xl flex flex-col sm:flex-row gap-3">
+      {/* Top Section: Realm Ruler & Hávamál Stanza (Full Lore, No Truncation) */}
+      <div className="relative z-10 w-full max-w-5xl flex flex-col md:flex-row gap-4">
         {/* Ruler Lore Card */}
         <motion.div
           initial={{ opacity: 0, x: -15 }}
           animate={{ opacity: 1, x: 0 }}
-          className="flex-1 rounded-xl border border-white/10 bg-[#070b14]/85 p-3.5 backdrop-blur-xl shadow-xl flex items-center space-x-3.5"
+          className="flex-1 rounded-xl border border-white/10 bg-[#070b14]/90 p-4 backdrop-blur-xl shadow-xl flex items-start space-x-4"
           style={{
-            borderColor: `${th.accentColor}30`,
+            borderColor: `${th.accentColor}35`,
             boxShadow: `0 8px 30px -10px rgba(0,0,0,0.7), 0 0 15px -4px ${th.glowColor}`,
           }}
         >
           <div
-            className="relative h-12 w-12 rounded-lg overflow-hidden border flex items-center justify-center shrink-0 shadow-inner"
+            className="relative h-14 w-14 rounded-lg overflow-hidden border flex items-center justify-center shrink-0 shadow-inner mt-0.5"
             style={{ borderColor: `${th.accentColor}60` }}
           >
             <img
               src={r.bgUrl}
               alt={r.ruler}
-              className="absolute inset-0 h-full w-full object-cover opacity-80"
+              className="absolute inset-0 h-full w-full object-cover opacity-90"
             />
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" />
-            <span className="relative z-10 text-xl font-black" style={{ color: th.accentColor }}>
+            <div className="absolute inset-0 bg-black/35 backdrop-blur-[1px]" />
+            <span className="relative z-10 text-2xl font-black" style={{ color: th.accentColor }}>
               {r.rune}
             </span>
           </div>
 
-          <div className="flex flex-col min-w-0">
-            <div className="flex items-center space-x-2">
+          <div className="flex flex-col min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
               <span className="text-[10px] font-mono tracking-widest uppercase font-bold text-slate-400">
                 SOVEREIGN OF {r.norseName.toUpperCase()}
               </span>
               <span
-                className="rounded px-1.5 py-0.2 text-[9px] font-bold uppercase"
+                className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
                 style={{
-                  backgroundColor: `${th.accentColor}20`,
+                  backgroundColor: `${th.accentColor}25`,
                   color: th.accentColor,
+                  border: `1px solid ${th.accentColor}40`,
                 }}
               >
                 {r.ruler}
               </span>
             </div>
-            <div className="text-xs font-semibold text-slate-200 truncate">
+            <div className="text-xs font-bold text-slate-100 leading-snug">
               {r.rulerTitle}
             </div>
-            <p className="text-[10px] italic text-slate-400 font-serif line-clamp-1 mt-0.5">
+            <p className="text-[11px] italic text-slate-300 font-serif leading-relaxed mt-1">
               "{r.quote}"
             </p>
+            <div className="mt-1 text-[10px] text-slate-400 font-mono tracking-wide">
+              {r.description}
+            </div>
           </div>
         </motion.div>
 
-        {/* Hávamál Stanza */}
+        {/* Hávamál Stanza Card */}
         <motion.div
           initial={{ opacity: 0, x: 15 }}
           animate={{ opacity: 1, x: 0 }}
-          className="flex-1 rounded-xl border border-white/10 bg-[#070b14]/85 p-3.5 backdrop-blur-xl shadow-xl flex flex-col justify-between"
+          className="flex-1 rounded-xl border border-white/10 bg-[#070b14]/90 p-4 backdrop-blur-xl shadow-xl flex flex-col justify-between"
           style={{
-            borderColor: `${th.accentColor}25`,
+            borderColor: `${th.accentColor}30`,
             boxShadow: `0 8px 30px -10px rgba(0,0,0,0.7), 0 0 15px -4px ${th.glowColor}`,
           }}
         >
-          <div className="flex items-center justify-between border-b border-white/5 pb-1.5 text-[10px] text-slate-400">
-            <div className="flex items-center space-x-1.5">
-              <Feather className="h-3 w-3" style={{ color: th.accentColor }} />
-              <span className="font-mono font-bold tracking-wider uppercase text-slate-300">
-                HÁVAMÁL {havamal.stanzaNumber}
-              </span>
+          <div>
+            <div className="flex items-center justify-between border-b border-white/5 pb-2 text-[10px] text-slate-400">
+              <div className="flex items-center space-x-1.5">
+                <Feather className="h-3.5 w-3.5" style={{ color: th.accentColor }} />
+                <span className="font-mono font-bold tracking-wider uppercase text-slate-200">
+                  HÁVAMÁL {havamal.stanzaNumber}
+                </span>
+                <span className="text-[9px] text-slate-500 font-serif italic">
+                  (Words of the High One)
+                </span>
+              </div>
+
+              <button
+                onClick={cycleHavamal}
+                className="group flex items-center space-x-1 text-slate-400 hover:text-white transition-colors"
+                title="Drink anew from the Well (New Stanza)"
+              >
+                <span className="text-[9px] font-mono">DRINK ANEW</span>
+                <RefreshCw className="h-2.5 w-2.5 transition-transform group-hover:rotate-180" />
+              </button>
             </div>
 
-            <button
-              onClick={cycleHavamal}
-              className="group flex items-center space-x-1 text-slate-400 hover:text-white transition-colors"
-              title="Drink anew from the Well (New Stanza)"
-            >
-              <span className="text-[9px] font-mono">DRINK ANEW</span>
-              <RefreshCw className="h-2.5 w-2.5 transition-transform group-hover:rotate-180" />
-            </button>
+            <p className="mt-2 text-xs text-slate-200 font-serif italic leading-relaxed">
+              "{havamal.english}"
+            </p>
           </div>
 
-          <p className="mt-1.5 text-[11px] text-slate-300 font-serif italic line-clamp-2 leading-relaxed">
-            "{havamal.english}"
-          </p>
+          <div className="mt-2 flex items-center justify-between pt-1 border-t border-white/5 text-[9px] font-mono text-slate-500">
+            <span>SACRED WELL WISDOM</span>
+            <span style={{ color: th.accentColor }}>{r.name.toUpperCase()} REPOSITORY</span>
+          </div>
         </motion.div>
       </div>
 

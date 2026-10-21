@@ -5,7 +5,7 @@ import { mimirIpc } from '@/core/ipc/bridge';
 import { REALM_THEMES } from '@/components/themes/realmThemes';
 import { NorseKnotworkRibbon } from '@/components/themes/NorsePatterns';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X, Volume2, VolumeX, ChevronLeft, ChevronRight, History } from 'lucide-react';
+import { Plus, X, Volume2, VolumeX, ChevronLeft, ChevronRight, History, Terminal } from 'lucide-react';
 
 interface TabTreeProps {
   tabs: Tab[];
@@ -16,6 +16,7 @@ interface TabTreeProps {
   onNewTab: () => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
+  onOpenCommandPalette?: () => void;
 }
 
 export const TabTree: React.FC<TabTreeProps> = ({
@@ -27,6 +28,7 @@ export const TabTree: React.FC<TabTreeProps> = ({
   onNewTab,
   isCollapsed,
   onToggleCollapse,
+  onOpenCommandPalette,
 }) => {
   const theme = REALM_THEMES[activeRealm] || REALM_THEMES.midgard;
 
@@ -74,6 +76,46 @@ export const TabTree: React.FC<TabTreeProps> = ({
       {/* Knotwork accent strip */}
       <div className="h-[2px] w-full opacity-20" style={{ color: theme.accentColor }}>
         <NorseKnotworkRibbon opacity={0.4} />
+      </div>
+
+      {/* Command Palette Trigger Button (Just above tabs) */}
+      <div className="px-2 pt-2 pb-1 shrink-0">
+        {!isCollapsed ? (
+          <button
+            onClick={() => {
+              runicAudio.playClick(600);
+              onOpenCommandPalette?.();
+            }}
+            className="group flex w-full items-center justify-between rounded-lg border border-white/10 bg-[#090e18]/80 px-2.5 py-1.5 text-xs text-slate-400 transition-all hover:border-white/20 hover:bg-[#0d1424] hover:text-white"
+            style={{
+              borderColor: `${theme.accentColor}25`,
+            }}
+            title="Open Hliðskjálf Command Palette (Ctrl+K)"
+          >
+            <div className="flex items-center space-x-2">
+              <Terminal className="h-3.5 w-3.5" style={{ color: theme.accentColor }} />
+              <span className="text-[11px] font-mono tracking-wide">Seek Command...</span>
+            </div>
+            <span className="rounded bg-white/5 px-1.5 py-0.2 text-[9px] font-mono text-slate-500 group-hover:text-slate-300 border border-white/5">
+              Ctrl+K
+            </span>
+          </button>
+        ) : (
+          <button
+            onClick={() => {
+              runicAudio.playClick(600);
+              onOpenCommandPalette?.();
+            }}
+            className="flex h-9 w-9 mx-auto items-center justify-center rounded-lg border border-white/10 bg-[#090e18]/80 text-slate-400 transition-all hover:border-white/25 hover:bg-[#0d1424] hover:text-white"
+            style={{
+              borderColor: `${theme.accentColor}30`,
+              color: theme.accentColor,
+            }}
+            title="Command Palette (Ctrl+K)"
+          >
+            <Terminal className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
       {/* Tabs List with Framer Motion Spring Physics */}

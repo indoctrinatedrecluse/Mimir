@@ -51,7 +51,7 @@ jobs:
         shell: pwsh
         run: |
           $TAG = "${{ github.ref_name }}"
-          if ([string]::IsNullOrEmpty($TAG)) { $TAG = "v0.2.0" }
+          if ([string]::IsNullOrEmpty($TAG)) { $TAG = "v0.3.0" }
 
           # Download official Microsoft WebView2 Evergreen Bootstrapper for dependency-free distribution
           Write-Host "Downloading Microsoft Edge WebView2 Evergreen Bootstrapper..."

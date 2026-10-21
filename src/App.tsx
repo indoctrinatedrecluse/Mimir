@@ -11,6 +11,7 @@ import { HuginnPanel } from '@/components/ai/HuginnPanel';
 import { MuninnVault } from '@/components/muninn/MuninnVault';
 import { BifrostMatrix } from '@/components/network/BifrostMatrix';
 import { BrokkrForge } from '@/components/forge/BrokkrForge';
+import { CommandPalette } from '@/components/palette/CommandPalette';
 import { Tab, RealmId } from '@/types';
 import { runicAudio } from '@/core/audio/runicAudio';
 import { mimirIpc } from '@/core/ipc/bridge';
@@ -51,6 +52,7 @@ export const App: React.FC = () => {
   const [isMuninnOpen, setIsMuninnOpen] = useState(false);
   const [isBifrostOpen, setIsBifrostOpen] = useState(false);
   const [isForgeOpen, setIsForgeOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isSplitGaze, setIsSplitGaze] = useState(false);
   const [splitTabId, setSplitTabId] = useState<string | undefined>('tab-2');
   const [isAmbientPlaying, setIsAmbientPlaying] = useState(runicAudio.isAmbientEnabled());
@@ -105,6 +107,12 @@ export const App: React.FC = () => {
         runicAudio.playClick(650);
         setIsSplitGaze((prev) => !prev);
       }
+      // Ctrl+K or Ctrl+Shift+P: Toggle Command Palette
+      if ((e.ctrlKey && e.key.toLowerCase() === 'k') || (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'p')) {
+        e.preventDefault();
+        runicAudio.playClick(600);
+        setIsCommandPaletteOpen((prev) => !prev);
+      }
       // Esc: Close modals & drawers
       if (e.key === 'Escape') {
         setIsRealmSelectorOpen(false);
@@ -112,6 +120,7 @@ export const App: React.FC = () => {
         setIsMuninnOpen(false);
         setIsBifrostOpen(false);
         setIsForgeOpen(false);
+        setIsCommandPaletteOpen(false);
       }
     };
 
@@ -261,6 +270,7 @@ export const App: React.FC = () => {
           onNewTab={() => handleNewTab()}
           isCollapsed={isTabTreeCollapsed}
           onToggleCollapse={() => setIsTabTreeCollapsed(!isTabTreeCollapsed)}
+          onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
         />
 
         <ContentViewport
@@ -321,6 +331,37 @@ export const App: React.FC = () => {
         isOpen={isForgeOpen}
         onClose={() => setIsForgeOpen(false)}
         activeRealm={activeRealm}
+      />
+
+      {/* Overlay 5: Hliðskjálf Command Palette */}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        activeRealm={activeRealm}
+        onNewTab={() => handleNewTab()}
+        onCloseTab={() => {
+          if (activeTab) handleCloseTab(activeTab.id);
+        }}
+        onToggleSplitGaze={() => setIsSplitGaze((prev) => !prev)}
+        onToggleHuginn={() => setIsHuginnOpen((prev) => !prev)}
+        onToggleMuninn={() => setIsMuninnOpen((prev) => !prev)}
+        onToggleBifrost={() => setIsBifrostOpen(true)}
+        onToggleForge={() => setIsForgeOpen(true)}
+        onToggleAmbient={() => {
+          const nextState = runicAudio.toggleAmbient(activeRealm);
+          setIsAmbientPlaying(nextState);
+        }}
+        isAmbientPlaying={isAmbientPlaying}
+        onSelectRealm={(r) => {
+          setActiveRealm(r);
+          runicAudio.playRunicHum();
+        }}
+        onNavigateHome={() => handleNavigate('mimir://newtab')}
+        onRefresh={() => {
+          if (activeTab?.url) {
+            handleNavigate(activeTab.url);
+          }
+        }}
       />
 
       {/* Slide-out: Huginn AI Intelligence Drawer */}
