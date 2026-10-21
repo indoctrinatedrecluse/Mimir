@@ -98,30 +98,34 @@ graph TD
 
 ## 🎯 Current Scope & Feature Roadmap
 
-### Phase 0: Scaffolding & Foundation *(Current)*
+### Phase 0: Scaffolding & Foundation *(Completed in v0.1.0)*
 - [x] Project architecture blueprint & technical specification.
-- [ ] Modular workspace setup (Rust backend + React 19 Vite frontend).
-- [ ] Establish typed IPC contract between Rust and React.
-- [ ] Initialize Obsidian Glass design tokens and typography.
+- [x] Modular workspace setup (Rust backend + React 19 Vite frontend).
+- [x] Establish typed IPC contract between Rust and React.
+- [x] Initialize Obsidian Glass design tokens and typography.
 
-### Phase 1: The Runic Frame (UI-First Prototype)
-- [ ] Custom borderless window frame with integrated titlebar and window controls.
-- [ ] **Mímisbrunnr (Omnibar)** with runic glow focus, keyboard hotkeys, and suggestions HUD.
-- [ ] **Yggdrasil Tab Bar** (vertical & collapsible) with spring-physics tab switching.
-- [ ] Tactile sound engine (subtle mechanical clicks, low-frequency hums on realm switches).
-- [ ] Ambient canvas rune particles / ember effects.
+### Phase 1: The Runic Frame (UI-First Prototype) *(Completed in v0.1.0)*
+- [x] Custom borderless window frame with integrated titlebar and window controls.
+- [x] **Mímisbrunnr (Omnibar)** with runic glow focus, keyboard hotkeys, and suggestions HUD.
+- [x] **Yggdrasil Tab Bar** (vertical & collapsible) with spring-physics tab switching.
+- [x] Tactile sound engine (subtle mechanical clicks, low-frequency hums on realm switches).
+- [x] Ambient canvas rune particles / ember effects.
 
-### Phase 2: Live Content Docking (Wry Integration)
-- [ ] Rust process spawning child WebView2 viewports inside the React frame workspace.
-- [ ] Dynamic bounds synchronization (resizing HUD cleanly adjusts the webview).
-- [ ] URL navigation, Back / Forward / Refresh controls bound to Mímisbrunnr.
-- [ ] Multi-tab lifecycle: Tab creation, switching, closing, and memory hibernation.
+### Phase 2: Live Content Docking (Wry Integration) *(Completed in v0.1.0)*
+- [x] Rust process spawning child WebView2 viewports inside the React frame workspace.
+- [x] Dynamic bounds synchronization (resizing HUD cleanly adjusts the webview).
+- [x] URL navigation, Back / Forward / Refresh controls bound to Mímisbrunnr.
+- [x] Multi-tab lifecycle: Tab creation, switching, closing, and memory hibernation.
 
-### Phase 3: The Nine Realms & Wisdom Features
-- [ ] **The Nine Realms** workspace switcher (switching isolated tab pools).
-- [ ] **Runestones** (visual bookmark pins with custom icons).
-- [ ] **Muninn History** drawer with search and timestamped journeys.
-- [ ] **Helheim Mode** toggle for private web sessions.
+### Phase 3: The Nine Realms & Sovereign Wisdom *(Completed in v0.2.0)*
+- [x] **The Nine Realms** workspace switcher with realm-specific mythological backgrounds & palettes.
+- [x] **Muninn's Memory Vault** (Runestones bookmarks & Threads of Fate history tree).
+- [x] **Gjallarhorn Procedural Ambient Soundscapes** (Continuous Web Audio synthesizer for all 9 realms).
+- [x] **Bifröst Proxy Conduit Matrix** (Per-realm proxy and encrypted DoH resolver routing).
+- [x] **Odin's Split-Gaze** (*Hliðskjálf* dual-viewport split-screen browsing).
+- [x] **Brokkr's Extension Forge** (User-scripts and custom runic CSS/JS style injection).
+- [x] **Huginn AI Scout** floating intelligence assistant drawer.
+- [x] **Helheim Mode** toggle for private web sessions.
 
 ---
 

@@ -218,7 +218,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     logger::init();
 
     if std::env::args().any(|arg| arg == "--version" || arg == "-V") {
-        println!("Mímir Browser Core v0.1.0 (Runic Conduit)");
+        println!("Mímir Browser Core v{} (Runic Conduit)", env!("CARGO_PKG_VERSION"));
         return Ok(());
     }
 

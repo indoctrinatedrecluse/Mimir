@@ -3,7 +3,7 @@ import { runicAudio } from '@/core/audio/runicAudio';
 import { mimirIpc } from '@/core/ipc/bridge';
 import { RealmId } from '@/types';
 import { REALM_THEMES } from '@/components/themes/realmThemes';
-import { ArrowLeft, ArrowRight, RotateCw, Shield, Sparkles, Bookmark, Search, Compass, BookOpen, Terminal } from 'lucide-react';
+import { ArrowLeft, ArrowRight, RotateCw, Shield, Sparkles, Bookmark, Search, Compass, BookOpen, Terminal, Columns, Feather, Hammer, Network, Volume2, VolumeX } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface OmnibarProps {
@@ -13,6 +13,14 @@ interface OmnibarProps {
   isLoading?: boolean;
   onToggleHuginn?: () => void;
   isHuginnOpen?: boolean;
+  onToggleMuninn?: () => void;
+  isMuninnOpen?: boolean;
+  onToggleSplitGaze?: () => void;
+  isSplitGazeActive?: boolean;
+  onToggleBifrost?: () => void;
+  onToggleForge?: () => void;
+  isAmbientPlaying?: boolean;
+  onToggleAmbient?: () => void;
 }
 
 interface Suggestion {
@@ -29,6 +37,14 @@ export const Omnibar: React.FC<OmnibarProps> = ({
   isLoading = false,
   onToggleHuginn,
   isHuginnOpen = false,
+  onToggleMuninn,
+  isMuninnOpen = false,
+  onToggleSplitGaze,
+  isSplitGazeActive = false,
+  onToggleBifrost,
+  onToggleForge,
+  isAmbientPlaying = false,
+  onToggleAmbient,
 }) => {
   const [inputVal, setInputVal] = useState(currentUrl);
   const [isFocused, setIsFocused] = useState(false);
@@ -286,14 +302,88 @@ export const Omnibar: React.FC<OmnibarProps> = ({
         </AnimatePresence>
       </div>
 
-      {/* Huginn AI Scout (Right Cluster) */}
-      <div className="flex items-center pl-2 space-x-2">
+      {/* Norse Command Hub (Right Cluster) */}
+      <div className="flex items-center pl-2 space-x-1.5">
+        {/* Odin's Split-Gaze (Hliðskjálf) */}
+        <button
+          onClick={() => {
+            runicAudio.playClick(650);
+            onToggleSplitGaze?.();
+          }}
+          className={`flex h-8 w-8 items-center justify-center rounded border transition-all ${
+            isSplitGazeActive
+              ? 'border-cyan-400 bg-cyan-500/25 text-cyan-300 shadow-[0_0_10px_rgba(0,245,255,0.4)]'
+              : 'border-white/10 bg-white/[0.03] text-slate-400 hover:text-white hover:bg-white/[0.08]'
+          }`}
+          title="Odin's Split-Gaze (Toggle Hliðskjálf Dual-Viewport)"
+        >
+          <Columns className="h-3.5 w-3.5" />
+        </button>
+
+        {/* Gjallarhorn Ambient Soundscape */}
+        <button
+          onClick={() => {
+            runicAudio.playClick(500);
+            onToggleAmbient?.();
+          }}
+          className={`flex h-8 w-8 items-center justify-center rounded border transition-all ${
+            isAmbientPlaying
+              ? 'border-emerald-400 bg-emerald-500/20 text-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.4)]'
+              : 'border-white/10 bg-white/[0.03] text-slate-400 hover:text-white hover:bg-white/[0.08]'
+          }`}
+          title={isAmbientPlaying ? 'Gjallarhorn Soundscape: Playing (Click to mute)' : 'Gjallarhorn Soundscape: Muted (Click to play realm atmosphere)'}
+        >
+          {isAmbientPlaying ? <Volume2 className="h-3.5 w-3.5 animate-pulse" /> : <VolumeX className="h-3.5 w-3.5" />}
+        </button>
+
+        {/* Bifröst Matrix */}
+        <button
+          onClick={() => {
+            runicAudio.playRunicHum();
+            onToggleBifrost?.();
+          }}
+          className="flex h-8 w-8 items-center justify-center rounded border border-white/10 bg-white/[0.03] text-slate-400 hover:text-white hover:bg-white/[0.08] transition-all"
+          title="Bifröst Matrix (Per-Realm Proxy & DoH Conduits)"
+        >
+          <Network className="h-3.5 w-3.5" />
+        </button>
+
+        {/* Brokkr's Forge */}
+        <button
+          onClick={() => {
+            runicAudio.playClick(550);
+            onToggleForge?.();
+          }}
+          className="flex h-8 w-8 items-center justify-center rounded border border-white/10 bg-white/[0.03] text-slate-400 hover:text-white hover:bg-white/[0.08] transition-all"
+          title="Brokkr's Forge (User-Scripts & Custom Runic Styles)"
+        >
+          <Hammer className="h-3.5 w-3.5" />
+        </button>
+
+        {/* Muninn's Vault (Memory & Runestones) */}
+        <button
+          onClick={() => {
+            runicAudio.playChime();
+            onToggleMuninn?.();
+          }}
+          className={`flex h-8 items-center space-x-1 rounded border px-2 text-[11px] font-bold tracking-wider transition-all ${
+            isMuninnOpen
+              ? 'border-cyan-400 bg-cyan-500/20 text-cyan-300 shadow-[0_0_10px_rgba(0,245,255,0.4)]'
+              : 'border-white/10 bg-white/[0.03] text-slate-300 hover:text-white hover:bg-white/[0.08]'
+          }`}
+          title="Muninn's Vault (Memory, Runestones & Fate Threads)"
+        >
+          <Feather className="h-3.5 w-3.5" />
+          <span className="hidden xl:inline font-mono">MUNINN</span>
+        </button>
+
+        {/* Huginn AI Scout */}
         <button
           onClick={() => {
             runicAudio.playChime();
             onToggleHuginn?.();
           }}
-          className={`group flex h-8 items-center space-x-1.5 rounded border px-3 text-[11px] font-bold tracking-wider transition-all backdrop-blur-md active:scale-95 ${
+          className={`group flex h-8 items-center space-x-1.5 rounded border px-2.5 text-[11px] font-bold tracking-wider transition-all backdrop-blur-md active:scale-95 ${
             isHuginnOpen ? 'ring-1 ring-cyan-400 brightness-125' : ''
           }`}
           style={{

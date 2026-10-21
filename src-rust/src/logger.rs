@@ -186,13 +186,14 @@ pub fn init() {
 
     let header = format!(
         "================================================================================\n\
-         ᛗ MÍMIR BROWSER CORE v0.1.0 - SESSION LAUNCH\n\
+         ᛗ MÍMIR BROWSER CORE v{} - SESSION LAUNCH\n\
          Timestamp: {}\n\
          Executable: {}\n\
          Current Working Dir: {}\n\
          CLI Arguments: {:?}\n\
          Crash Log Location: {}\n\
          ================================================================================",
+        env!("CARGO_PKG_VERSION"),
         current_timestamp(),
         exe_path,
         cwd,

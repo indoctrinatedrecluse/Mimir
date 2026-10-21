@@ -8,6 +8,9 @@ import { RealmSelector } from '@/components/realms/RealmSelector';
 import { RunicAtmosphere } from '@/components/hud/RunicAtmosphere';
 import { SplashScreen } from '@/components/splash/SplashScreen';
 import { HuginnPanel } from '@/components/ai/HuginnPanel';
+import { MuninnVault } from '@/components/muninn/MuninnVault';
+import { BifrostMatrix } from '@/components/network/BifrostMatrix';
+import { BrokkrForge } from '@/components/forge/BrokkrForge';
 import { Tab, RealmId } from '@/types';
 import { runicAudio } from '@/core/audio/runicAudio';
 import { mimirIpc } from '@/core/ipc/bridge';
@@ -45,9 +48,16 @@ export const App: React.FC = () => {
   const [isTabTreeCollapsed, setIsTabTreeCollapsed] = useState(false);
   const [isRealmSelectorOpen, setIsRealmSelectorOpen] = useState(false);
   const [isHuginnOpen, setIsHuginnOpen] = useState(false);
+  const [isMuninnOpen, setIsMuninnOpen] = useState(false);
+  const [isBifrostOpen, setIsBifrostOpen] = useState(false);
+  const [isForgeOpen, setIsForgeOpen] = useState(false);
+  const [isSplitGaze, setIsSplitGaze] = useState(false);
+  const [splitTabId, setSplitTabId] = useState<string | undefined>('tab-2');
+  const [isAmbientPlaying, setIsAmbientPlaying] = useState(runicAudio.isAmbientEnabled());
   const [showSplash, setShowSplash] = useState(true);
 
   const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0];
+  const splitTab = tabs.find((t) => t.id === splitTabId);
 
   // Synchronize initial tab with native Rust host
   useEffect(() => {
@@ -56,6 +66,11 @@ export const App: React.FC = () => {
       payload: { tabId: 'tab-1', url: 'mimir://newtab', realm: 'midgard' },
     });
   }, []);
+
+  // Update ambient audio if active realm changes
+  useEffect(() => {
+    runicAudio.updateAmbientRealm(activeRealm);
+  }, [activeRealm]);
 
   // Global keyboard shortcuts
   useEffect(() => {
@@ -78,10 +93,25 @@ export const App: React.FC = () => {
         runicAudio.playChime();
         setIsHuginnOpen((prev) => !prev);
       }
+      // Ctrl+M: Toggle Muninn's Vault (Memory & Runestones)
+      if (e.ctrlKey && e.key.toLowerCase() === 'm') {
+        e.preventDefault();
+        runicAudio.playChime();
+        setIsMuninnOpen((prev) => !prev);
+      }
+      // Ctrl+\: Toggle Odin's Split-Gaze
+      if (e.ctrlKey && (e.key === '\\' || e.key.toLowerCase() === 'u')) {
+        e.preventDefault();
+        runicAudio.playClick(650);
+        setIsSplitGaze((prev) => !prev);
+      }
       // Esc: Close modals & drawers
       if (e.key === 'Escape') {
         setIsRealmSelectorOpen(false);
         setIsHuginnOpen(false);
+        setIsMuninnOpen(false);
+        setIsBifrostOpen(false);
+        setIsForgeOpen(false);
       }
     };
 
@@ -207,6 +237,17 @@ export const App: React.FC = () => {
         isLoading={activeTab?.isLoading}
         onToggleHuginn={() => setIsHuginnOpen((prev) => !prev)}
         isHuginnOpen={isHuginnOpen}
+        onToggleMuninn={() => setIsMuninnOpen((prev) => !prev)}
+        isMuninnOpen={isMuninnOpen}
+        onToggleSplitGaze={() => setIsSplitGaze((prev) => !prev)}
+        isSplitGazeActive={isSplitGaze}
+        onToggleBifrost={() => setIsBifrostOpen(true)}
+        onToggleForge={() => setIsForgeOpen(true)}
+        isAmbientPlaying={isAmbientPlaying}
+        onToggleAmbient={() => {
+          const nextState = runicAudio.toggleAmbient(activeRealm);
+          setIsAmbientPlaying(nextState);
+        }}
       />
 
       {/* Layer 3: Main Workspace (Yggdrasil Tree + Content Viewport) */}
@@ -230,13 +271,25 @@ export const App: React.FC = () => {
             setActiveRealm(r);
             runicAudio.playRunicHum();
           }}
+          isSplitGaze={isSplitGaze}
+          splitTab={splitTab}
+          tabs={tabs}
+          onSelectSplitTab={(tabId) => setSplitTabId(tabId)}
+          onCloseSplitGaze={() => setIsSplitGaze(false)}
+          onSwapSplitTabs={() => {
+            const currentActive = activeTabId;
+            const nextActive = splitTabId || tabs[0].id;
+            setActiveTabId(nextActive);
+            setSplitTabId(currentActive);
+            runicAudio.playClick(650);
+          }}
         />
       </div>
 
       {/* Layer 4: Status Telemetry HUD */}
       <StatusBar activeRealm={activeRealm} />
 
-      {/* Overlay: Nine Realms Modal */}
+      {/* Overlay 1: Nine Realms Modal */}
       <RealmSelector
         isOpen={isRealmSelectorOpen}
         activeRealm={activeRealm}
@@ -245,6 +298,29 @@ export const App: React.FC = () => {
           runicAudio.playRunicHum();
         }}
         onClose={() => setIsRealmSelectorOpen(false)}
+      />
+
+      {/* Overlay 2: Muninn's Memory Vault (Runestones & History) */}
+      <MuninnVault
+        isOpen={isMuninnOpen}
+        onClose={() => setIsMuninnOpen(false)}
+        activeRealm={activeRealm}
+        currentTab={activeTab}
+        onNavigate={handleNavigate}
+      />
+
+      {/* Overlay 3: Bifröst Proxy Conduit Matrix */}
+      <BifrostMatrix
+        isOpen={isBifrostOpen}
+        onClose={() => setIsBifrostOpen(false)}
+        activeRealm={activeRealm}
+      />
+
+      {/* Overlay 4: Brokkr's Extension Forge */}
+      <BrokkrForge
+        isOpen={isForgeOpen}
+        onClose={() => setIsForgeOpen(false)}
+        activeRealm={activeRealm}
       />
 
       {/* Slide-out: Huginn AI Intelligence Drawer */}

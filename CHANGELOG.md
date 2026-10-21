@@ -7,6 +7,80 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.0] - 2026-10-21 *(The Nine Realms & Sovereign Wisdom)*
+
+Major milestone expansion bringing full realization of the Nine Norse Realms with sovereign ruler artwork, the Huginn AI Copilot, Muninn's Memory Vault, Gjallarhorn Procedural Ambient Soundscapes, Bifröst Proxy Matrix, Odin's Split-Gaze dual viewports, and Brokkr's Extension Forge.
+
+### Added
+
+#### The Nine Realms Cosmology & Sovereign Artwork
+* **All Nine Realms Fully Realized**:
+  * **Midgard (*Miðgarðr*)**: Sovereign **Heimdall** (*Guardian of the Bifröst*), Rune `ᛗ` (Mannaz), Bifröst cyan & celestial aurora curtains.
+  * **Asgard (*Ásgarðr*)**: Sovereign **Odin Allfather** (*High King of the Æsir*), Rune `ᚨ` (Ansuz), Valhalla gold & divine constellation stardust.
+  * **Vanaheim (*Vanaheimr*)**: Sovereign **Freya** (*Queen of the Vanir & Lady of Fólkvangr*), Rune `ᚹ` (Wunjo), Vanir emerald & floating golden bio-spores.
+  * **Alfheim (*Álfheimr*)**: Sovereign **Freyr** (*Lord of the Light Elves & Sun King*), Rune `ᛞ` (Dagaz), Luminous frost blue & crystal prism shimmers.
+  * **Jotunheim (*Jötunheimr*)**: Sovereign **Queen Laufey** (*Ruler of the Frost Giants*), Rune `ᛁ` (Isa), Subzero glacial blue & falling ice needle blizzards.
+  * **Muspelheim (*Múspellsheimr*)**: Sovereign **Surtr** (*Lord of the Fire Giants & World Burner*), Rune `ᚲ` (Kenaz), Volcanic ember rose & surging thermal fire glow.
+  * **Niflheim (*Niflheimr*)**: Sovereign **Níðhöggr** (*The Primordial Serpent & Root Gnawer*), Rune `ᚺ` (Hagalaz), Toxic venom cyan & creeping primordial fog.
+  * **Nidavellir (*Niðavellir*)**: Sovereigns **Brokkr & Sindri** (*Dwarven Master Smiths*), Rune `ᛏ` (Tiwaz), Molten bronze & explosive anvil sparks.
+  * **Helheim (*Helheimr*)**: Sovereign **Hel (Hela)** (*Sovereign of the Underworld*), Rune `ᛈ` (Perthro), Amethyst purple & zero-trace stealth abyss veil.
+* **Sovereign Ruler Artwork & Atmosphere**:
+  * Bespoke high-resolution 16:9 widescreen artwork for all 9 sovereign rulers integrated into the Sacred Well (`mimir://newtab`) with obsidian veil gradients ensuring high text contrast.
+  * Sovereign Lore Banner displaying ruler titles, avatars, and authentic mythological quotes.
+  * Nine Realms Selector (`Níu Heimar`) expanded to a 3×3 responsive grid modal with ruler portraits and workspace isolation status.
+
+#### Huginn AI Scout & Intelligence Drawer (`HuginnPanel.tsx`)
+* **Norse AI Companion (Thought / *Hugr*)**:
+  * Interactive slide-out intelligence drawer accessible from the Omnibar and via `Ctrl+H` / `Ctrl+I`.
+  * **Runic Invocations**:
+    * **ᚱ Synthesize Page**: Instant 4-point distillation of active page lore, security posture, and domain essence.
+    * **ᚲ Code Lore**: Deep technical examination of client framework, sandboxing, and DOM architecture.
+    * **ᛈ Ward Audit**: Telemetry assessment, cookie containment status, and fingerprint defenses.
+  * **Procedural Old Norse Wisdom**: Dynamic conversational streaming responses with typewriter animation, Eddic sayings, and runic audio cues.
+  * **Memory Carving**: One-click copying of insights ("Carve into Memory") and chat reset ("Purge Raven Memory").
+
+#### Muninn's Memory Vault (`MuninnVault.tsx`)
+* **Permanent Runestones (Bookmarks)**:
+  * Persistent bookmarking system with realm tagging, customizable runes, search filtering, and one-click navigation.
+  * "Carve Tab" quick action anchoring any active conduit permanently into memory.
+* **Threads of Fate (Browsing History)**:
+  * Chronological runic timeline of visited gateways across all nine realms.
+  * "Sever Threads" action for clearing history with runic audio feedback.
+  * Accessible via `Ctrl+M` or the Omnibar Muninn button.
+
+#### Gjallarhorn Procedural Ambient Soundscapes
+* **Web Audio API Elemental Atmosphere**:
+  * Continuous, zero-dependency procedural audio synthesis generating living atmospheric soundscapes for each realm:
+    * *Asgard*: Harmonic drone tuned to 432Hz & 648Hz sacred golden ratio chords.
+    * *Muspelheim*: Deep volcanic sub-bass rumble (55Hz) with random ember crackle impulse filters.
+    * *Jotunheim*: Sub-zero resonant sweeping bandpass glacial winds (420Hz).
+    * *Vanaheim*: Calming nature breeze with 528Hz harmonic resonance.
+    * *Helheim*: Deep subterranean cavern hum (42Hz).
+    * *Nidavellir*: Resonant 110Hz metallic forge anvil tone.
+    * *Midgard / Alfheim*: Gentle coastal rain and cosmic tide swell.
+  * Dynamic cross-fading when switching active realms and dedicated toggle in the HUD.
+
+#### Bifröst Proxy Conduit Matrix (`BifrostMatrix.tsx`)
+* **Per-Realm Network Routing & Tunneling**:
+  * Independent proxy topology per realm: Direct Bifröst, SOCKS5, HTTP, and Tor Stealth Gateway.
+  * Encrypted DNS-over-HTTPS (DoH) resolver configuration per realm (Cloudflare, Mullvad, Google, Quad9).
+  * Localhost bypass toggle for seamless web development in Asgard while retaining stealth in Helheim.
+
+#### Odin's Split-Gaze (`Hliðskjálf Dual-Viewport`)
+* **Multi-Realm Dual Browsing**:
+  * Split-screen viewing container dividing the workspace into two side-by-side viewports.
+  * Central control divider with instant Swap Panes (`ArrowLeftRight`) and Close Split actions.
+  * Dynamic Secondary Gaze picker allowing quick selection of any active tab or branch of Yggdrasil.
+  * Accessible via Omnibar button and shortcut `Ctrl+\`.
+
+#### Brokkr's Extension Forge (`BrokkrForge.tsx`)
+* **User-Scripts & Custom Runic Styles**:
+  * Domain-specific CSS and sandboxed JavaScript injection manager.
+  * Built-in runic presets: *Obsidian Dark Veil* (OLED pure black), *Mímir High-Legibility Typography*, *Cleanse Distractions* (Reader mode), and *Asgard Engineering Monospace*.
+  * Custom Inscription Editor with live enable/disable toggles and URL pattern matching.
+
+---
+
 ## [0.1.0] - 2026-10-20 *(Alpha Release — The Genesis of Mímir)*
 
 The inaugural public alpha proof of concept (POC) for Mímir, the hypermodern, runic-forged web explorer.
@@ -89,4 +163,5 @@ The inaugural public alpha proof of concept (POC) for Mímir, the hypermodern, r
 
 ---
 
+[0.2.0]: https://github.com/indoctrinatedrecluse/Mimir/releases/tag/v0.2.0
 [0.1.0]: https://github.com/indoctrinatedrecluse/Mimir/releases/tag/v0.1.0

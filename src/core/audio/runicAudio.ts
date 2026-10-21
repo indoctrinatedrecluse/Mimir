@@ -148,6 +148,219 @@ class RunicAudioEngine {
     osc.start();
     osc.stop(this.ctx.currentTime + 0.07);
   }
+
+  // ==========================================
+  // GJALLARHORN PROCEDURAL AMBIENT SOUNDSCAPES
+  // ==========================================
+  private ambientGain: GainNode | null = null;
+  private ambientSources: (OscillatorNode | AudioBufferSourceNode)[] = [];
+  private ambientEnabled: boolean = false;
+  private ambientVolume: number = 0.18;
+  private currentAmbientRealm: string | null = null;
+
+  public isAmbientEnabled(): boolean {
+    return this.ambientEnabled;
+  }
+
+  public getAmbientVolume(): number {
+    return this.ambientVolume;
+  }
+
+  public setAmbientVolume(vol: number) {
+    this.ambientVolume = Math.max(0, Math.min(1, vol));
+    if (this.ambientGain && this.ctx) {
+      this.ambientGain.gain.setValueAtTime(this.ambientVolume, this.ctx.currentTime);
+    }
+  }
+
+  public toggleAmbient(realm: string): boolean {
+    if (this.ambientEnabled) {
+      this.stopAmbient();
+    } else {
+      this.startAmbient(realm);
+    }
+    return this.ambientEnabled;
+  }
+
+  public updateAmbientRealm(realm: string) {
+    if (this.ambientEnabled && this.currentAmbientRealm !== realm) {
+      this.startAmbient(realm);
+    }
+  }
+
+  public stopAmbient() {
+    this.ambientEnabled = false;
+    this.currentAmbientRealm = null;
+    if (this.ambientGain && this.ctx) {
+      this.ambientGain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 0.4);
+    }
+    setTimeout(() => {
+      this.ambientSources.forEach((src) => {
+        try {
+          src.stop();
+          src.disconnect();
+        } catch {
+          // ignore
+        }
+      });
+      this.ambientSources = [];
+    }, 450);
+  }
+
+  public startAmbient(realm: string) {
+    this.initContext();
+    if (!this.ctx) return;
+
+    // Clean previous ambient sources
+    this.ambientSources.forEach((src) => {
+      try {
+        src.stop();
+        src.disconnect();
+      } catch {
+        // ignore
+      }
+    });
+    this.ambientSources = [];
+
+    this.ambientEnabled = true;
+    this.currentAmbientRealm = realm;
+
+    if (!this.ambientGain) {
+      this.ambientGain = this.ctx.createGain();
+      this.ambientGain.connect(this.ctx.destination);
+    }
+
+    this.ambientGain.gain.setValueAtTime(0.0001, this.ctx.currentTime);
+    this.ambientGain.gain.exponentialRampToValueAtTime(this.ambientVolume, this.ctx.currentTime + 0.8);
+
+    const now = this.ctx.currentTime;
+
+    // Generate White Noise Buffer for atmospheric winds / fire / water
+    const bufferSize = this.ctx.sampleRate * 2;
+    const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      output[i] = Math.random() * 2 - 1;
+    }
+
+    const whiteNoise = this.ctx.createBufferSource();
+    whiteNoise.buffer = noiseBuffer;
+    whiteNoise.loop = true;
+
+    const noiseFilter = this.ctx.createBiquadFilter();
+    const noiseGain = this.ctx.createGain();
+
+    // Realm-specific elemental tuning
+    if (realm === 'asgard') {
+      // Golden Harmonic Drone (432Hz & 648Hz sacred fifth)
+      noiseFilter.type = 'lowpass';
+      noiseFilter.frequency.setValueAtTime(450, now);
+      noiseGain.gain.setValueAtTime(0.02, now);
+
+      const osc1 = this.ctx.createOscillator();
+      const osc2 = this.ctx.createOscillator();
+      osc1.type = 'sine';
+      osc2.type = 'triangle';
+      osc1.frequency.setValueAtTime(216, now); // Low A
+      osc2.frequency.setValueAtTime(324, now); // Pure 5th E
+
+      const toneGain = this.ctx.createGain();
+      toneGain.gain.setValueAtTime(0.04, now);
+
+      osc1.connect(toneGain);
+      osc2.connect(toneGain);
+      toneGain.connect(this.ambientGain);
+
+      osc1.start();
+      osc2.start();
+      this.ambientSources.push(osc1, osc2);
+    } else if (realm === 'muspelheim') {
+      // Volcanic rumble & fire crackle
+      noiseFilter.type = 'bandpass';
+      noiseFilter.frequency.setValueAtTime(180, now);
+      noiseFilter.Q.setValueAtTime(2.0, now);
+      noiseGain.gain.setValueAtTime(0.08, now);
+
+      const subOsc = this.ctx.createOscillator();
+      subOsc.type = 'sawtooth';
+      subOsc.frequency.setValueAtTime(55, now);
+      const subGain = this.ctx.createGain();
+      subGain.gain.setValueAtTime(0.04, now);
+
+      subOsc.connect(subGain);
+      subGain.connect(this.ambientGain);
+      subOsc.start();
+      this.ambientSources.push(subOsc);
+    } else if (realm === 'jotunheim') {
+      // Sub-zero whistling glacial winds
+      noiseFilter.type = 'bandpass';
+      noiseFilter.frequency.setValueAtTime(420, now);
+      noiseFilter.Q.setValueAtTime(3.5, now);
+      noiseGain.gain.setValueAtTime(0.07, now);
+    } else if (realm === 'vanaheim') {
+      // Gentle nature breeze & high chime drone (528Hz Love/Nature frequency)
+      noiseFilter.type = 'lowpass';
+      noiseFilter.frequency.setValueAtTime(350, now);
+      noiseGain.gain.setValueAtTime(0.04, now);
+
+      const osc = this.ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(528, now);
+      const toneGain = this.ctx.createGain();
+      toneGain.gain.setValueAtTime(0.015, now);
+
+      osc.connect(toneGain);
+      toneGain.connect(this.ambientGain);
+      osc.start();
+      this.ambientSources.push(osc);
+    } else if (realm === 'helheim') {
+      // Subterranean underworld cavern hum
+      noiseFilter.type = 'lowpass';
+      noiseFilter.frequency.setValueAtTime(90, now);
+      noiseGain.gain.setValueAtTime(0.09, now);
+
+      const osc = this.ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(42, now);
+      const toneGain = this.ctx.createGain();
+      toneGain.gain.setValueAtTime(0.05, now);
+
+      osc.connect(toneGain);
+      toneGain.connect(this.ambientGain);
+      osc.start();
+      this.ambientSources.push(osc);
+    } else if (realm === 'nidavellir') {
+      // Dwarven forge anvil drone (110Hz + warm lowpass noise)
+      noiseFilter.type = 'bandpass';
+      noiseFilter.frequency.setValueAtTime(240, now);
+      noiseFilter.Q.setValueAtTime(1.5, now);
+      noiseGain.gain.setValueAtTime(0.06, now);
+
+      const osc = this.ctx.createOscillator();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(110, now);
+      const toneGain = this.ctx.createGain();
+      toneGain.gain.setValueAtTime(0.03, now);
+
+      osc.connect(toneGain);
+      toneGain.connect(this.ambientGain);
+      osc.start();
+      this.ambientSources.push(osc);
+    } else {
+      // Midgard, Alfheim, Niflheim: Soothing rain & gentle cosmic tide
+      noiseFilter.type = 'lowpass';
+      noiseFilter.frequency.setValueAtTime(260, now);
+      noiseGain.gain.setValueAtTime(0.05, now);
+    }
+
+    whiteNoise.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(this.ambientGain);
+
+    whiteNoise.start();
+    this.ambientSources.push(whiteNoise);
+  }
 }
 
 export const runicAudio = new RunicAudioEngine();
+
