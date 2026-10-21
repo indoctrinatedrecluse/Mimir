@@ -11,6 +11,8 @@ interface OmnibarProps {
   activeRealm: RealmId;
   onNavigate: (url: string) => void;
   isLoading?: boolean;
+  onToggleHuginn?: () => void;
+  isHuginnOpen?: boolean;
 }
 
 interface Suggestion {
@@ -25,6 +27,8 @@ export const Omnibar: React.FC<OmnibarProps> = ({
   activeRealm,
   onNavigate,
   isLoading = false,
+  onToggleHuginn,
+  isHuginnOpen = false,
 }) => {
   const [inputVal, setInputVal] = useState(currentUrl);
   const [isFocused, setIsFocused] = useState(false);
@@ -287,17 +291,20 @@ export const Omnibar: React.FC<OmnibarProps> = ({
         <button
           onClick={() => {
             runicAudio.playChime();
+            onToggleHuginn?.();
           }}
-          className="group flex h-8 items-center space-x-1.5 rounded border px-3 text-[11px] font-bold tracking-wider transition-all backdrop-blur-md active:scale-95"
+          className={`group flex h-8 items-center space-x-1.5 rounded border px-3 text-[11px] font-bold tracking-wider transition-all backdrop-blur-md active:scale-95 ${
+            isHuginnOpen ? 'ring-1 ring-cyan-400 brightness-125' : ''
+          }`}
           style={{
-            borderColor: `${theme.accentColor}40`,
-            backgroundColor: `${theme.accentColor}15`,
+            borderColor: `${theme.accentColor}50`,
+            backgroundColor: isHuginnOpen ? `${theme.accentColor}30` : `${theme.accentColor}15`,
             color: theme.accentColor,
-            boxShadow: `0 0 10px ${theme.glowColor}`,
+            boxShadow: `0 0 12px ${theme.glowColor}`,
           }}
-          title="Huginn AI — Scout, summarize and divine the current page"
+          title="Huginn AI — Raven of Thought (Toggle Intelligence Panel)"
         >
-          <Sparkles className="h-3.5 w-3.5 transition-transform group-hover:rotate-12" />
+          <Sparkles className={`h-3.5 w-3.5 transition-transform group-hover:rotate-12 ${isHuginnOpen ? 'animate-pulse' : ''}`} />
           <span className="hidden md:inline font-mono">HUGINN</span>
         </button>
       </div>

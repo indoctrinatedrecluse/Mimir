@@ -7,6 +7,7 @@ import { StatusBar } from '@/components/hud/StatusBar';
 import { RealmSelector } from '@/components/realms/RealmSelector';
 import { RunicAtmosphere } from '@/components/hud/RunicAtmosphere';
 import { SplashScreen } from '@/components/splash/SplashScreen';
+import { HuginnPanel } from '@/components/ai/HuginnPanel';
 import { Tab, RealmId } from '@/types';
 import { runicAudio } from '@/core/audio/runicAudio';
 import { mimirIpc } from '@/core/ipc/bridge';
@@ -43,6 +44,7 @@ export const App: React.FC = () => {
   const [activeRealm, setActiveRealm] = useState<RealmId>('midgard');
   const [isTabTreeCollapsed, setIsTabTreeCollapsed] = useState(false);
   const [isRealmSelectorOpen, setIsRealmSelectorOpen] = useState(false);
+  const [isHuginnOpen, setIsHuginnOpen] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
 
   const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0];
@@ -70,9 +72,16 @@ export const App: React.FC = () => {
           handleCloseTab(activeTab.id);
         }
       }
-      // Esc: Close modals
+      // Ctrl+H or Ctrl+I: Toggle Huginn AI Panel
+      if (e.ctrlKey && (e.key.toLowerCase() === 'h' || e.key.toLowerCase() === 'i')) {
+        e.preventDefault();
+        runicAudio.playChime();
+        setIsHuginnOpen((prev) => !prev);
+      }
+      // Esc: Close modals & drawers
       if (e.key === 'Escape') {
         setIsRealmSelectorOpen(false);
+        setIsHuginnOpen(false);
       }
     };
 
@@ -196,6 +205,8 @@ export const App: React.FC = () => {
         activeRealm={activeRealm}
         onNavigate={handleNavigate}
         isLoading={activeTab?.isLoading}
+        onToggleHuginn={() => setIsHuginnOpen((prev) => !prev)}
+        isHuginnOpen={isHuginnOpen}
       />
 
       {/* Layer 3: Main Workspace (Yggdrasil Tree + Content Viewport) */}
@@ -234,6 +245,14 @@ export const App: React.FC = () => {
           runicAudio.playRunicHum();
         }}
         onClose={() => setIsRealmSelectorOpen(false)}
+      />
+
+      {/* Slide-out: Huginn AI Intelligence Drawer */}
+      <HuginnPanel
+        isOpen={isHuginnOpen}
+        onClose={() => setIsHuginnOpen(false)}
+        activeRealm={activeRealm}
+        currentTab={activeTab}
       />
     </div>
   );

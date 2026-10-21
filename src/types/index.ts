@@ -1,18 +1,25 @@
 export type RealmId = 
   | 'midgard'     // General / Everyday
-  | 'asgard'      // Development / Tech
-  | 'vanaheim'    // Media / Entertainment
-  | 'alfheim'     // Design / Reading
-  | 'helheim'     // Stealth / Private
-  | 'muspelheim'; // Gaming / High Performance
+  | 'asgard'      // Development / Tech / Divine
+  | 'vanaheim'    // Media / Entertainment / Nature
+  | 'alfheim'     // Design / Reading / Light
+  | 'jotunheim'   // Storage / Heavy Data / Frost
+  | 'muspelheim'  // High Performance / Gaming / Fire
+  | 'niflheim'    // Security / DevTools / Mist
+  | 'nidavellir'  // Extensions / WebAssembly / Forges
+  | 'helheim';    // Stealth / Ephemeral / Underworld
 
 export interface Realm {
   id: RealmId;
   name: string;
   norseName: string;
   rune: string;
+  ruler: string;
+  rulerTitle: string;
   description: string;
   accentColor: string;
+  bgUrl: string;
+  quote: string;
 }
 
 export interface Tab {

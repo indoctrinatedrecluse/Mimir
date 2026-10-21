@@ -107,11 +107,26 @@ export const ContentViewport: React.FC<ContentViewportProps> = ({
       ) : isHome ? (
         /* The Sacred Well of Mímisbrunnr (New Blank Tab Sanctuary) */
         <div className="relative flex h-full w-full flex-col items-center justify-between p-6 overflow-y-auto z-10">
+          {/* Realm Ruler Cinematic Background Image with Atmospheric Veil */}
+          <div
+            className="absolute inset-0 z-0 bg-cover bg-center transition-all duration-1000 scale-105"
+            style={{
+              backgroundImage: `url('${realm.bgUrl}')`,
+            }}
+          >
+            {/* Obsidian Glass Gradient Overlays to preserve contrast & readability */}
+            <div className="absolute inset-0 bg-gradient-to-b from-[#040711]/85 via-[#060914]/80 to-[#03050a]/95 backdrop-blur-[3px]" />
+            <div
+              className="absolute inset-0 opacity-20 mix-blend-color-dodge transition-opacity duration-700 pointer-events-none"
+              style={{ backgroundColor: theme.accentColor }}
+            />
+          </div>
+
           {/* Background Decorative Layer: Yggdrasil Roots & Ambient Knotwork */}
           <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
             {/* Deep subterranean roots */}
             <div
-              className="absolute bottom-0 inset-x-0 w-full h-80 opacity-30 transition-opacity duration-700"
+              className="absolute bottom-0 inset-x-0 w-full h-80 opacity-20 transition-opacity duration-700"
               style={{ color: theme.accentColor }}
             >
               <YggdrasilRootsSvg className="w-full h-full object-cover" />
@@ -140,47 +155,93 @@ export const ContentViewport: React.FC<ContentViewportProps> = ({
             />
           </div>
 
-          {/* Top Section: Hávamál Stanza of Ancient Wisdom */}
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="relative z-10 w-full max-w-2xl rounded-xl border border-white/10 bg-[#070b14]/75 p-4 backdrop-blur-xl shadow-xl"
-            style={{
-              borderColor: `${theme.accentColor}25`,
-              boxShadow: `0 8px 30px -10px rgba(0,0,0,0.7), 0 0 15px -3px ${theme.glowColor}`,
-            }}
-          >
-            <div className="flex items-center justify-between border-b border-white/5 pb-2 text-[10px] text-slate-400">
-              <div className="flex items-center space-x-2">
-                <Feather className="h-3 w-3 text-cyan-400" />
-                <span className="font-mono font-bold tracking-wider uppercase text-slate-300">
-                  HÁVAMÁL — Stanza {havamal.stanzaNumber}
-                </span>
-                <span className="rounded bg-white/5 px-1.5 py-0.2 text-[9px] text-slate-400">
-                  {havamal.context}
+          {/* Top Section: Realm Ruler & Hávamál Stanza */}
+          <div className="relative z-10 w-full max-w-3xl flex flex-col sm:flex-row gap-3">
+            {/* Ruler Lore Card */}
+            <motion.div
+              initial={{ opacity: 0, x: -15 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="flex-1 rounded-xl border border-white/10 bg-[#070b14]/85 p-3.5 backdrop-blur-xl shadow-xl flex items-center space-x-3.5"
+              style={{
+                borderColor: `${theme.accentColor}30`,
+                boxShadow: `0 8px 30px -10px rgba(0,0,0,0.7), 0 0 15px -4px ${theme.glowColor}`,
+              }}
+            >
+              {/* Ruler Avatar/Rune Badge */}
+              <div
+                className="relative h-12 w-12 rounded-lg overflow-hidden border flex items-center justify-center shrink-0 shadow-inner"
+                style={{ borderColor: `${theme.accentColor}60` }}
+              >
+                <img
+                  src={realm.bgUrl}
+                  alt={realm.ruler}
+                  className="absolute inset-0 h-full w-full object-cover opacity-80"
+                />
+                <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" />
+                <span className="relative z-10 text-xl font-black" style={{ color: theme.accentColor }}>
+                  {realm.rune}
                 </span>
               </div>
 
-              <button
-                onClick={cycleHavamal}
-                className="group flex items-center space-x-1 text-slate-400 hover:text-white transition-colors"
-                title="Drink anew from the Well (New Stanza)"
-              >
-                <span className="text-[9px] font-mono">DRINK ANEW</span>
-                <RefreshCw className="h-2.5 w-2.5 transition-transform group-hover:rotate-180" />
-              </button>
-            </div>
+              {/* Ruler Info */}
+              <div className="flex flex-col min-w-0">
+                <div className="flex items-center space-x-2">
+                  <span className="text-[10px] font-mono tracking-widest uppercase font-bold text-slate-400">
+                    SOVEREIGN OF {realm.norseName.toUpperCase()}
+                  </span>
+                  <span
+                    className="rounded px-1.5 py-0.2 text-[9px] font-bold uppercase"
+                    style={{
+                      backgroundColor: `${theme.accentColor}20`,
+                      color: theme.accentColor,
+                    }}
+                  >
+                    {realm.ruler}
+                  </span>
+                </div>
+                <div className="text-xs font-semibold text-slate-200 truncate">
+                  {realm.rulerTitle}
+                </div>
+                <p className="text-[10px] italic text-slate-400 font-serif line-clamp-1 mt-0.5">
+                  "{realm.quote}"
+                </p>
+              </div>
+            </motion.div>
 
-            {/* Old Norse Inscription */}
-            <p className="mt-2 text-xs italic font-serif text-slate-300 tracking-wide text-center">
-              "{havamal.oldNorse}"
-            </p>
+            {/* Hávamál Stanza */}
+            <motion.div
+              initial={{ opacity: 0, x: 15 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="flex-1 rounded-xl border border-white/10 bg-[#070b14]/85 p-3.5 backdrop-blur-xl shadow-xl flex flex-col justify-between"
+              style={{
+                borderColor: `${theme.accentColor}25`,
+                boxShadow: `0 8px 30px -10px rgba(0,0,0,0.7), 0 0 15px -4px ${theme.glowColor}`,
+              }}
+            >
+              <div className="flex items-center justify-between border-b border-white/5 pb-1.5 text-[10px] text-slate-400">
+                <div className="flex items-center space-x-1.5">
+                  <Feather className="h-3 w-3" style={{ color: theme.accentColor }} />
+                  <span className="font-mono font-bold tracking-wider uppercase text-slate-300">
+                    HÁVAMÁL {havamal.stanzaNumber}
+                  </span>
+                </div>
 
-            {/* English Wisdom */}
-            <p className="mt-1 text-xs text-slate-400 text-center font-sans">
-              {havamal.english}
-            </p>
-          </motion.div>
+                <button
+                  onClick={cycleHavamal}
+                  className="group flex items-center space-x-1 text-slate-400 hover:text-white transition-colors"
+                  title="Drink anew from the Well (New Stanza)"
+                >
+                  <span className="text-[9px] font-mono">DRINK ANEW</span>
+                  <RefreshCw className="h-2.5 w-2.5 transition-transform group-hover:rotate-180" />
+                </button>
+              </div>
+
+              {/* English Wisdom */}
+              <p className="mt-1.5 text-[11px] text-slate-300 font-serif italic line-clamp-2 leading-relaxed">
+                "{havamal.english}"
+              </p>
+            </motion.div>
+          </div>
 
           {/* Central Sanctum: The Eye of Mímir & Search Pool */}
           <div className="relative z-10 flex flex-col items-center justify-center my-auto w-full max-w-2xl">

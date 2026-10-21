@@ -70,7 +70,7 @@ export const RunicAtmosphere: React.FC<RunicAtmosphereProps> = ({ activeRealm })
       const currentTheme = themeRef.current;
       const currentRealm = realmRef.current;
 
-      // 1. Draw Mythological Realm Waves (Bifröst Aurora / Golden Haze / Volcanic Glow)
+      // 1. Draw Mythological Realm Waves & Atmospheric Overlays
       if (currentRealm === 'midgard' || currentRealm === 'alfheim') {
         // Bifröst Aurora Borealis wave curtains
         ctx.save();
@@ -106,28 +106,77 @@ export const RunicAtmosphere: React.FC<RunicAtmosphereProps> = ({ activeRealm })
       } else if (currentRealm === 'muspelheim') {
         // Volcanic fire glow rising from bottom
         ctx.save();
-        const fireGrad = ctx.createLinearGradient(0, height, 0, height - 200);
-        fireGrad.addColorStop(0, 'rgba(251, 113, 133, 0.09)');
-        fireGrad.addColorStop(0.5, 'rgba(244, 63, 94, 0.04)');
+        const fireGrad = ctx.createLinearGradient(0, height, 0, height - 220);
+        fireGrad.addColorStop(0, 'rgba(251, 113, 133, 0.12)');
+        fireGrad.addColorStop(0.5, 'rgba(244, 63, 94, 0.05)');
         fireGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
         ctx.fillStyle = fireGrad;
-        ctx.fillRect(0, height - 200, width, 200);
+        ctx.fillRect(0, height - 220, width, 220);
+        ctx.restore();
+      } else if (currentRealm === 'niflheim') {
+        // Chilling serpent fog across screen
+        ctx.save();
+        const fogGrad = ctx.createLinearGradient(0, height / 2, width, height / 2);
+        fogGrad.addColorStop(0, 'rgba(103, 232, 249, 0.04)');
+        fogGrad.addColorStop(0.5, 'rgba(6, 182, 212, 0.07)');
+        fogGrad.addColorStop(1, 'rgba(103, 232, 249, 0.03)');
+        ctx.fillStyle = fogGrad;
+        ctx.fillRect(0, 0, width, height);
+        ctx.restore();
+      } else if (currentRealm === 'nidavellir') {
+        // Warm subterranean forge ambience from bottom center
+        ctx.save();
+        const forgeGrad = ctx.createRadialGradient(width / 2, height, 10, width / 2, height, height * 0.7);
+        forgeGrad.addColorStop(0, 'rgba(249, 115, 22, 0.12)');
+        forgeGrad.addColorStop(0.5, 'rgba(234, 88, 12, 0.04)');
+        forgeGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = forgeGrad;
+        ctx.fillRect(0, 0, width, height);
+        ctx.restore();
+      } else if (currentRealm === 'helheim') {
+        // Shadows of the abyss from corners
+        ctx.save();
+        const abyssGrad = ctx.createRadialGradient(width / 2, height / 2, 50, width / 2, height / 2, width * 0.7);
+        abyssGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+        abyssGrad.addColorStop(1, 'rgba(192, 132, 252, 0.07)');
+        ctx.fillStyle = abyssGrad;
+        ctx.fillRect(0, 0, width, height);
         ctx.restore();
       }
 
-      // 2. Draw Realm Particles (Embers for Muspelheim, Stardust for Asgard, Frost for Helheim)
+      // 2. Draw Realm Particles
       particles.forEach((p, idx) => {
         // Realm-specific motion adjustments
         if (currentRealm === 'muspelheim') {
           // Accelerating upward embers with turbulent horizontal flicker
-          p.y -= Math.random() * 0.8 + 0.3;
-          p.x += Math.sin(time * 3 + idx) * 0.5;
+          p.y -= Math.random() * 0.9 + 0.4;
+          p.x += Math.sin(time * 3 + idx) * 0.6;
+        } else if (currentRealm === 'jotunheim') {
+          // Glacial snowfall drifting diagonally downward
+          p.y += Math.random() * 0.7 + 0.3;
+          p.x += Math.sin(time + idx) * 0.4 - 0.2;
+        } else if (currentRealm === 'niflheim') {
+          // Slow crawling serpent mist
+          p.y += Math.sin(time * 0.5 + idx) * 0.2;
+          p.x += Math.cos(time * 0.5 + idx) * 0.3 + 0.1;
+        } else if (currentRealm === 'nidavellir') {
+          // Forge sparks - explosive short burst motion
+          p.y -= Math.random() * 1.1 + 0.2;
+          p.x += (Math.random() - 0.5) * 1.2;
+        } else if (currentRealm === 'vanaheim') {
+          // Floating pollen & bio-spores rising gently
+          p.y += p.speedY * 0.5;
+          p.x += Math.sin(time * 1.5 + idx) * 0.5;
         } else if (currentRealm === 'asgard') {
-          // Gentle floating celestial stardust
+          // Gentle celestial stardust
           p.y += p.speedY * 0.7;
           p.x += p.speedX * 0.7;
+        } else if (currentRealm === 'helheim') {
+          // Ghostly amethyst wisps drifting slowly upward
+          p.y -= Math.random() * 0.3 + 0.1;
+          p.x += Math.sin(time * 0.8 + idx) * 0.3;
         } else {
-          // Standard runic drift
+          // Standard runic drift for Midgard & Alfheim
           p.y += p.speedY;
           p.x += p.speedX;
         }
@@ -146,19 +195,19 @@ export const RunicAtmosphere: React.FC<RunicAtmosphereProps> = ({ activeRealm })
         if (p.x < -20) p.x = width + 10;
         if (p.x > width + 20) p.x = -10;
 
-        const currentOpacity = Math.max(0.04, Math.min(0.4, p.opacity));
+        const currentOpacity = Math.max(0.04, Math.min(0.45, p.opacity));
 
         if (p.rune) {
           ctx.font = '13px "Segoe UI Historic", sans-serif';
           ctx.fillStyle = currentTheme.accentColor;
-          ctx.globalAlpha = currentOpacity * 0.85;
+          ctx.globalAlpha = currentOpacity * 0.9;
           ctx.fillText(p.rune, p.x, p.y);
         } else {
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
           ctx.fillStyle = currentTheme.accentColor;
           ctx.globalAlpha = currentOpacity;
-          ctx.shadowBlur = currentRealm === 'asgard' || currentRealm === 'midgard' ? 12 : 6;
+          ctx.shadowBlur = currentRealm === 'asgard' || currentRealm === 'midgard' || currentRealm === 'nidavellir' ? 12 : 6;
           ctx.shadowColor = currentTheme.accentColor;
           ctx.fill();
           ctx.shadowBlur = 0;
