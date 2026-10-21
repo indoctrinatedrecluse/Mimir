@@ -82,12 +82,14 @@ export const RealmSelector: React.FC<RealmSelectorProps> = ({
                     }}
                     className={`group relative flex flex-col rounded-xl border p-3.5 text-left transition-all overflow-hidden ${
                       isCurrent
-                        ? 'border-cyan-400 bg-cyan-500/10 shadow-[0_0_20px_rgba(0,245,255,0.25)] scale-[1.01]'
+                        ? 'scale-[1.01] shadow-lg'
                         : 'border-white/10 bg-[#090e1a]/90 hover:border-white/30 hover:bg-[#0c1424] hover:scale-[1.01]'
                     }`}
                     style={{
                       borderColor: isCurrent ? realm.accentColor : undefined,
-                      boxShadow: isCurrent ? `0 0 20px ${realm.accentColor}40` : undefined,
+                      backgroundColor: isCurrent ? `${realm.accentColor}18` : undefined,
+                      boxShadow: isCurrent ? `0 0 25px ${realm.accentColor}40` : undefined,
+                      borderWidth: isCurrent ? '1.5px' : '1px',
                     }}
                   >
                     {/* Realm Ruler Background Silhouette Thumbnail */}

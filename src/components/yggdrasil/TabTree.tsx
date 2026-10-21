@@ -166,7 +166,7 @@ export const TabTree: React.FC<TabTreeProps> = ({
                   <div
                     className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-xs font-bold transition-all border ${
                       isActive
-                        ? 'border-cyan-400/50 shadow-md font-black'
+                        ? 'shadow-md font-black'
                         : 'border-white/5 bg-white/[0.03] text-slate-500 group-hover:text-slate-300'
                     }`}
                     style={{

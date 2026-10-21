@@ -128,6 +128,14 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [tabs, activeTabId, activeRealm]);
 
+  const handleSelectRealm = (realm: RealmId) => {
+    setActiveRealm(realm);
+    setTabs((prev) =>
+      prev.map((t) => (t.id === activeTabId ? { ...t, realm } : t))
+    );
+    runicAudio.playRunicHum();
+  };
+
   const handleSelectTab = (id: string) => {
     setTabs((prev) =>
       prev.map((t) => ({
@@ -136,6 +144,10 @@ export const App: React.FC = () => {
       }))
     );
     setActiveTabId(id);
+    const target = tabs.find((t) => t.id === id);
+    if (target?.realm) {
+      setActiveRealm(target.realm);
+    }
     mimirIpc.send({ type: 'SWITCH_TAB', payload: { tabId: id } });
   };
 
@@ -277,10 +289,7 @@ export const App: React.FC = () => {
           activeTab={activeTab}
           activeRealm={activeRealm}
           onNavigate={handleNavigate}
-          onSelectRealm={(r) => {
-            setActiveRealm(r);
-            runicAudio.playRunicHum();
-          }}
+          onSelectRealm={handleSelectRealm}
           isSplitGaze={isSplitGaze}
           splitTab={splitTab}
           tabs={tabs}
@@ -303,10 +312,7 @@ export const App: React.FC = () => {
       <RealmSelector
         isOpen={isRealmSelectorOpen}
         activeRealm={activeRealm}
-        onSelectRealm={(r) => {
-          setActiveRealm(r);
-          runicAudio.playRunicHum();
-        }}
+        onSelectRealm={handleSelectRealm}
         onClose={() => setIsRealmSelectorOpen(false)}
       />
 
@@ -352,10 +358,7 @@ export const App: React.FC = () => {
           setIsAmbientPlaying(nextState);
         }}
         isAmbientPlaying={isAmbientPlaying}
-        onSelectRealm={(r) => {
-          setActiveRealm(r);
-          runicAudio.playRunicHum();
-        }}
+        onSelectRealm={handleSelectRealm}
         onNavigateHome={() => handleNavigate('mimir://newtab')}
         onRefresh={() => {
           if (activeTab?.url) {

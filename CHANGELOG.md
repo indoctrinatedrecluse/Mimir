@@ -59,6 +59,12 @@ Major upgrade introducing intelligent multi-source autosuggestion ranking in the
   * Added the full realm description text below ruler quotes for richer cosmological context.
   * Removed `line-clamp-2` on English translation stanzas in the Hávamál wisdom card, ensuring ancient philosophical verses from the Poetic Edda are completely legible without truncation.
 
+#### Realm Selection Synchronization & Persistent Highlighting
+* **Cosmic Realm Highlighting Fix (`ContentViewport.tsx`, `App.tsx`, `RealmSelector.tsx`)**:
+  * Corrected realm selection comparison logic (`isSelected = isPrimary ? rId === activeRealm : ...`) so the currently active realm is accurately highlighted instead of defaulting to Midgard.
+  * Synchronized tab realm state on selection and tab switching so each tab retains its bound realm identity.
+  * Enhanced active realm visual presence with dedicated accent glows, pulsating active runic markers, and theme-colored borders across both the Sacred Well quick switcher and the Nine Realms modal dialog.
+
 ---
 
 ## [0.2.0] - 2026-10-21 *(The Nine Realms & Sovereign Wisdom)*

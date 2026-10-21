@@ -350,7 +350,7 @@ export const ContentViewport: React.FC<ContentViewportProps> = ({
         </span>
         {(Object.keys(REALMS) as RealmId[]).map((rId) => {
           const rItem = REALMS[rId];
-          const isSelected = rId === (tab?.realm || activeRealm);
+          const isSelected = isPrimary ? rId === activeRealm : rId === (tab?.realm || r.id);
           return (
             <button
               key={rId}
@@ -358,19 +358,30 @@ export const ContentViewport: React.FC<ContentViewportProps> = ({
                 runicAudio.playRunicHum();
                 onSelectRealm(rId);
               }}
-              className={`flex items-center space-x-1 rounded-md px-2 py-0.5 text-[10px] font-medium transition-all ${
+              className={`flex items-center space-x-1.5 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all ${
                 isSelected
-                  ? 'border bg-white/10 text-white shadow-md'
+                  ? 'text-white shadow-lg scale-105'
                   : 'border border-white/5 bg-white/[0.02] text-slate-400 hover:text-slate-200 hover:bg-white/5'
               }`}
               style={{
                 borderColor: isSelected ? rItem.accentColor : undefined,
+                backgroundColor: isSelected ? `${rItem.accentColor}25` : undefined,
+                boxShadow: isSelected
+                  ? `0 0 16px ${rItem.accentColor}50, inset 0 0 8px ${rItem.accentColor}20`
+                  : undefined,
+                borderWidth: isSelected ? '1.5px' : '1px',
               }}
             >
-              <span className="font-bold text-[11px]" style={{ color: rItem.accentColor }}>
+              <span className="font-bold text-xs" style={{ color: rItem.accentColor }}>
                 {rItem.rune}
               </span>
               <span>{rItem.name}</span>
+              {isSelected && (
+                <span
+                  className="h-1.5 w-1.5 rounded-full animate-pulse ml-0.5"
+                  style={{ backgroundColor: rItem.accentColor }}
+                />
+              )}
             </button>
           );
         })}
