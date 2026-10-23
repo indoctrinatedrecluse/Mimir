@@ -30,8 +30,10 @@ export interface Tab {
   isActive: boolean;
   isLoading: boolean;
   isMuted: boolean;
+  isPinned: boolean;
   realm: RealmId;
   rune: string;
+  zoomLevel: number;
 }
 
 export interface RunicWardStats {

@@ -35,6 +35,33 @@ pub enum IpcCommand {
     #[serde(rename = "UPDATE_VIEWPORT_BOUNDS")]
     UpdateViewportBounds { payload: ViewportBounds },
 
+    #[serde(rename = "ZOOM_IN")]
+    ZoomIn,
+
+    #[serde(rename = "ZOOM_OUT")]
+    ZoomOut,
+
+    #[serde(rename = "ZOOM_RESET")]
+    ZoomReset,
+
+    #[serde(rename = "PRINT")]
+    Print,
+
+    #[serde(rename = "FIND_IN_PAGE")]
+    FindInPage { payload: FindInPagePayload },
+
+    #[serde(rename = "FIND_NEXT")]
+    FindNext,
+
+    #[serde(rename = "FIND_PREVIOUS")]
+    FindPrevious,
+
+    #[serde(rename = "FIND_CLOSE")]
+    FindClose,
+
+    #[serde(rename = "DUPLICATE_TAB")]
+    DuplicateTab { payload: DuplicateTabPayload },
+
     #[serde(rename = "WINDOW_MINIMIZE")]
     WindowMinimize,
 
@@ -70,4 +97,17 @@ pub struct CloseTabPayload {
 pub struct SwitchTabPayload {
     #[serde(rename = "tabId")]
     pub tab_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FindInPagePayload {
+    pub query: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DuplicateTabPayload {
+    #[serde(rename = "tabId")]
+    pub tab_id: String,
+    #[serde(rename = "newTabId")]
+    pub new_tab_id: String,
 }

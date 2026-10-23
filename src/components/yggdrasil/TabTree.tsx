@@ -5,7 +5,7 @@ import { mimirIpc } from '@/core/ipc/bridge';
 import { REALM_THEMES } from '@/components/themes/realmThemes';
 import { NorseKnotworkRibbon } from '@/components/themes/NorsePatterns';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X, Volume2, VolumeX, ChevronLeft, ChevronRight, History, Terminal } from 'lucide-react';
+import { Plus, X, Volume2, VolumeX, ChevronLeft, ChevronRight, History, Terminal, Pin, PinOff, Copy } from 'lucide-react';
 
 interface TabTreeProps {
   tabs: Tab[];
@@ -17,6 +17,8 @@ interface TabTreeProps {
   isCollapsed: boolean;
   onToggleCollapse: () => void;
   onOpenCommandPalette?: () => void;
+  onTogglePinTab?: (id: string) => void;
+  onDuplicateTab?: (id: string) => void;
 }
 
 export const TabTree: React.FC<TabTreeProps> = ({
@@ -29,6 +31,8 @@ export const TabTree: React.FC<TabTreeProps> = ({
   isCollapsed,
   onToggleCollapse,
   onOpenCommandPalette,
+  onTogglePinTab,
+  onDuplicateTab,
 }) => {
   const theme = REALM_THEMES[activeRealm] || REALM_THEMES.midgard;
 
@@ -164,7 +168,7 @@ export const TabTree: React.FC<TabTreeProps> = ({
                 >
                   {/* Left Runic Sigil Frame */}
                   <div
-                    className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-xs font-bold transition-all border ${
+                    className={`relative flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-xs font-bold transition-all border ${
                       isActive
                         ? 'shadow-md font-black'
                         : 'border-white/5 bg-white/[0.03] text-slate-500 group-hover:text-slate-300'
@@ -176,21 +180,33 @@ export const TabTree: React.FC<TabTreeProps> = ({
                     }}
                   >
                     {tab.rune}
+                    {tab.isPinned && (
+                      <span
+                        className="absolute -top-1 -right-1 flex h-2.5 w-2.5 items-center justify-center rounded-full"
+                        style={{ backgroundColor: theme.accentColor }}
+                        title="Pinned Branch"
+                      />
+                    )}
                   </div>
 
                   {/* Expanded Content: Title & Audio indicator */}
                   {!isCollapsed && (
                     <div className="ml-2.5 flex flex-1 items-center justify-between overflow-hidden">
                       <div className="flex flex-col truncate pr-1">
-                        <span className="truncate text-[11px] font-semibold tracking-wide">
-                          {tab.title}
-                        </span>
+                        <div className="flex items-center space-x-1">
+                          {tab.isPinned && (
+                            <Pin className="h-2.5 w-2.5 shrink-0 opacity-70" style={{ color: theme.accentColor }} />
+                          )}
+                          <span className="truncate text-[11px] font-semibold tracking-wide">
+                            {tab.title}
+                          </span>
+                        </div>
                         <span className="truncate text-[9px] font-mono text-slate-500">
                           {tab.url.replace(/^https?:\/\//, '') || 'Sacred Spring'}
                         </span>
                       </div>
 
-                      {/* Right icons: Audio / Close */}
+                      {/* Right icons: Pin, Duplicate, Audio, Close */}
                       <div className="flex items-center space-x-1 pl-1">
                         {tab.isMuted && (
                           <VolumeX className="h-3 w-3 text-slate-500" />
@@ -199,18 +215,51 @@ export const TabTree: React.FC<TabTreeProps> = ({
                           <Volume2 className="h-3 w-3 animate-pulse" style={{ color: theme.accentColor }} />
                         )}
 
+                        {/* Quick Pin Toggle Button */}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            runicAudio.playTabClose();
-                            onCloseTab(tab.id);
-                            mimirIpc.send({ type: 'CLOSE_TAB', payload: { tabId: tab.id } });
+                            runicAudio.playClick(650);
+                            onTogglePinTab?.(tab.id);
                           }}
-                          className="flex h-5 w-5 items-center justify-center rounded text-slate-500 opacity-0 transition-all hover:bg-rose-500/20 hover:text-rose-400 group-hover:opacity-100"
-                          title="Sever Branch (Close Tab)"
+                          className={`flex h-5 w-5 items-center justify-center rounded transition-all ${
+                            tab.isPinned
+                              ? 'text-amber-400 opacity-90 hover:text-amber-300'
+                              : 'text-slate-500 opacity-0 hover:bg-white/10 hover:text-white group-hover:opacity-100'
+                          }`}
+                          title={tab.isPinned ? "Unpin Branch" : "Pin Branch of Fate"}
                         >
-                          <X className="h-3 w-3" />
+                          {tab.isPinned ? <PinOff className="h-2.5 w-2.5" /> : <Pin className="h-2.5 w-2.5" />}
                         </button>
+
+                        {/* Duplicate Tab Button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            runicAudio.playClick(600);
+                            onDuplicateTab?.(tab.id);
+                          }}
+                          className="flex h-5 w-5 items-center justify-center rounded text-slate-500 opacity-0 transition-all hover:bg-white/10 hover:text-white group-hover:opacity-100"
+                          title="Duplicate Branch of Fate"
+                        >
+                          <Copy className="h-2.5 w-2.5" />
+                        </button>
+
+                        {/* Close Tab Button */}
+                        {!tab.isPinned && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              runicAudio.playTabClose();
+                              onCloseTab(tab.id);
+                              mimirIpc.send({ type: 'CLOSE_TAB', payload: { tabId: tab.id } });
+                            }}
+                            className="flex h-5 w-5 items-center justify-center rounded text-slate-500 opacity-0 transition-all hover:bg-rose-500/20 hover:text-rose-400 group-hover:opacity-100"
+                            title="Sever Branch (Close Tab)"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   )}

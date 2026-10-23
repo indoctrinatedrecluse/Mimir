@@ -12,12 +12,28 @@ import { MuninnVault } from '@/components/muninn/MuninnVault';
 import { BifrostMatrix } from '@/components/network/BifrostMatrix';
 import { BrokkrForge } from '@/components/forge/BrokkrForge';
 import { CommandPalette } from '@/components/palette/CommandPalette';
+import { RuneSeeker } from '@/components/hud/RuneSeeker';
+import { MimirsHoard, DownloadItem } from '@/components/hud/MimirsHoard';
+import { FateThreadPurge } from '@/components/hud/FateThreadPurge';
 import { Tab, RealmId } from '@/types';
 import { runicAudio } from '@/core/audio/runicAudio';
 import { mimirIpc } from '@/core/ipc/bridge';
 import { AnimatePresence } from 'framer-motion';
 
-const INITIAL_TABS: Tab[] = [
+const getInitialRealm = (): RealmId => {
+  try {
+    const saved = localStorage.getItem('mimir_active_realm');
+    if (
+      saved &&
+      ['midgard', 'asgard', 'helheim', 'jotunheim', 'alfheim', 'svartalfheim', 'vanaheim', 'muspelheim', 'niflheim'].includes(saved)
+    ) {
+      return saved as RealmId;
+    }
+  } catch {}
+  return 'midgard';
+};
+
+const createInitialTabs = (realm: RealmId): Tab[] => [
   {
     id: 'tab-1',
     title: 'Mímisbrunnr (New Tab)',
@@ -25,8 +41,10 @@ const INITIAL_TABS: Tab[] = [
     isActive: true,
     isLoading: false,
     isMuted: false,
-    realm: 'midgard',
+    isPinned: false,
+    realm,
     rune: 'ᛗ',
+    zoomLevel: 100,
   },
   {
     id: 'tab-2',
@@ -35,17 +53,19 @@ const INITIAL_TABS: Tab[] = [
     isActive: false,
     isLoading: false,
     isMuted: false,
+    isPinned: false,
     realm: 'asgard',
     rune: 'ᚨ',
+    zoomLevel: 100,
   },
 ];
 
 const RUNES_POOL = ['ᛗ', 'ᚨ', 'ᚱ', 'ᚲ', 'ᚷ', 'ᚹ', 'ᚺ', 'ᛃ', 'ᛈ', 'ᛉ', 'ᛋ', 'ᛏ', 'ᛒ', 'ᛖ', 'ᛚ', 'ᛞ', 'ᛟ'];
 
 export const App: React.FC = () => {
-  const [tabs, setTabs] = useState<Tab[]>(INITIAL_TABS);
+  const [activeRealm, setActiveRealm] = useState<RealmId>(getInitialRealm);
+  const [tabs, setTabs] = useState<Tab[]>(() => createInitialTabs(getInitialRealm()));
   const [activeTabId, setActiveTabId] = useState<string>('tab-1');
-  const [activeRealm, setActiveRealm] = useState<RealmId>('midgard');
   const [isTabTreeCollapsed, setIsTabTreeCollapsed] = useState(false);
   const [isRealmSelectorOpen, setIsRealmSelectorOpen] = useState(false);
   const [isHuginnOpen, setIsHuginnOpen] = useState(false);
@@ -53,10 +73,47 @@ export const App: React.FC = () => {
   const [isBifrostOpen, setIsBifrostOpen] = useState(false);
   const [isForgeOpen, setIsForgeOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isFindOpen, setIsFindOpen] = useState(false);
+  const [isDownloadsOpen, setIsDownloadsOpen] = useState(false);
+  const [isClearDataOpen, setIsClearDataOpen] = useState(false);
   const [isSplitGaze, setIsSplitGaze] = useState(false);
   const [splitTabId, setSplitTabId] = useState<string | undefined>('tab-2');
   const [isAmbientPlaying, setIsAmbientPlaying] = useState(runicAudio.isAmbientEnabled());
   const [showSplash, setShowSplash] = useState(true);
+
+  // Download artifacts telemetry
+  const [downloads, setDownloads] = useState<DownloadItem[]>([
+    {
+      id: 'dl-1',
+      filename: 'poetic_edda_voluspa.pdf',
+      url: 'https://sacred-texts.com/cla/poe/voluspa.htm',
+      size: '2.8 MB',
+      progress: 100,
+      status: 'complete',
+      timestamp: 'Just now',
+      type: 'document',
+    },
+    {
+      id: 'dl-2',
+      filename: 'yggdrasil_realm_cartography.png',
+      url: 'https://mimir-archives.org/cartography/yggdrasil.png',
+      size: '14.2 MB',
+      progress: 100,
+      status: 'complete',
+      timestamp: '18 min ago',
+      type: 'image',
+    },
+  ]);
+
+  // Persistent bookmarks storage
+  const [bookmarks, setBookmarks] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('mimir_bookmarked_urls');
+      return saved ? JSON.parse(saved) : ['https://github.com'];
+    } catch {
+      return ['https://github.com'];
+    }
+  });
 
   const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0];
   const splitTab = tabs.find((t) => t.id === splitTabId);
@@ -65,13 +122,20 @@ export const App: React.FC = () => {
   useEffect(() => {
     mimirIpc.send({
       type: 'CREATE_TAB',
-      payload: { tabId: 'tab-1', url: 'mimir://newtab', realm: 'midgard' },
+      payload: { tabId: 'tab-1', url: 'mimir://newtab', realm: activeRealm },
     });
   }, []);
 
   // Update ambient audio if active realm changes
   useEffect(() => {
     runicAudio.updateAmbientRealm(activeRealm);
+  }, [activeRealm]);
+
+  // Synchronize active realm to localStorage for persistence
+  useEffect(() => {
+    try {
+      localStorage.setItem('mimir_active_realm', activeRealm);
+    } catch {}
   }, [activeRealm]);
 
   // Global keyboard shortcuts
@@ -85,7 +149,7 @@ export const App: React.FC = () => {
       // Ctrl+W: Close Tab
       if (e.ctrlKey && e.key.toLowerCase() === 'w') {
         e.preventDefault();
-        if (activeTab) {
+        if (activeTab && !activeTab.isPinned) {
           handleCloseTab(activeTab.id);
         }
       }
@@ -113,6 +177,44 @@ export const App: React.FC = () => {
         runicAudio.playClick(600);
         setIsCommandPaletteOpen((prev) => !prev);
       }
+      // Ctrl+F: Rune Seeker (Find in Page)
+      if (e.ctrlKey && e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        runicAudio.playClick(700);
+        setIsFindOpen((prev) => !prev);
+      }
+      // Ctrl+J: Mímir's Hoard (Downloads)
+      if (e.ctrlKey && e.key.toLowerCase() === 'j') {
+        e.preventDefault();
+        runicAudio.playClick(600);
+        setIsDownloadsOpen((prev) => !prev);
+      }
+      // Ctrl+P: Print Page
+      if (e.ctrlKey && e.key.toLowerCase() === 'p' && !e.shiftKey) {
+        e.preventDefault();
+        handlePrint();
+      }
+      // Ctrl+= / Ctrl++: Zoom In
+      if (e.ctrlKey && (e.key === '=' || e.key === '+')) {
+        e.preventDefault();
+        handleZoomIn();
+      }
+      // Ctrl+-: Zoom Out
+      if (e.ctrlKey && (e.key === '-' || e.key === '_')) {
+        e.preventDefault();
+        handleZoomOut();
+      }
+      // Ctrl+0: Zoom Reset
+      if (e.ctrlKey && e.key === '0') {
+        e.preventDefault();
+        handleZoomReset();
+      }
+      // Ctrl+Shift+Delete: Fate Thread Purge (Clear Browsing Data)
+      if (e.ctrlKey && e.shiftKey && (e.key === 'Delete' || e.key === 'Backspace')) {
+        e.preventDefault();
+        runicAudio.playClick(750);
+        setIsClearDataOpen((prev) => !prev);
+      }
       // Esc: Close modals & drawers
       if (e.key === 'Escape') {
         setIsRealmSelectorOpen(false);
@@ -121,15 +223,21 @@ export const App: React.FC = () => {
         setIsBifrostOpen(false);
         setIsForgeOpen(false);
         setIsCommandPaletteOpen(false);
+        setIsFindOpen(false);
+        setIsDownloadsOpen(false);
+        setIsClearDataOpen(false);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [tabs, activeTabId, activeRealm]);
+  }, [tabs, activeTabId, activeRealm, activeTab]);
 
   const handleSelectRealm = (realm: RealmId) => {
     setActiveRealm(realm);
+    try {
+      localStorage.setItem('mimir_active_realm', realm);
+    } catch {}
     setTabs((prev) =>
       prev.map((t) => (t.id === activeTabId ? { ...t, realm } : t))
     );
@@ -164,8 +272,10 @@ export const App: React.FC = () => {
           isActive: true,
           isLoading: false,
           isMuted: false,
+          isPinned: false,
           realm: activeRealm,
           rune: 'ᛗ',
+          zoomLevel: 100,
         },
       ]);
       setActiveTabId('tab-1');
@@ -197,8 +307,10 @@ export const App: React.FC = () => {
       isActive: true,
       isLoading: false,
       isMuted: false,
+      isPinned: false,
       realm: activeRealm,
       rune: randomRune,
+      zoomLevel: 100,
     };
 
     setTabs((prev) => prev.map((t) => ({ ...t, isActive: false })).concat(newTab));
@@ -230,6 +342,77 @@ export const App: React.FC = () => {
         prev.map((t) => (t.id === activeTabId ? { ...t, isLoading: false } : t))
       );
     }, 600);
+  };
+
+  const handleZoomIn = () => {
+    mimirIpc.send({ type: 'ZOOM_IN' });
+    setTabs((prev) =>
+      prev.map((t) =>
+        t.id === activeTabId ? { ...t, zoomLevel: Math.min(300, (t.zoomLevel || 100) + 10) } : t
+      )
+    );
+  };
+
+  const handleZoomOut = () => {
+    mimirIpc.send({ type: 'ZOOM_OUT' });
+    setTabs((prev) =>
+      prev.map((t) =>
+        t.id === activeTabId ? { ...t, zoomLevel: Math.max(30, (t.zoomLevel || 100) - 10) } : t
+      )
+    );
+  };
+
+  const handleZoomReset = () => {
+    mimirIpc.send({ type: 'ZOOM_RESET' });
+    setTabs((prev) =>
+      prev.map((t) => (t.id === activeTabId ? { ...t, zoomLevel: 100 } : t))
+    );
+  };
+
+  const handlePrint = () => {
+    mimirIpc.send({ type: 'PRINT' });
+  };
+
+  const handleTogglePinTab = (id: string) => {
+    setTabs((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, isPinned: !t.isPinned } : t))
+    );
+  };
+
+  const handleDuplicateTab = (id: string) => {
+    const source = tabs.find((t) => t.id === id);
+    if (!source) return;
+    const newId = `tab-${Date.now()}`;
+    const randomRune = RUNES_POOL[Math.floor(Math.random() * RUNES_POOL.length)];
+    const newTab: Tab = {
+      id: newId,
+      title: source.title,
+      url: source.url,
+      isActive: true,
+      isLoading: false,
+      isMuted: false,
+      isPinned: false,
+      realm: source.realm,
+      rune: randomRune,
+      zoomLevel: source.zoomLevel || 100,
+    };
+    setTabs((prev) => prev.map((t) => ({ ...t, isActive: false })).concat(newTab));
+    setActiveTabId(newId);
+    mimirIpc.send({
+      type: 'DUPLICATE_TAB',
+      payload: { tabId: id, newTabId: newId },
+    });
+  };
+
+  const handleToggleBookmark = (url: string) => {
+    if (!url || url === 'mimir://newtab') return;
+    setBookmarks((prev) => {
+      const next = prev.includes(url) ? prev.filter((u) => u !== url) : [...prev, url];
+      try {
+        localStorage.setItem('mimir_bookmarked_urls', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
   };
 
   return (
@@ -269,6 +452,18 @@ export const App: React.FC = () => {
           const nextState = runicAudio.toggleAmbient(activeRealm);
           setIsAmbientPlaying(nextState);
         }}
+        onZoomIn={handleZoomIn}
+        onZoomOut={handleZoomOut}
+        onZoomReset={handleZoomReset}
+        zoomLevel={activeTab?.zoomLevel || 100}
+        onToggleDownloads={() => setIsDownloadsOpen((prev) => !prev)}
+        downloadCount={downloads.filter((d) => d.status === 'downloading').length || downloads.length}
+        onToggleFind={() => setIsFindOpen(true)}
+        onPrint={handlePrint}
+        onOpenClearData={() => setIsClearDataOpen(true)}
+        isDownloadsOpen={isDownloadsOpen}
+        onBookmarkCurrent={() => handleToggleBookmark(activeTab?.url || '')}
+        isCurrentBookmarked={bookmarks.includes(activeTab?.url || '')}
       />
 
       {/* Layer 3: Main Workspace (Yggdrasil Tree + Content Viewport) */}
@@ -283,6 +478,8 @@ export const App: React.FC = () => {
           isCollapsed={isTabTreeCollapsed}
           onToggleCollapse={() => setIsTabTreeCollapsed(!isTabTreeCollapsed)}
           onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+          onTogglePinTab={handleTogglePinTab}
+          onDuplicateTab={handleDuplicateTab}
         />
 
         <ContentViewport
@@ -346,7 +543,7 @@ export const App: React.FC = () => {
         activeRealm={activeRealm}
         onNewTab={() => handleNewTab()}
         onCloseTab={() => {
-          if (activeTab) handleCloseTab(activeTab.id);
+          if (activeTab && !activeTab.isPinned) handleCloseTab(activeTab.id);
         }}
         onToggleSplitGaze={() => setIsSplitGaze((prev) => !prev)}
         onToggleHuginn={() => setIsHuginnOpen((prev) => !prev)}
@@ -365,6 +562,38 @@ export const App: React.FC = () => {
             handleNavigate(activeTab.url);
           }
         }}
+        onZoomIn={handleZoomIn}
+        onZoomOut={handleZoomOut}
+        onZoomReset={handleZoomReset}
+        onPrint={handlePrint}
+        onOpenFind={() => setIsFindOpen(true)}
+        onOpenDownloads={() => setIsDownloadsOpen(true)}
+        onOpenClearData={() => setIsClearDataOpen(true)}
+        onPinActiveTab={() => handleTogglePinTab(activeTabId)}
+        onDuplicateActiveTab={() => handleDuplicateTab(activeTabId)}
+      />
+
+      {/* Overlay 6: Rune Seeker (Find in Page) */}
+      <RuneSeeker
+        isOpen={isFindOpen}
+        onClose={() => setIsFindOpen(false)}
+        activeRealm={activeRealm}
+      />
+
+      {/* Overlay 7: Mímir's Hoard (Downloads Manager) */}
+      <MimirsHoard
+        isOpen={isDownloadsOpen}
+        onClose={() => setIsDownloadsOpen(false)}
+        activeRealm={activeRealm}
+        downloads={downloads}
+        onClearCompleted={() => setDownloads((prev) => prev.filter((d) => d.status !== 'complete'))}
+      />
+
+      {/* Overlay 8: Fate Thread Purge (Clear Browsing Data) */}
+      <FateThreadPurge
+        isOpen={isClearDataOpen}
+        onClose={() => setIsClearDataOpen(false)}
+        activeRealm={activeRealm}
       />
 
       {/* Slide-out: Huginn AI Intelligence Drawer */}

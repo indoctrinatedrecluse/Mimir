@@ -463,6 +463,42 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     logger::info("Refreshing sacred spring (Reload)");
                     tab_manager.refresh();
                 }
+                IpcCommand::ZoomIn => {
+                    logger::info("Zooming in (Enlarging runes)");
+                    tab_manager.zoom_in();
+                }
+                IpcCommand::ZoomOut => {
+                    logger::info("Zooming out (Diminishing runes)");
+                    tab_manager.zoom_out();
+                }
+                IpcCommand::ZoomReset => {
+                    logger::info("Resetting zoom (Restoring rune scale)");
+                    tab_manager.zoom_reset();
+                }
+                IpcCommand::Print => {
+                    logger::info("Invoking Print Rune Inscription");
+                    tab_manager.print_page();
+                }
+                IpcCommand::FindInPage { payload } => {
+                    logger::info(&format!("Seeking rune in page: {}", payload.query));
+                    tab_manager.find_in_page(&payload.query);
+                }
+                IpcCommand::FindNext => {
+                    logger::info("Seeking next rune match");
+                    tab_manager.find_next();
+                }
+                IpcCommand::FindPrevious => {
+                    logger::info("Seeking previous rune match");
+                    tab_manager.find_previous();
+                }
+                IpcCommand::FindClose => {
+                    logger::info("Closing rune search");
+                    tab_manager.find_close();
+                }
+                IpcCommand::DuplicateTab { payload } => {
+                    logger::info(&format!("Duplicating tab {} as {}", payload.tab_id, payload.new_tab_id));
+                    tab_manager.duplicate_tab(&window_clone, &payload.tab_id, payload.new_tab_id);
+                }
             },
             Event::WindowEvent {
                 event: WindowEvent::CloseRequested,

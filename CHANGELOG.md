@@ -7,7 +7,87 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.0] - 2026-10-23 *(Sacred Wards, Hoard & Browser Mastery)*
+
+This release brings a comprehensive set of common browser functions, privacy controls, and security telemetry — wrapped in Mímir's distinctive Norse aesthetic. Every standard browser action a user expects is now present and themed.
+
+### Added
+
+#### Security Ward Widget — HTTPS Lock Icon & Privacy Panel (`SecurityWardWidget.tsx`)
+* **Clickable HTTPS lock icon** in the Omnibar:
+  * 🔒 **HTTPS** → emerald `Lock` icon (*"Sacred Conduit"*)
+  * ⚠️ **HTTP** → red `ShieldAlert` icon (*"Unshielded Passage"*)
+  * 🛡 **Internal pages** → cyan `ShieldCheck` icon (*"Mímir Sanctuary"*)
+* **Security Ward Popup** (click the lock icon to open):
+  * **Connection & Certificate panel**: TLS 1.3 cipher suite, issuer authority, OCSP stapling, key exchange algorithm — all expandable on demand.
+  * **Runic Shield tracker blocker**: toggle per-site, shows tracker count and third-party cookie count. Animated on/off toggle.
+  * **Site Permissions panel**: Geolocation, Camera, Microphone, Notifications — each individually togglable between `allow`, `ask`, and `block`.
+  * **Quick actions**: Purge browsing threads directly for the active realm.
+
+#### Rune Seeker — Find in Page (`RuneSeeker.tsx`)
+* Floating overlay panel (`Ctrl+F`) for text search within the active WebView.
+* Previous / Next match navigation (`Shift+Enter` / `Enter`).
+* Sends `FIND_IN_PAGE`, `FIND_NEXT`, `FIND_PREVIOUS`, `FIND_CLOSE` IPC commands to the Rust/WebView2 host.
+* Auto-focuses and auto-selects text on open; clears selection on close.
+* Full Norse realm theming with accent glow and rune marker.
+
+#### Mímir's Hoard — Downloads Manager (`MimirsHoard.tsx`)
+* Downloads panel accessible via the `Download` button in the Omnibar (`Ctrl+J`) or Command Palette.
+* Shows filename, file type icon (document/image/archive/video/audio), download size, progress bar, and status badges.
+* Colour-coded status: *Acquiring…* (cyan), *Complete* (emerald), *Failed* (rose), *Paused* (amber).
+* **Clear Completed** button to flush finished entries.
+
+#### Fate Thread Purge — Clear Browsing Data (`FateThreadPurge.tsx`)
+* Modal for clearing browsing data (`Ctrl+Shift+Del`) with:
+  * Time range selector: Last Hour / Last 24 Hours / Last 7 Days / All Time.
+  * Granular toggles for: Browsing History (*Threads of Fate*), Cookies & Site Data (*Hospitality Tokens*), Cached Images & Files (*Cached Artifacts*), Local Storage (*Runic Inscriptions*).
+  * Animated confirmation sequence with Norse purge visual.
+
+#### Omnibar Enhancements
+* **Zoom controls** cluster: Zoom In (`Ctrl++`), Zoom % display (click to reset to 100%), Zoom Out (`Ctrl+-`).
+* **Downloads badge button** with active download count indicator.
+* **Print button** (`Ctrl+P`) → sends `PRINT` IPC to trigger `window.print()` in the WebView.
+* **Find button** → opens Rune Seeker overlay.
+* **Bookmark button**: now wired to real persistent state via `localStorage`, showing `BookmarkCheck` icon when current URL is bookmarked.
+
+#### Tab Pinning & Duplication (`TabTree.tsx`)
+* **Pin/Unpin tab**: Accent dot indicator on pinned tab rune, `Pin` icon inline in expanded title row. Pinned tabs cannot be closed via `Ctrl+W` or the close button.
+* **Duplicate Tab**: Clone button with `Copy` icon clones the active tab's URL + realm into a new branch. Sends `DUPLICATE_TAB` IPC command.
+* Right-side micro-button cluster on each tab: Pin, Duplicate, Close (hidden by default, revealed on hover).
+
+#### Command Palette Expansion (`CommandPalette.tsx`)
+* **New commands added**:
+  * Rune Seeker (Find in Page) — `Ctrl+F`
+  * Mímir's Hoard (Downloads) — `Ctrl+J`
+  * Zoom In / Zoom Out / Zoom Reset — `Ctrl++` / `Ctrl+-` / `Ctrl+0`
+  * Print Page — `Ctrl+P`
+  * Pin Active Tab / Duplicate Active Tab
+  * Purge Threads of Fate (Clear Browsing Data) — `Ctrl+Shift+Del`
+
+#### Persistent Theme Selection
+* Active realm is now persisted to `localStorage` under `mimir_active_realm`.
+* On every browser launch, the previously selected realm is restored immediately — no splash race, no flicker.
+* Realm changes are written synchronously on every `handleSelectRealm` call.
+
+#### New Rust/IPC Commands (`ipc.rs`, `tab_manager.rs`, `main.rs`)
+* `ZOOM_IN` / `ZOOM_OUT` / `ZOOM_RESET` — adjusts `document.body.style.zoom` on the active WebView.
+* `PRINT` — triggers `window.print()` in the active WebView.
+* `FIND_IN_PAGE { query }` — calls `window.find()` with wrap + multi-match flags.
+* `FIND_NEXT` / `FIND_PREVIOUS` — re-uses `window.__mimirLastFind` for stateful navigation.
+* `FIND_CLOSE` — clears all selections via `window.getSelection().removeAllRanges()`.
+* `DUPLICATE_TAB { tabId, newTabId }` — clones the source tab's URL and realm into a new WebView.
+* `execute_on_active()` helper method added to `TabManager` to DRY all script-evaluation calls.
+
+### Changed
+* `Tab` interface gained `isPinned: boolean` and `zoomLevel: number` fields.
+* `IpcCommand` TypeScript union type extended with all 9 new command variants.
+* `handleCloseTab` respects `isPinned` — pinned tabs are immune to `Ctrl+W`.
+* Bookmarks now persist to `localStorage` under `mimir_bookmarked_urls`.
+
+---
+
 ## [0.3.0] - 2026-10-21 *(Mímisbrunnr Autosuggest & Hliðskjálf Command Center)*
+
 
 Major upgrade introducing intelligent multi-source autosuggestion ranking in the Omnibar, the Hliðskjálf Command Palette in the left navigation pane, and comprehensive layout refinement across realm lore and Hávamál wisdom cards.
 

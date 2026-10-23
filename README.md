@@ -1,7 +1,7 @@
 # ᛗ MÍMIR
 ### *The Hypermodern, Runic-Forged Web Explorer*
 
-[![Release](https://img.shields.io/badge/Release-v0.3.0%20(Alpha)-10b981?style=for-the-badge&logo=github)](https://github.com/indoctrinatedrecluse/Mimir/releases/tag/v0.3.0)
+[![Release](https://img.shields.io/badge/Release-v0.4.0%20(Alpha)-10b981?style=for-the-badge&logo=github)](https://github.com/indoctrinatedrecluse/Mimir/releases/tag/v0.4.0)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20(WebView2)-00f5ff?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/indoctrinatedrecluse/Mimir)
 [![Core Engine](https://img.shields.io/badge/Core-Rust%20%2B%20Wry-f97316?style=for-the-badge&logo=rust&logoColor=white)](https://github.com/tauri-apps/wry)
 [![UI HUD](https://img.shields.io/badge/HUD-React%2019%20%2B%20Vite-61dafb?style=for-the-badge&logo=react&logoColor=black)](https://vitejs.dev/)
@@ -13,14 +13,14 @@
 
 ---
 
-## ⚡ Download Mímir (v0.3.0 Alpha)
+## ⚡ Download Mímir (v0.4.0 Alpha)
 
 Ready-to-use releases for 64-bit Windows are packaged and distributed with zero manual prerequisites:
 
 | Package | Format | Description |
 | :--- | :--- | :--- |
-| [**Windows Setup Installer**](https://github.com/indoctrinatedrecluse/Mimir/releases/download/v0.3.0/mimir-v0.3.0-windows-x64-setup.exe) | `.exe` (~10 MB) | Full setup wizard with Desktop and Start Menu shortcuts, auto-launch option, and bundled Microsoft WebView2 Evergreen Bootstrapper for fresh or LTSC Windows systems. |
-| [**Portable Archive**](https://github.com/indoctrinatedrecluse/Mimir/releases/download/v0.3.0/mimir-v0.3.0-windows-x64-portable.zip) | `.zip` (~8 MB) | Standalone portable bundle. Extract and launch `mimir.exe` directly without installation. |
+| [**Windows Setup Installer**](https://github.com/indoctrinatedrecluse/Mimir/releases/download/v0.4.0/mimir-v0.4.0-windows-x64-setup.exe) | `.exe` (~10 MB) | Full setup wizard with Desktop and Start Menu shortcuts, auto-launch option, and bundled Microsoft WebView2 Evergreen Bootstrapper for fresh or LTSC Windows systems. |
+| [**Portable Archive**](https://github.com/indoctrinatedrecluse/Mimir/releases/download/v0.4.0/mimir-v0.4.0-windows-x64-portable.zip) | `.zip` (~8 MB) | Standalone portable bundle. Extract and launch `mimir.exe` directly without installation. |
 
 ---
 
@@ -78,6 +78,13 @@ Every standard browser function is rechristened into ancient Norse cosmology:
 | **Proxy & DoH Routing** | **Bifröst Conduit Matrix** | Per-realm proxy routing (Direct, SOCKS5, HTTP, Tor) and encrypted DNS-over-HTTPS resolvers. |
 | **Extension Engine** | **Brokkr's Forge** | User-scripts and custom runic CSS/JS style injection engine for power customization. |
 | **Adblock & Shields** | **Runic Ward** | Defensive runic barrier deflecting trackers, banners, and malicious script intrusion. |
+| **Lock Icon / Security** | **Sacred Cipher Ward** | Clickable HTTPS status indicator revealing TLS cipher, certificate authority, tracker count, and per-site permissions. |
+| **Find in Page** | **Rune Seeker** | Floating search overlay (`Ctrl+F`) scanning active WebView for matching text runes. |
+| **Downloads** | **Mímir's Hoard** | Collected manuscripts and acquired artifacts stored by the great sage (`Ctrl+J`). |
+| **Clear Browsing Data** | **Fate Thread Purge** | Selective obliteration of history, cookies, cache, and localStorage across chosen time spans (`Ctrl+Shift+Del`). |
+| **Zoom Controls** | **Realm Gaze Magnification** | Per-tab zoom controls in the Omnibar (`Ctrl++` / `Ctrl+-` / `Ctrl+0`). |
+| **Tab Pinning** | **Branch of Fate Anchor** | Locks a tab branch against accidental severance; shown with amber accent dot. |
+| **Duplicate Tab** | **Fate Thread Clone** | Spawns an identical branch from the current URL and realm. |
 
 ---
 
@@ -162,6 +169,19 @@ graph TD
   - Active realm indicators with distinct accent glows, borders, and pulsing runic status dots.
   - Expanded lore layout removing truncation on ruler titles, quotes, and Hávamál verses.
 
+### Phase 5: Sacred Wards, Browser Mastery & Privacy Controls *(Completed in v0.4.0)*
+- [x] **Security Ward Widget (HTTPS Lock Icon)**: Clickable lock icon exposing TLS cipher suite, certificate authority, OCSP status, Runic Shield tracker blocker toggle, and per-site permission controls.
+- [x] **Rune Seeker (Find in Page)**: Floating `Ctrl+F` text search overlay with prev/next navigation, IPC-backed `window.find()` integration.
+- [x] **Mímir's Hoard (Downloads Manager)**: `Ctrl+J` panel showing acquired file artifacts with type icons, progress bars, and status badges.
+- [x] **Fate Thread Purge (Clear Browsing Data)**: `Ctrl+Shift+Del` modal with time range selector and granular data category toggles.
+- [x] **Omnibar Zoom Controls**: Inline Zoom In / Zoom % Reset / Zoom Out cluster with per-tab IPC-backed `document.body.style.zoom` control.
+- [x] **Print Page**: `Ctrl+P` dispatches `window.print()` via IPC.
+- [x] **Tab Pinning**: Pin/Unpin tabs via hover micro-button; pinned tabs immune to `Ctrl+W` closure.
+- [x] **Duplicate Tab**: Clone any tab's URL + realm into a new branch via IPC `DUPLICATE_TAB`.
+- [x] **Persistent Theme Selection**: Active realm auto-saved to `localStorage`; restored on next launch.
+- [x] **Command Palette Expansion**: Find, Downloads, Zoom, Print, Pin, Duplicate, and Clear Data all callable from Hliðskjálf.
+- [x] **Bookmark Persistence**: Bookmarks survive page reloads via `localStorage` under `mimir_bookmarked_urls`.
+
 ---
 
 ## ⌨️ Essential Keyboard Shortcuts
@@ -170,11 +190,17 @@ graph TD
 | :--- | :--- |
 | `Ctrl + K` / `Ctrl + Shift + P` | Open **Hliðskjálf Command Palette** |
 | `Ctrl + T` | Open New Tab (Branch of Yggdrasil) |
-| `Ctrl + W` | Sever Active Tab Thread |
+| `Ctrl + W` | Sever Active Tab Thread (if not pinned) |
 | `Ctrl + L` | Focus **Mímisbrunnr (Omnibar)** |
 | `Ctrl + H` / `Ctrl + I` | Summon **Huginn AI Scout** |
 | `Ctrl + M` | Open **Muninn's Memory Vault** |
 | `Ctrl + \` / `Ctrl + U` | Toggle **Odin's Split-Gaze** (Dual Viewports) |
+| `Ctrl + F` | Open **Rune Seeker** (Find in Page) |
+| `Ctrl + J` | Open **Mímir's Hoard** (Downloads Manager) |
+| `Ctrl + P` | **Inscribe Parchment** (Print Page) |
+| `Ctrl + +` / `Ctrl + -` | Zoom In / Zoom Out |
+| `Ctrl + 0` | Reset Zoom to 100% |
+| `Ctrl + Shift + Del` | **Fate Thread Purge** (Clear Browsing Data) |
 | `Escape` | Dismiss Active Modal, Command Palette, or AI Drawer |
 
 ---

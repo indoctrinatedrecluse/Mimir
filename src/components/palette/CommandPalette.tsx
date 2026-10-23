@@ -27,6 +27,12 @@ import {
   ChevronRight,
   Sliders,
   Feather,
+  ZoomIn,
+  ZoomOut,
+  Download,
+  Printer,
+  Pin,
+  Copy,
 } from 'lucide-react';
 
 export interface CommandItem {
@@ -56,6 +62,15 @@ interface CommandPaletteProps {
   onSelectRealm: (realm: RealmId) => void;
   onNavigateHome: () => void;
   onRefresh: () => void;
+  onZoomIn?: () => void;
+  onZoomOut?: () => void;
+  onZoomReset?: () => void;
+  onPrint?: () => void;
+  onOpenFind?: () => void;
+  onOpenDownloads?: () => void;
+  onOpenClearData?: () => void;
+  onPinActiveTab?: () => void;
+  onDuplicateActiveTab?: () => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
@@ -74,6 +89,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onSelectRealm,
   onNavigateHome,
   onRefresh,
+  onZoomIn,
+  onZoomOut,
+  onZoomReset,
+  onPrint,
+  onOpenFind,
+  onOpenDownloads,
+  onOpenClearData,
+  onPinActiveTab,
+  onDuplicateActiveTab,
 }) => {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -195,6 +219,96 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         rune: 'ᛞ',
         icon: isAmbientPlaying ? VolumeX : Volume2,
         action: onToggleAmbient,
+      },
+
+      // Security, Wards & Browser Operations
+      {
+        id: 'find-in-page',
+        category: 'Viewports & Tools',
+        title: 'Rune Seeker (Find in Page)',
+        description: 'Search for text runes and glyphs within active web content',
+        shortcut: 'Ctrl+F',
+        rune: 'ᛋ',
+        icon: Search,
+        action: () => onOpenFind?.(),
+      },
+      {
+        id: 'mimirs-hoard',
+        category: 'Viewports & Tools',
+        title: "Mímir's Hoard (Downloads Manager)",
+        description: 'Inspect acquired artifacts and downloaded manuscripts',
+        shortcut: 'Ctrl+J',
+        rune: 'ᚠ',
+        icon: Download,
+        action: () => onOpenDownloads?.(),
+      },
+      {
+        id: 'zoom-in',
+        category: 'Viewports & Tools',
+        title: 'Magnify Realm Gaze (Zoom In)',
+        description: 'Increase active viewport magnification by 10%',
+        shortcut: 'Ctrl++',
+        rune: 'ᚨ',
+        icon: ZoomIn,
+        action: () => onZoomIn?.(),
+      },
+      {
+        id: 'zoom-out',
+        category: 'Viewports & Tools',
+        title: 'Diminish Realm Gaze (Zoom Out)',
+        description: 'Decrease active viewport magnification by 10%',
+        shortcut: 'Ctrl+-',
+        rune: 'ᚨ',
+        icon: ZoomOut,
+        action: () => onZoomOut?.(),
+      },
+      {
+        id: 'zoom-reset',
+        category: 'Viewports & Tools',
+        title: 'Reset Realm Gaze (Zoom 100%)',
+        description: 'Restore default 100% viewport magnification',
+        shortcut: 'Ctrl+0',
+        rune: 'ᚨ',
+        icon: RotateCw,
+        action: () => onZoomReset?.(),
+      },
+      {
+        id: 'print-page',
+        category: 'Viewports & Tools',
+        title: 'Inscribe Parchment (Print Page)',
+        description: 'Send current viewport content to system printing conduit',
+        shortcut: 'Ctrl+P',
+        rune: 'ᛈ',
+        icon: Printer,
+        action: () => onPrint?.(),
+      },
+      {
+        id: 'pin-tab',
+        category: 'Tabs & Navigation',
+        title: 'Pin Branch of Fate (Lock Tab)',
+        description: 'Anchor active tab to prevent accidental severance',
+        rune: 'ᛏ',
+        icon: Pin,
+        action: () => onPinActiveTab?.(),
+      },
+      {
+        id: 'duplicate-tab',
+        category: 'Tabs & Navigation',
+        title: 'Duplicate Fate Thread (Clone Active Tab)',
+        description: 'Spawn an identical branch with current URL and realm',
+        rune: 'ᛞ',
+        icon: Copy,
+        action: () => onDuplicateActiveTab?.(),
+      },
+      {
+        id: 'purge-data',
+        category: 'System & Wards',
+        title: 'Purge Threads of Fate (Clear Browsing Data)',
+        description: 'Wipe history, cookies, cache, and localStorage tokens',
+        shortcut: 'Ctrl+Shift+Del',
+        rune: 'ᚦ',
+        icon: Trash2,
+        action: () => onOpenClearData?.(),
       },
     ];
 

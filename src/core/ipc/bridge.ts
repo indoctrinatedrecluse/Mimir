@@ -16,6 +16,15 @@ export type IpcCommand =
   | { type: 'CLOSE_TAB'; payload: { tabId: string } }
   | { type: 'SWITCH_TAB'; payload: { tabId: string } }
   | { type: 'UPDATE_VIEWPORT_BOUNDS'; payload: ViewportBounds }
+  | { type: 'ZOOM_IN' }
+  | { type: 'ZOOM_OUT' }
+  | { type: 'ZOOM_RESET' }
+  | { type: 'PRINT' }
+  | { type: 'FIND_IN_PAGE'; payload: { query: string } }
+  | { type: 'FIND_NEXT' }
+  | { type: 'FIND_PREVIOUS' }
+  | { type: 'FIND_CLOSE' }
+  | { type: 'DUPLICATE_TAB'; payload: { tabId: string; newTabId: string } }
   | { type: 'WINDOW_MINIMIZE' }
   | { type: 'WINDOW_MAXIMIZE' }
   | { type: 'WINDOW_CLOSE' };

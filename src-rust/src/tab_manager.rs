@@ -267,4 +267,67 @@ impl TabManager {
             }
         }
     }
+
+    pub fn zoom_in(&self) {
+        self.execute_on_active("document.body.style.zoom = (parseFloat(document.body.style.zoom || '1') + 0.1).toString()");
+    }
+
+    pub fn zoom_out(&self) {
+        self.execute_on_active("document.body.style.zoom = Math.max(0.3, parseFloat(document.body.style.zoom || '1') - 0.1).toString()");
+    }
+
+    pub fn zoom_reset(&self) {
+        self.execute_on_active("document.body.style.zoom = '1'");
+    }
+
+    pub fn print_page(&self) {
+        self.execute_on_active("window.print()");
+    }
+
+    pub fn find_in_page(&self, query: &str) {
+        let escaped = query.replace('\\', "\\\\").replace('\'', "\\'");
+        let script = format!(
+            "window.find('{}', false, false, true, false, true, false)",
+            escaped
+        );
+        self.execute_on_active(&script);
+    }
+
+    pub fn find_next(&self) {
+        // window.find with same params searches forward
+        self.execute_on_active(
+            "if(window.__mimirLastFind){window.find(window.__mimirLastFind,false,false,true,false,true,false)}"
+        );
+    }
+
+    pub fn find_previous(&self) {
+        // window.find with backwards=true
+        self.execute_on_active(
+            "if(window.__mimirLastFind){window.find(window.__mimirLastFind,false,true,true,false,true,false)}"
+        );
+    }
+
+    pub fn find_close(&self) {
+        self.execute_on_active("window.getSelection().removeAllRanges(); window.__mimirLastFind=null;");
+    }
+
+    pub fn duplicate_tab(&mut self, window: &Arc<Window>, source_id: &str, new_id: String) {
+        if let Some(source) = self.tabs.get(source_id) {
+            let url = source.url.clone();
+            let realm = source.realm.clone();
+            if !url.is_empty() && url != "mimir://newtab" {
+                self.open_or_navigate_tab(window, new_id, url, realm);
+            }
+        }
+    }
+
+    fn execute_on_active(&self, script: &str) {
+        if let Some(active_id) = &self.active_tab_id {
+            if let Some(tab) = self.tabs.get(active_id) {
+                if let Some(wv) = &tab.webview {
+                    let _ = wv.evaluate_script(script);
+                }
+            }
+        }
+    }
 }
