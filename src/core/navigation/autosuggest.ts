@@ -54,6 +54,60 @@ export const POPULAR_GATEWAYS = [
   { title: 'ChatGPT — OpenAI Oracle', url: 'https://chatgpt.com', domain: 'chatgpt.com', rune: 'ᚺ' },
 ];
 
+export interface BangDefinition {
+  bang: string;
+  name: string;
+  rune: string;
+  hint: string;
+  buildUrl: (query: string) => string;
+}
+
+export const SEARCH_BANGS: BangDefinition[] = [
+  { bang: '!g', name: 'Google Search', rune: 'ᚷ', hint: '!g <query>', buildUrl: (q) => `https://www.google.com/search?q=${encodeURIComponent(q)}` },
+  { bang: '!ddg', name: 'DuckDuckGo Untracked', rune: 'ᛗ', hint: '!ddg <query>', buildUrl: (q) => `https://duckduckgo.com/?q=${encodeURIComponent(q)}` },
+  { bang: '!gh', name: 'GitHub Forge', rune: 'ᚨ', hint: '!gh <repo or user>', buildUrl: (q) => `https://github.com/search?q=${encodeURIComponent(q)}` },
+  { bang: '!yt', name: 'YouTube Streams', rune: 'ᛃ', hint: '!yt <video>', buildUrl: (q) => `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}` },
+  { bang: '!w', name: 'Wikipedia Lore', rune: 'ᚹ', hint: '!w <lore topic>', buildUrl: (q) => `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(q)}` },
+  { bang: '!rust', name: 'Rust Lore (Std Docs)', rune: 'ᚱ', hint: '!rust <type or crate>', buildUrl: (q) => `https://doc.rust-lang.org/std/?search=${encodeURIComponent(q)}` },
+  { bang: '!crate', name: 'Crates.io Registry', rune: 'ᚲ', hint: '!crate <crate name>', buildUrl: (q) => `https://crates.io/search?q=${encodeURIComponent(q)}` },
+];
+
+export function parseBangQuery(raw: string): { bang: BangDefinition; query: string; url: string } | null {
+  const trimmed = raw.trim();
+  const match = trimmed.match(/^(![a-zA-Z]+)(?:\s+(.*))?$/);
+  if (!match) return null;
+  const bangCode = match[1].toLowerCase();
+  const query = (match[2] || '').trim();
+  const def = SEARCH_BANGS.find((b) => b.bang.toLowerCase() === bangCode);
+  if (!def) return null;
+  return {
+    bang: def,
+    query,
+    url: query ? def.buildUrl(query) : def.buildUrl(''),
+  };
+}
+
+export function purifyUrl(rawUrl: string): string {
+  try {
+    const url = new URL(rawUrl);
+    const trackingParams = [
+      'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
+      'fbclid', 'gclid', 'gclsrc', 'dclid', 'msclkid', 'mc_cid', 'mc_eid',
+      'igshid', 'si', '_ga', '_gl', 'yclid', 'zanpid'
+    ];
+    let changed = false;
+    trackingParams.forEach((param) => {
+      if (url.searchParams.has(param)) {
+        url.searchParams.delete(param);
+        changed = true;
+      }
+    });
+    return changed ? url.toString() : rawUrl;
+  } catch {
+    return rawUrl;
+  }
+}
+
 export function cleanDisplayUrl(rawUrl: string): string {
   try {
     return rawUrl
@@ -71,6 +125,45 @@ export function cleanDisplayUrl(rawUrl: string): string {
 export function getRankedSuggestions(query: string, maxResults = 7): SuggestionItem[] {
   const q = query.trim().toLowerCase();
   const qClean = cleanDisplayUrl(q);
+
+  // 0. Search Bangs Handling
+  if (q.startsWith('!')) {
+    const parsed = parseBangQuery(query);
+    const bangList: SuggestionItem[] = [];
+
+    if (parsed && parsed.query) {
+      bangList.push({
+        id: `bang-exec-${parsed.bang.bang}`,
+        type: 'search',
+        title: `${parsed.bang.name} for "${parsed.query}"`,
+        url: parsed.url,
+        cleanUrl: parsed.url,
+        rune: parsed.bang.rune,
+        badge: `⚡ ${parsed.bang.bang.toUpperCase()} BANG`,
+        score: 1000,
+      });
+    }
+
+    // List available bangs matching prefix
+    const matchingBangs = SEARCH_BANGS.filter((b) => b.bang.startsWith(q.split(' ')[0]));
+    matchingBangs.forEach((b) => {
+      if (parsed && parsed.bang.bang === b.bang && parsed.query) return;
+      bangList.push({
+        id: `bang-hint-${b.bang}`,
+        type: 'gateway',
+        title: `${b.name} (${b.hint})`,
+        url: b.buildUrl(''),
+        cleanUrl: b.bang,
+        rune: b.rune,
+        badge: '⚡ RUNIC BANG',
+        score: 800,
+      });
+    });
+
+    if (bangList.length > 0) {
+      return bangList.slice(0, maxResults);
+    }
+  }
 
   // 1. Fetch Runestones from localStorage
   let runestones: StoredRunestone[] = [];

@@ -18,6 +18,11 @@ import {
   Columns,
   Image as ImageIcon,
   Check,
+  Sparkles,
+  Languages,
+  Link2,
+  Volume2,
+  Repeat,
 } from 'lucide-react';
 
 interface NorseContextMenuProps {
@@ -30,6 +35,7 @@ interface NorseContextMenuProps {
   onDownloadUrl: (url: string, filename?: string) => void;
   onBookmarkUrl: (url: string, title?: string) => void;
   onSearchQuery: (query: string) => void;
+  onAskHuginn?: (prompt: string) => void;
 }
 
 export const NorseContextMenu: React.FC<NorseContextMenuProps> = ({
@@ -42,6 +48,7 @@ export const NorseContextMenu: React.FC<NorseContextMenuProps> = ({
   onDownloadUrl,
   onBookmarkUrl,
   onSearchQuery,
+  onAskHuginn,
 }) => {
   const menuRef = useRef<HTMLDivElement | null>(null);
   const theme = REALM_THEMES[activeRealm] || REALM_THEMES.midgard;
@@ -116,12 +123,36 @@ export const NorseContextMenu: React.FC<NorseContextMenuProps> = ({
         {/* 1. Selection Options */}
         {eventData.selectedText && (
           <div className="border-b border-white/5 pb-1 mb-1">
+            {onAskHuginn && (
+              <button
+                onClick={() => handleAction(() => onAskHuginn(`Explain or analyze this passage from the Nine Realms: "${eventData.selectedText}"`))}
+                className="flex w-full items-center space-x-2.5 rounded-lg px-2.5 py-1.5 hover:bg-white/10 hover:text-white transition-colors font-medium"
+                style={{ color: theme.accentColor }}
+              >
+                <Sparkles className="h-3.5 w-3.5 animate-pulse" />
+                <span className="truncate">Ask Huginn AI</span>
+              </button>
+            )}
             <button
               onClick={() => copyToClipboard(eventData.selectedText!)}
               className="flex w-full items-center space-x-2.5 rounded-lg px-2.5 py-1.5 hover:bg-white/10 hover:text-white transition-colors"
             >
               <Copy className="h-3.5 w-3.5 text-cyan-400" />
               <span className="truncate">Copy Selection</span>
+            </button>
+            <button
+              onClick={() => copyToClipboard(`[${eventData.selectedText}](${eventData.linkUrl || eventData.pageUrl})`)}
+              className="flex w-full items-center space-x-2.5 rounded-lg px-2.5 py-1.5 hover:bg-white/10 hover:text-white transition-colors text-slate-300"
+            >
+              <Link2 className="h-3.5 w-3.5 text-emerald-400" />
+              <span className="truncate">Copy as Markdown Link</span>
+            </button>
+            <button
+              onClick={() => handleAction(() => onSearchQuery(`translate: ${eventData.selectedText}`))}
+              className="flex w-full items-center space-x-2.5 rounded-lg px-2.5 py-1.5 hover:bg-white/10 hover:text-white transition-colors text-slate-300"
+            >
+              <Languages className="h-3.5 w-3.5 text-cyan-400" />
+              <span className="truncate">Translate Rune / Text</span>
             </button>
             <button
               onClick={() => handleAction(() => onSearchQuery(eventData.selectedText!))}
@@ -158,6 +189,13 @@ export const NorseContextMenu: React.FC<NorseContextMenuProps> = ({
             >
               <Copy className="h-3.5 w-3.5 text-slate-400" />
               <span>Copy Link Rune</span>
+            </button>
+            <button
+              onClick={() => copyToClipboard(`[${eventData.selectedText || eventData.pageTitle || 'Link'}](${eventData.linkUrl})`)}
+              className="flex w-full items-center space-x-2.5 rounded-lg px-2.5 py-1.5 hover:bg-white/10 hover:text-white transition-colors text-slate-300"
+            >
+              <Link2 className="h-3.5 w-3.5 text-emerald-400" />
+              <span>Copy as Markdown Link</span>
             </button>
             <button
               onClick={() => handleAction(() => onBookmarkUrl(eventData.linkUrl!, 'Linked Rune'))}

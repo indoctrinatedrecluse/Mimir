@@ -1,26 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { TitleBar } from '@/components/chrome/TitleBar';
 import { Omnibar } from '@/components/mimisbrunnr/Omnibar';
 import { TabTree } from '@/components/yggdrasil/TabTree';
 import { ContentViewport } from '@/components/viewport/ContentViewport';
 import { StatusBar } from '@/components/hud/StatusBar';
-import { RealmSelector } from '@/components/realms/RealmSelector';
 import { RunicAtmosphere } from '@/components/hud/RunicAtmosphere';
 import { SplashScreen } from '@/components/splash/SplashScreen';
-import { HuginnPanel } from '@/components/ai/HuginnPanel';
-import { MuninnVault } from '@/components/muninn/MuninnVault';
-import { BifrostMatrix } from '@/components/network/BifrostMatrix';
-import { BrokkrForge } from '@/components/forge/BrokkrForge';
-import { CommandPalette } from '@/components/palette/CommandPalette';
-import { RuneSeeker } from '@/components/hud/RuneSeeker';
-import { MimirsHoard, DownloadItem } from '@/components/hud/MimirsHoard';
-import { FateThreadPurge } from '@/components/hud/FateThreadPurge';
-import { Tab, RealmId } from '@/types';
+import { Tab, RealmId, DownloadItem } from '@/types';
 import { runicAudio } from '@/core/audio/runicAudio';
 import { mimirIpc, NativeContextMenuEvent } from '@/core/ipc/bridge';
 import { AnimatePresence } from 'framer-motion';
 import { NorseContextMenu } from '@/components/chrome/NorseContextMenu';
-import { detectFileType } from '@/components/hud/MimirsHoard';
+import { detectFileType } from '@/core/utils/fileType';
+
+// Engine & Bundle Optimization: Lazy-load heavy drawers and overlays
+const RealmSelector = lazy(() => import('@/components/realms/RealmSelector').then((m) => ({ default: m.RealmSelector })));
+const HuginnPanel = lazy(() => import('@/components/ai/HuginnPanel').then((m) => ({ default: m.HuginnPanel })));
+const MuninnVault = lazy(() => import('@/components/muninn/MuninnVault').then((m) => ({ default: m.MuninnVault })));
+const BifrostMatrix = lazy(() => import('@/components/network/BifrostMatrix').then((m) => ({ default: m.BifrostMatrix })));
+const BrokkrForge = lazy(() => import('@/components/forge/BrokkrForge').then((m) => ({ default: m.BrokkrForge })));
+const CommandPalette = lazy(() => import('@/components/palette/CommandPalette').then((m) => ({ default: m.CommandPalette })));
+const RuneSeeker = lazy(() => import('@/components/hud/RuneSeeker').then((m) => ({ default: m.RuneSeeker })));
+const MimirsHoard = lazy(() => import('@/components/hud/MimirsHoard').then((m) => ({ default: m.MimirsHoard })));
+const FateThreadPurge = lazy(() => import('@/components/hud/FateThreadPurge').then((m) => ({ default: m.FateThreadPurge })));
 
 const getInitialRealm = (): RealmId => {
   try {
@@ -82,6 +84,7 @@ export const App: React.FC = () => {
   const [splitTabId, setSplitTabId] = useState<string | undefined>('tab-2');
   const [isAmbientPlaying, setIsAmbientPlaying] = useState(runicAudio.isAmbientEnabled());
   const [showSplash, setShowSplash] = useState(true);
+  const [huginnPrompt, setHuginnPrompt] = useState<string>('');
 
   // Download artifacts telemetry & localStorage persistence
   const [downloads, setDownloads] = useState<DownloadItem[]>(() => {
@@ -280,6 +283,28 @@ export const App: React.FC = () => {
         runicAudio.playClick(750);
         setIsClearDataOpen((prev) => !prev);
       }
+      // Alt+1 to Alt+9: Realm Jump Hotkeys
+      if (e.altKey && !e.ctrlKey && !e.shiftKey) {
+        const num = parseInt(e.key, 10);
+        if (num >= 1 && num <= 9) {
+          const realms: RealmId[] = [
+            'midgard',
+            'asgard',
+            'vanaheim',
+            'alfheim',
+            'jotunheim',
+            'muspelheim',
+            'niflheim',
+            'nidavellir',
+            'helheim',
+          ];
+          const target = realms[num - 1];
+          if (target) {
+            e.preventDefault();
+            handleSelectRealm(target);
+          }
+        }
+      }
       // Esc: Close modals & drawers
       if (e.key === 'Escape') {
         setIsRealmSelectorOpen(false);
@@ -444,6 +469,12 @@ export const App: React.FC = () => {
     );
   };
 
+  const handleToggleMuteTab = (id: string) => {
+    setTabs((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, isMuted: !t.isMuted } : t))
+    );
+  };
+
   const handleDuplicateTab = (id: string) => {
     const source = tabs.find((t) => t.id === id);
     if (!source) return;
@@ -460,6 +491,7 @@ export const App: React.FC = () => {
       realm: source.realm,
       rune: randomRune,
       zoomLevel: source.zoomLevel || 100,
+      parentId: id,
     };
     setTabs((prev) => prev.map((t) => ({ ...t, isActive: false })).concat(newTab));
     setActiveTabId(newId);
@@ -498,6 +530,25 @@ export const App: React.FC = () => {
       type: detectFileType(filename),
     };
     setDownloads((prev) => [tempItem, ...prev]);
+  };
+
+  const handleCancelDownloadItem = (id: string) => {
+    mimirIpc.cancelDownload(id);
+    setDownloads((prev) =>
+      prev.map((d) => (d.id === id ? { ...d, status: 'failed', progress: 0 } : d))
+    );
+  };
+
+  const handleTogglePauseDownloadItem = (id: string) => {
+    setDownloads((prev) =>
+      prev.map((d) => {
+        if (d.id === id) {
+          const nextStatus = d.status === 'downloading' ? 'paused' : 'downloading';
+          return { ...d, status: nextStatus };
+        }
+        return d;
+      })
+    );
   };
 
   const handleDeleteDownloadItem = (id: string, path: string) => {
@@ -582,6 +633,7 @@ export const App: React.FC = () => {
           onTogglePinTab={handleTogglePinTab}
           onDuplicateTab={handleDuplicateTab}
           onReorderTabs={(newTabs) => setTabs(newTabs)}
+          onToggleMuteTab={handleToggleMuteTab}
         />
 
         <ContentViewport
@@ -607,106 +659,112 @@ export const App: React.FC = () => {
       {/* Layer 4: Status Telemetry HUD */}
       <StatusBar activeRealm={activeRealm} />
 
-      {/* Overlay 1: Nine Realms Modal */}
-      <RealmSelector
-        isOpen={isRealmSelectorOpen}
-        activeRealm={activeRealm}
-        onSelectRealm={handleSelectRealm}
-        onClose={() => setIsRealmSelectorOpen(false)}
-      />
+      {/* Lazy Overlays & Drawers Boundary */}
+      <Suspense fallback={null}>
+        {/* Overlay 1: Nine Realms Modal */}
+        <RealmSelector
+          isOpen={isRealmSelectorOpen}
+          activeRealm={activeRealm}
+          onSelectRealm={handleSelectRealm}
+          onClose={() => setIsRealmSelectorOpen(false)}
+        />
 
-      {/* Overlay 2: Muninn's Memory Vault (Runestones & History) */}
-      <MuninnVault
-        isOpen={isMuninnOpen}
-        onClose={() => setIsMuninnOpen(false)}
-        activeRealm={activeRealm}
-        currentTab={activeTab}
-        onNavigate={handleNavigate}
-      />
+        {/* Overlay 2: Muninn's Memory Vault (Runestones & History) */}
+        <MuninnVault
+          isOpen={isMuninnOpen}
+          onClose={() => setIsMuninnOpen(false)}
+          activeRealm={activeRealm}
+          currentTab={activeTab}
+          onNavigate={handleNavigate}
+        />
 
-      {/* Overlay 3: Bifröst Proxy Conduit Matrix */}
-      <BifrostMatrix
-        isOpen={isBifrostOpen}
-        onClose={() => setIsBifrostOpen(false)}
-        activeRealm={activeRealm}
-      />
+        {/* Overlay 3: Bifröst Proxy Conduit Matrix */}
+        <BifrostMatrix
+          isOpen={isBifrostOpen}
+          onClose={() => setIsBifrostOpen(false)}
+          activeRealm={activeRealm}
+        />
 
-      {/* Overlay 4: Brokkr's Extension Forge */}
-      <BrokkrForge
-        isOpen={isForgeOpen}
-        onClose={() => setIsForgeOpen(false)}
-        activeRealm={activeRealm}
-      />
+        {/* Overlay 4: Brokkr's Extension Forge */}
+        <BrokkrForge
+          isOpen={isForgeOpen}
+          onClose={() => setIsForgeOpen(false)}
+          activeRealm={activeRealm}
+        />
 
-      {/* Overlay 5: Hliðskjálf Command Palette */}
-      <CommandPalette
-        isOpen={isCommandPaletteOpen}
-        onClose={() => setIsCommandPaletteOpen(false)}
-        activeRealm={activeRealm}
-        onNewTab={() => handleNewTab()}
-        onCloseTab={() => {
-          if (activeTab && !activeTab.isPinned) handleCloseTab(activeTab.id);
-        }}
-        onToggleSplitGaze={() => setIsSplitGaze((prev) => !prev)}
-        onToggleHuginn={() => setIsHuginnOpen((prev) => !prev)}
-        onToggleMuninn={() => setIsMuninnOpen((prev) => !prev)}
-        onToggleBifrost={() => setIsBifrostOpen(true)}
-        onToggleForge={() => setIsForgeOpen(true)}
-        onToggleAmbient={() => {
-          const nextState = runicAudio.toggleAmbient(activeRealm);
-          setIsAmbientPlaying(nextState);
-        }}
-        isAmbientPlaying={isAmbientPlaying}
-        onSelectRealm={handleSelectRealm}
-        onNavigateHome={() => handleNavigate('mimir://newtab')}
-        onRefresh={() => {
-          if (activeTab?.url) {
-            handleNavigate(activeTab.url);
-          }
-        }}
-        onZoomIn={handleZoomIn}
-        onZoomOut={handleZoomOut}
-        onZoomReset={handleZoomReset}
-        onPrint={handlePrint}
-        onOpenFind={() => setIsFindOpen(true)}
-        onOpenDownloads={() => setIsDownloadsOpen(true)}
-        onOpenClearData={() => setIsClearDataOpen(true)}
-        onPinActiveTab={() => handleTogglePinTab(activeTabId)}
-        onDuplicateActiveTab={() => handleDuplicateTab(activeTabId)}
-      />
+        {/* Overlay 5: Hliðskjálf Command Palette */}
+        <CommandPalette
+          isOpen={isCommandPaletteOpen}
+          onClose={() => setIsCommandPaletteOpen(false)}
+          activeRealm={activeRealm}
+          onNewTab={() => handleNewTab()}
+          onCloseTab={() => {
+            if (activeTab && !activeTab.isPinned) handleCloseTab(activeTab.id);
+          }}
+          onToggleSplitGaze={() => setIsSplitGaze((prev) => !prev)}
+          onToggleHuginn={() => setIsHuginnOpen((prev) => !prev)}
+          onToggleMuninn={() => setIsMuninnOpen((prev) => !prev)}
+          onToggleBifrost={() => setIsBifrostOpen(true)}
+          onToggleForge={() => setIsForgeOpen(true)}
+          onToggleAmbient={() => {
+            const nextState = runicAudio.toggleAmbient(activeRealm);
+            setIsAmbientPlaying(nextState);
+          }}
+          isAmbientPlaying={isAmbientPlaying}
+          onSelectRealm={handleSelectRealm}
+          onNavigateHome={() => handleNavigate('mimir://newtab')}
+          onRefresh={() => {
+            if (activeTab?.url) {
+              handleNavigate(activeTab.url);
+            }
+          }}
+          onZoomIn={handleZoomIn}
+          onZoomOut={handleZoomOut}
+          onZoomReset={handleZoomReset}
+          onPrint={handlePrint}
+          onOpenFind={() => setIsFindOpen(true)}
+          onOpenDownloads={() => setIsDownloadsOpen(true)}
+          onOpenClearData={() => setIsClearDataOpen(true)}
+          onPinActiveTab={() => handleTogglePinTab(activeTabId)}
+          onDuplicateActiveTab={() => handleDuplicateTab(activeTabId)}
+        />
 
-      {/* Overlay 6: Rune Seeker (Find in Page) */}
-      <RuneSeeker
-        isOpen={isFindOpen}
-        onClose={() => setIsFindOpen(false)}
-        activeRealm={activeRealm}
-      />
+        {/* Overlay 6: Rune Seeker (Find in Page) */}
+        <RuneSeeker
+          isOpen={isFindOpen}
+          onClose={() => setIsFindOpen(false)}
+          activeRealm={activeRealm}
+        />
 
-      {/* Overlay 7: Mímir's Hoard (Downloads Manager) */}
-      <MimirsHoard
-        isOpen={isDownloadsOpen}
-        onClose={() => setIsDownloadsOpen(false)}
-        activeRealm={activeRealm}
-        downloads={downloads}
-        onClearCompleted={() => setDownloads((prev) => prev.filter((d) => d.status !== 'complete'))}
-        onAcquireUrl={handleAcquireUrl}
-        onDeleteItem={handleDeleteDownloadItem}
-      />
+        {/* Overlay 7: Mímir's Hoard (Downloads Manager) */}
+        <MimirsHoard
+          isOpen={isDownloadsOpen}
+          onClose={() => setIsDownloadsOpen(false)}
+          activeRealm={activeRealm}
+          downloads={downloads}
+          onClearCompleted={() => setDownloads((prev) => prev.filter((d) => d.status !== 'complete'))}
+          onAcquireUrl={handleAcquireUrl}
+          onDeleteItem={handleDeleteDownloadItem}
+          onCancelItem={handleCancelDownloadItem}
+          onTogglePauseItem={handleTogglePauseDownloadItem}
+        />
 
-      {/* Overlay 8: Fate Thread Purge (Clear Browsing Data) */}
-      <FateThreadPurge
-        isOpen={isClearDataOpen}
-        onClose={() => setIsClearDataOpen(false)}
-        activeRealm={activeRealm}
-      />
+        {/* Overlay 8: Fate Thread Purge (Clear Browsing Data) */}
+        <FateThreadPurge
+          isOpen={isClearDataOpen}
+          onClose={() => setIsClearDataOpen(false)}
+          activeRealm={activeRealm}
+        />
 
-      {/* Slide-out: Huginn AI Intelligence Drawer */}
-      <HuginnPanel
-        isOpen={isHuginnOpen}
-        onClose={() => setIsHuginnOpen(false)}
-        activeRealm={activeRealm}
-        currentTab={activeTab}
-      />
+        {/* Slide-out: Huginn AI Intelligence Drawer */}
+        <HuginnPanel
+          isOpen={isHuginnOpen}
+          onClose={() => setIsHuginnOpen(false)}
+          activeRealm={activeRealm}
+          currentTab={activeTab}
+          initialPrompt={huginnPrompt}
+        />
+      </Suspense>
 
       {/* Custom Themed Norse Context Menu */}
       <NorseContextMenu
@@ -742,6 +800,10 @@ export const App: React.FC = () => {
         onSearchQuery={(query) => {
           const searchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(query)}`;
           handleNewTab(searchUrl);
+        }}
+        onAskHuginn={(prompt) => {
+          setHuginnPrompt(prompt);
+          setIsHuginnOpen(true);
         }}
       />
     </div>

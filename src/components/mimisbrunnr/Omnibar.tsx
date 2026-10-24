@@ -31,10 +31,13 @@ import {
   ZoomOut,
   Download,
   Printer,
+  QrCode,
+  ShieldOff,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getRankedSuggestions, SuggestionItem, cleanDisplayUrl } from '@/core/navigation/autosuggest';
+import { getRankedSuggestions, SuggestionItem, cleanDisplayUrl, parseBangQuery, purifyUrl } from '@/core/navigation/autosuggest';
 import { SecurityWardWidget } from './SecurityWardWidget';
+import { RunicQrPopover } from './RunicQrPopover';
 
 interface OmnibarProps {
   currentUrl: string;
@@ -101,9 +104,28 @@ export const Omnibar: React.FC<OmnibarProps> = ({
   const [isFocused, setIsFocused] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const [isSecurityWidgetOpen, setIsSecurityWidgetOpen] = useState(false);
+  const [isQrOpen, setIsQrOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const theme = REALM_THEMES[activeRealm] || REALM_THEMES.midgard;
+
+  const isRealmWardLowered = useMemo(() => {
+    try {
+      if (!currentUrl || currentUrl.startsWith('mimir://')) return false;
+      const host = new URL(currentUrl).hostname;
+      const raw = localStorage.getItem('mimir_ward_whitelist');
+      if (raw) {
+        const whitelist: string[] = JSON.parse(raw);
+        return whitelist.includes(host);
+      }
+    } catch {}
+    return false;
+  }, [currentUrl, isSecurityWidgetOpen]);
+
+  const hasTrackingRunes = useMemo(() => {
+    if (!currentUrl || currentUrl.startsWith('mimir://')) return false;
+    return purifyUrl(currentUrl) !== currentUrl;
+  }, [currentUrl]);
 
   useEffect(() => {
     setInputVal(currentUrl);
@@ -129,7 +151,10 @@ export const Omnibar: React.FC<OmnibarProps> = ({
 
   const handleNavigateTarget = (target: string) => {
     let url = target.trim();
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    const bangMatch = parseBangQuery(url);
+    if (bangMatch) {
+      url = bangMatch.url;
+    } else if (!url.startsWith('http://') && !url.startsWith('https://')) {
       if (url.includes('.') && !url.includes(' ')) {
         url = 'https://' + url;
       } else {
@@ -287,14 +312,18 @@ export const Omnibar: React.FC<OmnibarProps> = ({
             }}
             className="flex items-center pl-3 pr-2 transition-transform hover:scale-110 active:scale-95 focus:outline-none"
             title={
-              currentUrl.startsWith('https://')
+              isRealmWardLowered
+                ? 'Ward Lowered for this Realm — Click to manage Security Ward'
+                : currentUrl.startsWith('https://')
                 ? 'Sacred Conduit (Encrypted HTTPS) — Click to view Security Ward'
                 : currentUrl.startsWith('http://')
                 ? 'Unshielded Passage (HTTP) — Click to view Security Ward'
                 : 'Mímir Sanctuary (Internal) — Click to view Security Ward'
             }
           >
-            {currentUrl.startsWith('https://') ? (
+            {isRealmWardLowered ? (
+              <ShieldAlert className="h-3.5 w-3.5 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.7)] animate-pulse" />
+            ) : currentUrl.startsWith('https://') ? (
               <Lock className="h-3.5 w-3.5 text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
             ) : currentUrl.startsWith('http://') ? (
               <ShieldAlert className="h-3.5 w-3.5 text-red-400 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
@@ -324,12 +353,44 @@ export const Omnibar: React.FC<OmnibarProps> = ({
               setIsFocused(true);
               runicAudio.playRunicHum();
             }}
-            placeholder="Drink from Mímisbrunnr... (Search or enter destination URL)"
+            placeholder="Drink from Mímisbrunnr... (Search, !bang, or enter URL)"
             className="h-8 flex-1 bg-transparent text-xs tracking-wide text-slate-100 outline-none placeholder:text-slate-500/70"
           />
 
           {/* Right side icons */}
           <div className="flex items-center space-x-1.5 pr-2">
+            {/* Purify URL Button (if trackers detected) */}
+            {hasTrackingRunes && (
+              <button
+                type="button"
+                onClick={() => {
+                  runicAudio.playChime();
+                  const clean = purifyUrl(currentUrl);
+                  onNavigate(clean);
+                }}
+                className="flex items-center space-x-1 rounded px-1.5 py-0.5 text-[10px] font-mono text-cyan-300 bg-cyan-500/15 border border-cyan-500/30 hover:bg-cyan-500/25 transition-all"
+                title="Purify URL: Strip tracking & telemetry runes"
+              >
+                <Sparkles className="h-3 w-3 text-cyan-400" />
+                <span className="hidden lg:inline text-[9px] font-bold">PURIFY</span>
+              </button>
+            )}
+
+            {/* Offline Runic QR Lens Button */}
+            <button
+              type="button"
+              onClick={() => {
+                runicAudio.playClick(700);
+                setIsQrOpen(!isQrOpen);
+              }}
+              className={`p-1 transition-colors hover:text-cyan-300 ${
+                isQrOpen ? 'text-cyan-400' : 'text-slate-400 hover:text-slate-200'
+              }`}
+              title="Runic Lens: Offline QR code sharing"
+            >
+              <QrCode className="h-3.5 w-3.5" />
+            </button>
+
             {/* Bookmark / Runestone */}
             <button
               type="button"
@@ -654,6 +715,15 @@ export const Omnibar: React.FC<OmnibarProps> = ({
         onOpenClearData={onOpenClearData}
         liveBlockedCount={liveBlockedCount}
         onUpgradeToHttps={onUpgradeToHttps}
+      />
+
+      {/* Offline Runic QR Code Sharing Popover */}
+      <RunicQrPopover
+        isOpen={isQrOpen}
+        onClose={() => setIsQrOpen(false)}
+        url={currentUrl}
+        activeRealm={activeRealm}
+        onPurifyAndNavigate={onNavigate}
       />
     </div>
   );

@@ -19,6 +19,10 @@ export const RuneSeeker: React.FC<RuneSeekerProps> = ({
 }) => {
   const [query, setQuery] = useState('');
   const [matchInfo, setMatchInfo] = useState('');
+  const [matchCount, setMatchCount] = useState<number | null>(null);
+  const [caseSensitive, setCaseSensitive] = useState(false);
+  const [useRegex, setUseRegex] = useState(false);
+
   const inputRef = useRef<HTMLInputElement | null>(null);
   const theme = REALM_THEMES[activeRealm] || REALM_THEMES.midgard;
 
@@ -34,13 +38,58 @@ export const RuneSeeker: React.FC<RuneSeekerProps> = ({
       mimirIpc.send({ type: 'FIND_CLOSE' });
       setQuery('');
       setMatchInfo('');
+      setMatchCount(null);
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    const unsub = mimirIpc.onFindResult((res) => {
+      setMatchCount(res.count);
+      if (res.count === 0) {
+        setMatchInfo('No matches');
+      } else {
+        setMatchInfo(`${res.count} ${res.count === 1 ? 'match' : 'matches'}`);
+      }
+    });
+    return unsub;
+  }, []);
+
+  const executeFind = (searchQuery: string, isCase: boolean, isRegex: boolean) => {
+    if (!searchQuery.trim()) {
+      setMatchInfo('');
+      setMatchCount(null);
+      return;
+    }
+    mimirIpc.send({
+      type: 'FIND_IN_PAGE',
+      payload: {
+        query: searchQuery,
+        caseSensitive: isCase,
+        useRegex: isRegex,
+      },
+    });
+  };
+
   const handleSearch = (searchQuery: string) => {
-    if (!searchQuery.trim()) return;
-    mimirIpc.send({ type: 'FIND_IN_PAGE', payload: { query: searchQuery } });
-    setMatchInfo('Seeking...');
+    executeFind(searchQuery, caseSensitive, useRegex);
+  };
+
+  const toggleCase = () => {
+    const next = !caseSensitive;
+    setCaseSensitive(next);
+    runicAudio.playClick(700);
+    if (query.trim()) {
+      executeFind(query, next, useRegex);
+    }
+  };
+
+  const toggleRegex = () => {
+    const next = !useRegex;
+    setUseRegex(next);
+    runicAudio.playClick(700);
+    if (query.trim()) {
+      executeFind(query, caseSensitive, next);
+    }
   };
 
   const handleNext = () => {
@@ -61,7 +110,7 @@ export const RuneSeeker: React.FC<RuneSeekerProps> = ({
       if (e.shiftKey) {
         handlePrevious();
       } else {
-        handleSearch(query);
+        handleNext();
       }
     }
     if (e.key === 'Escape') {
@@ -103,22 +152,63 @@ export const RuneSeeker: React.FC<RuneSeekerProps> = ({
             type="text"
             value={query}
             onChange={(e) => {
-              setQuery(e.target.value);
-              if (e.target.value.length > 1) {
-                handleSearch(e.target.value);
-              }
+              const val = e.target.value;
+              setQuery(val);
+              handleSearch(val);
             }}
             onKeyDown={handleKeyDown}
             placeholder="Seek rune in page..."
-            className="h-7 w-52 rounded border border-white/10 bg-white/[0.05] px-2.5 text-xs text-slate-100 outline-none placeholder:text-slate-500 focus:border-white/20"
+            className="h-7 w-48 rounded border border-white/10 bg-white/[0.05] px-2.5 text-xs text-slate-100 outline-none placeholder:text-slate-500 focus:border-white/20"
             style={{
               borderColor: query ? `${theme.accentColor}50` : undefined,
             }}
           />
 
-          {/* Match Info */}
+          {/* Case Sensitive Toggle (Aa) */}
+          <button
+            onClick={toggleCase}
+            className={`flex h-6 px-1.5 items-center justify-center rounded text-[11px] font-mono font-bold transition-all ${
+              caseSensitive
+                ? 'border text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent'
+            }`}
+            style={{
+              borderColor: caseSensitive ? `${theme.accentColor}60` : undefined,
+              backgroundColor: caseSensitive ? `${theme.accentColor}25` : undefined,
+              color: caseSensitive ? theme.accentColor : undefined,
+            }}
+            title="Match Case (Aa)"
+          >
+            Aa
+          </button>
+
+          {/* Regex Toggle (.*) */}
+          <button
+            onClick={toggleRegex}
+            className={`flex h-6 px-1.5 items-center justify-center rounded text-[11px] font-mono font-bold transition-all ${
+              useRegex
+                ? 'border text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent'
+            }`}
+            style={{
+              borderColor: useRegex ? `${theme.accentColor}60` : undefined,
+              backgroundColor: useRegex ? `${theme.accentColor}25` : undefined,
+              color: useRegex ? theme.accentColor : undefined,
+            }}
+            title="Use Regular Expression (.*)"
+          >
+            .*
+          </button>
+
+          {/* Match Info Badge */}
           {matchInfo && (
-            <span className="text-[10px] font-mono text-slate-400 whitespace-nowrap">
+            <span
+              className={`text-[10px] font-mono whitespace-nowrap px-1.5 py-0.5 rounded border ${
+                matchCount && matchCount > 0
+                  ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+                  : 'border-white/10 bg-white/[0.03] text-slate-400'
+              }`}
+            >
               {matchInfo}
             </span>
           )}

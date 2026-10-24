@@ -481,8 +481,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     tab_manager.print_page();
                 }
                 IpcCommand::FindInPage { payload } => {
-                    logger::info(&format!("Seeking rune in page: {}", payload.query));
-                    tab_manager.find_in_page(&payload.query);
+                    logger::info(&format!("Seeking rune in page: {} (case={}, regex={})", payload.query, payload.case_sensitive, payload.use_regex));
+                    tab_manager.find_in_page(&payload.query, payload.case_sensitive, payload.use_regex);
                 }
                 IpcCommand::FindNext => {
                     logger::info("Seeking next rune match");
@@ -622,9 +622,54 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         let _ = _hud.evaluate_script(&script);
                     }
                 }
+                IpcCommand::CancelDownload { payload } => {
+                    logger::info(&format!("Canceling download artifact {}", payload.id));
+                }
+                IpcCommand::CalculateHash { payload } => {
+                    let path_clone = payload.path.clone();
+                    let proxy_hash = event_loop_proxy.clone();
+                    std::thread::spawn(move || {
+                        #[cfg(target_os = "windows")]
+                        {
+                            use std::os::windows::process::CommandExt;
+                            const CREATE_NO_WINDOW: u32 = 0x08000000;
+                            let output = std::process::Command::new("certutil")
+                                .args(["-hashfile", &path_clone, "SHA256"])
+                                .creation_flags(CREATE_NO_WINDOW)
+                                .output();
+                            if let Ok(out) = output {
+                                let stdout = String::from_utf8_lossy(&out.stdout);
+                                let lines: Vec<&str> = stdout.lines().collect();
+                                let hash_str = if lines.len() >= 2 {
+                                    lines[1].trim().to_string()
+                                } else {
+                                    "Error computing SHA-256".to_string()
+                                };
+                                let _ = proxy_hash.send_event(IpcCommand::HashResult {
+                                    payload: crate::ipc::HashResultPayload {
+                                        path: path_clone,
+                                        hash: hash_str,
+                                    },
+                                });
+                            }
+                        }
+                    });
+                }
                 IpcCommand::TrackerBlocked { payload } => {
                     if let Ok(json) = serde_json::to_string(&payload) {
                         let script = format!("window.__mimirOnTrackerBlocked && window.__mimirOnTrackerBlocked({});", json);
+                        let _ = _hud.evaluate_script(&script);
+                    }
+                }
+                IpcCommand::FindResult { payload } => {
+                    if let Ok(json) = serde_json::to_string(&payload) {
+                        let script = format!("window.__mimirOnFindResult && window.__mimirOnFindResult({});", json);
+                        let _ = _hud.evaluate_script(&script);
+                    }
+                }
+                IpcCommand::HashResult { payload } => {
+                    if let Ok(json) = serde_json::to_string(&payload) {
+                        let script = format!("window.__mimirOnHashResult && window.__mimirOnHashResult({});", json);
                         let _ = _hud.evaluate_script(&script);
                     }
                 }

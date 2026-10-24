@@ -34,6 +34,8 @@ export interface Tab {
   realm: RealmId;
   rune: string;
   zoomLevel: number;
+  parentId?: string;
+  isBranchCollapsed?: boolean;
 }
 
 export interface RunicWardStats {
@@ -49,3 +51,16 @@ export interface WindowState {
   isAudioEnabled: boolean;
   activeRealm: RealmId;
 }
+
+export interface DownloadItem {
+  id: string;
+  filename: string;
+  url: string;
+  path: string;
+  size: string;
+  progress: number; // 0-100
+  status: 'downloading' | 'complete' | 'failed' | 'paused';
+  timestamp: string;
+  type: 'document' | 'image' | 'archive' | 'video' | 'audio' | 'other';
+}
+

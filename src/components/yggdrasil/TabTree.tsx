@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Tab, RealmId } from '@/types';
 import { runicAudio } from '@/core/audio/runicAudio';
 import { mimirIpc } from '@/core/ipc/bridge';
 import { REALM_THEMES } from '@/components/themes/realmThemes';
 import { NorseKnotworkRibbon } from '@/components/themes/NorsePatterns';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
-import { Plus, X, Volume2, VolumeX, ChevronLeft, ChevronRight, History, Terminal, Pin, PinOff, Copy, GripVertical } from 'lucide-react';
+import { Plus, X, Volume2, VolumeX, ChevronLeft, ChevronRight, History, Terminal, Pin, PinOff, Copy, Search, GitBranch } from 'lucide-react';
 
 interface TabTreeProps {
   tabs: Tab[];
@@ -20,6 +20,7 @@ interface TabTreeProps {
   onTogglePinTab?: (id: string) => void;
   onDuplicateTab?: (id: string) => void;
   onReorderTabs?: (newTabs: Tab[]) => void;
+  onToggleMuteTab?: (id: string) => void;
 }
 
 export const TabTree: React.FC<TabTreeProps> = ({
@@ -35,8 +36,16 @@ export const TabTree: React.FC<TabTreeProps> = ({
   onTogglePinTab,
   onDuplicateTab,
   onReorderTabs,
+  onToggleMuteTab,
 }) => {
   const theme = REALM_THEMES[activeRealm] || REALM_THEMES.midgard;
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredTabs = useMemo(() => {
+    if (!searchQuery.trim()) return tabs;
+    const q = searchQuery.toLowerCase();
+    return tabs.filter((t) => t.title.toLowerCase().includes(q) || t.url.toLowerCase().includes(q));
+  }, [tabs, searchQuery]);
 
   return (
     <aside
@@ -85,27 +94,50 @@ export const TabTree: React.FC<TabTreeProps> = ({
       </div>
 
       {/* Command Palette Trigger Button (Just above tabs) */}
-      <div className="px-2 pt-2 pb-1 shrink-0">
+      <div className="px-2 pt-2 pb-1 shrink-0 space-y-1.5">
         {!isCollapsed ? (
-          <button
-            onClick={() => {
-              runicAudio.playClick(600);
-              onOpenCommandPalette?.();
-            }}
-            className="group flex w-full items-center justify-between rounded-lg border border-white/10 bg-[#090e18]/80 px-2.5 py-1.5 text-xs text-slate-400 transition-all hover:border-white/20 hover:bg-[#0d1424] hover:text-white"
-            style={{
-              borderColor: `${theme.accentColor}25`,
-            }}
-            title="Open Hliðskjálf Command Palette (Ctrl+K)"
-          >
-            <div className="flex items-center space-x-2">
-              <Terminal className="h-3.5 w-3.5" style={{ color: theme.accentColor }} />
-              <span className="text-[11px] font-mono tracking-wide">Seek Command...</span>
+          <>
+            <button
+              onClick={() => {
+                runicAudio.playClick(600);
+                onOpenCommandPalette?.();
+              }}
+              className="group flex w-full items-center justify-between rounded-lg border border-white/10 bg-[#090e18]/80 px-2.5 py-1.5 text-xs text-slate-400 transition-all hover:border-white/20 hover:bg-[#0d1424] hover:text-white"
+              style={{
+                borderColor: `${theme.accentColor}25`,
+              }}
+              title="Open Hliðskjálf Command Palette (Ctrl+K)"
+            >
+              <div className="flex items-center space-x-2">
+                <Terminal className="h-3.5 w-3.5" style={{ color: theme.accentColor }} />
+                <span className="text-[11px] font-mono tracking-wide">Seek Command...</span>
+              </div>
+              <span className="rounded bg-white/5 px-1.5 py-0.2 text-[9px] font-mono text-slate-500 group-hover:text-slate-300 border border-white/5">
+                Ctrl+K
+              </span>
+            </button>
+
+            {/* Quick Tab Branch Filter Input */}
+            <div className="relative flex items-center">
+              <Search className="absolute left-2 h-3 w-3 text-slate-500 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Filter branches..."
+                className="w-full rounded-md border border-white/5 bg-black/40 pl-7 pr-6 py-1 text-[10px] font-mono text-slate-200 outline-none placeholder:text-slate-600 focus:border-white/20 transition-colors"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-1.5 p-0.5 text-slate-500 hover:text-white"
+                  title="Clear filter"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
             </div>
-            <span className="rounded bg-white/5 px-1.5 py-0.2 text-[9px] font-mono text-slate-500 group-hover:text-slate-300 border border-white/5">
-              Ctrl+K
-            </span>
-          </button>
+          </>
         ) : (
           <button
             onClick={() => {
@@ -128,19 +160,21 @@ export const TabTree: React.FC<TabTreeProps> = ({
       <div className="flex-1 space-y-1.5 overflow-y-auto p-2">
         <Reorder.Group
           axis="y"
-          values={tabs}
+          values={filteredTabs}
           onReorder={(newTabs) => onReorderTabs?.(newTabs)}
           className="space-y-1.5"
         >
-          {tabs.map((tab) => {
+          {filteredTabs.map((tab) => {
             const isActive = tab.id === activeTabId;
+            const isChildBranch = Boolean(tab.parentId);
+
             return (
               <Reorder.Item
                 key={tab.id}
                 value={tab}
                 id={tab.id}
                 whileDrag={{ scale: 1.02, zIndex: 30 }}
-                className="relative"
+                className={`relative ${isChildBranch && !isCollapsed ? 'ml-3 pl-1.5 border-l border-white/10' : ''}`}
               >
                 {/* Active Glow Backdrop */}
                 {isActive && (
@@ -171,6 +205,11 @@ export const TabTree: React.FC<TabTreeProps> = ({
                   }`}
                   title={`${tab.title} (${tab.url})`}
                 >
+                  {/* Branch hierarchy marker for nested children */}
+                  {isChildBranch && !isCollapsed && (
+                    <GitBranch className="h-2.5 w-2.5 mr-1 text-slate-500 shrink-0 opacity-60" />
+                  )}
+
                   {/* Left Runic Sigil Frame */}
                   <div
                     className={`relative flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-xs font-bold transition-all border ${
@@ -211,14 +250,34 @@ export const TabTree: React.FC<TabTreeProps> = ({
                         </span>
                       </div>
 
-                      {/* Right icons: Pin, Duplicate, Audio, Close */}
+                      {/* Right icons: Audio Wave Equalizer, Pin, Duplicate, Close */}
                       <div className="flex items-center space-x-1 pl-1">
-                        {tab.isMuted && (
-                          <VolumeX className="h-3 w-3 text-slate-500" />
-                        )}
-                        {!tab.isMuted && isActive && (
-                          <Volume2 className="h-3 w-3 animate-pulse" style={{ color: theme.accentColor }} />
-                        )}
+                        {/* Audio Wave Equalizer with Quick Mute */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            runicAudio.playClick(tab.isMuted ? 750 : 350);
+                            onToggleMuteTab?.(tab.id);
+                          }}
+                          className={`flex items-center justify-center h-5 w-5 rounded transition-all ${
+                            tab.isMuted
+                              ? 'text-rose-400 hover:bg-rose-500/20'
+                              : isActive
+                              ? 'text-cyan-400 hover:bg-cyan-500/20'
+                              : 'text-slate-500 opacity-0 group-hover:opacity-100 hover:text-white'
+                          }`}
+                          title={tab.isMuted ? 'Branch Muted (Click to Unmute)' : 'Mute Branch Audio'}
+                        >
+                          {tab.isMuted ? (
+                            <VolumeX className="h-3 w-3" />
+                          ) : (
+                            <div className="flex items-end space-x-[2px] h-3 w-3.5 pb-0.5">
+                              <span className="w-[2px] bg-cyan-400 rounded-full animate-pulse h-2.5" />
+                              <span className="w-[2px] bg-cyan-300 rounded-full animate-bounce h-3" />
+                              <span className="w-[2px] bg-cyan-400 rounded-full animate-pulse h-1.5" />
+                            </div>
+                          )}
+                        </button>
 
                         {/* Quick Pin Toggle Button */}
                         <button

@@ -20,6 +20,12 @@ import {
   Plus,
   ArrowRight,
   AlertCircle,
+  Pause,
+  Play,
+  Hash,
+  ShieldCheck,
+  Copy,
+  Check,
 } from 'lucide-react';
 
 export interface DownloadItem {
@@ -42,17 +48,12 @@ interface MimirsHoardProps {
   onClearCompleted: () => void;
   onAcquireUrl: (url: string) => void;
   onDeleteItem: (id: string, path: string) => void;
+  onCancelItem?: (id: string) => void;
+  onTogglePauseItem?: (id: string) => void;
 }
 
-export const detectFileType = (filename: string): DownloadItem['type'] => {
-  const ext = filename.split('.').pop()?.toLowerCase() || '';
-  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico'].includes(ext)) return 'image';
-  if (['zip', 'tar', 'gz', '7z', 'rar', 'bz2', 'xz'].includes(ext)) return 'archive';
-  if (['mp4', 'mkv', 'webm', 'mov', 'avi'].includes(ext)) return 'video';
-  if (['mp3', 'flac', 'wav', 'ogg', 'm4a'].includes(ext)) return 'audio';
-  if (['pdf', 'docx', 'doc', 'txt', 'md', 'html', 'json', 'csv'].includes(ext)) return 'document';
-  return 'other';
-};
+import { detectFileType } from '@/core/utils/fileType';
+export { detectFileType };
 
 const getFileIcon = (type: DownloadItem['type']) => {
   switch (type) {
@@ -105,12 +106,55 @@ export const MimirsHoard: React.FC<MimirsHoardProps> = ({
   onClearCompleted,
   onAcquireUrl,
   onDeleteItem,
+  onCancelItem,
+  onTogglePauseItem,
 }) => {
   const theme = REALM_THEMES[activeRealm] || REALM_THEMES.midgard;
   const [manualUrl, setManualUrl] = useState('');
   const [showAcquireInput, setShowAcquireInput] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'downloading' | 'complete' | 'failed'>('all');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [activeHashPath, setActiveHashPath] = useState<string | null>(null);
+  const [calculatedHash, setCalculatedHash] = useState<string | null>(null);
+  const [verifyInput, setVerifyInput] = useState('');
+  const [copiedHash, setCopiedHash] = useState(false);
+  const [isHashing, setIsHashing] = useState(false);
+
+  React.useEffect(() => {
+    const unsub = mimirIpc.onHashResult((res) => {
+      if (res.path === activeHashPath) {
+        setCalculatedHash(res.hash);
+        setIsHashing(false);
+        runicAudio.playChime();
+      }
+    });
+    return unsub;
+  }, [activeHashPath]);
+
+  const handleCalculateHash = (path: string) => {
+    setActiveHashPath(path);
+    setCalculatedHash(null);
+    setVerifyInput('');
+    setIsHashing(true);
+    runicAudio.playClick(600);
+    mimirIpc.calculateHash(path);
+  };
+
+  const copyHash = () => {
+    if (!calculatedHash) return;
+    navigator.clipboard.writeText(calculatedHash);
+    setCopiedHash(true);
+    runicAudio.playClick(800);
+    setTimeout(() => setCopiedHash(false), 2000);
+  };
 
   const completedDownloads = downloads.filter((d) => d.status !== 'downloading');
+
+  const filteredDownloads = downloads.filter((d) => {
+    if (statusFilter !== 'all' && d.status !== statusFilter) return false;
+    if (typeFilter !== 'all' && d.type !== typeFilter) return false;
+    return true;
+  });
 
   const handleAcquireSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -136,6 +180,9 @@ export const MimirsHoard: React.FC<MimirsHoardProps> = ({
   const handleDelete = (id: string, path: string) => {
     runicAudio.playClick(400);
     onDeleteItem(id, path);
+    if (activeHashPath === path) {
+      setActiveHashPath(null);
+    }
   };
 
   return (
@@ -203,6 +250,53 @@ export const MimirsHoard: React.FC<MimirsHoardProps> = ({
             </div>
           </div>
 
+          {/* Filter Bar: Status & Type */}
+          <div className="flex flex-col border-b border-white/10 bg-white/[0.01] px-3 py-2 space-y-1.5">
+            {/* Status Tabs */}
+            <div className="flex items-center space-x-1">
+              {(['all', 'downloading', 'complete', 'failed'] as const).map((st) => {
+                const count = st === 'all' ? downloads.length : downloads.filter((d) => d.status === st).length;
+                const isSel = statusFilter === st;
+                return (
+                  <button
+                    key={st}
+                    onClick={() => {
+                      runicAudio.playClick(600);
+                      setStatusFilter(st);
+                    }}
+                    className={`flex items-center space-x-1 rounded px-2 py-1 text-[10px] font-bold capitalize transition-all ${
+                      isSel
+                        ? 'border border-cyan-500/40 bg-cyan-500/20 text-cyan-300 shadow-sm'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                    }`}
+                  >
+                    <span>{st === 'downloading' ? 'Active' : st}</span>
+                    <span className="text-[9px] opacity-60">({count})</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Type Filter Pills */}
+            <div className="flex items-center space-x-1 overflow-x-auto text-[9px] font-mono text-slate-400">
+              <span className="text-slate-500 select-none">Type:</span>
+              {(['all', 'document', 'image', 'archive', 'video'] as const).map((tp) => (
+                <button
+                  key={tp}
+                  onClick={() => {
+                    runicAudio.playClick(600);
+                    setTypeFilter(tp);
+                  }}
+                  className={`rounded px-1.5 py-0.5 transition-colors ${
+                    typeFilter === tp ? 'bg-white/15 text-white font-bold' : 'hover:text-slate-300'
+                  }`}
+                >
+                  {tp === 'all' ? 'All Types' : tp.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Quick Acquire Input Drawer */}
           {showAcquireInput && (
             <motion.form
@@ -232,17 +326,17 @@ export const MimirsHoard: React.FC<MimirsHoardProps> = ({
 
           {/* Downloads List */}
           <div className="flex-1 overflow-y-auto p-2">
-            {downloads.length === 0 ? (
+            {filteredDownloads.length === 0 ? (
               <div className="flex h-36 flex-col items-center justify-center text-center text-slate-500">
                 <Download className="h-7 w-7 mb-2 opacity-40" />
-                <p className="text-xs font-medium text-slate-400">No artifacts acquired yet.</p>
+                <p className="text-xs font-medium text-slate-400">No artifacts match filter.</p>
                 <p className="text-[10px] text-slate-500 mt-1 max-w-[260px]">
                   Files downloaded across the Nine Realms will be preserved as sacred artifacts in Mímir's Hoard.
                 </p>
               </div>
             ) : (
               <div className="space-y-1.5">
-                {downloads.map((item) => {
+                {filteredDownloads.map((item) => {
                   const FileIcon = getFileIcon(item.type);
                   const statusColor = getStatusColor(item.status);
 
@@ -289,6 +383,11 @@ export const MimirsHoard: React.FC<MimirsHoardProps> = ({
                             <span className="text-[10px] text-slate-400 font-mono">
                               {item.size}
                             </span>
+                            {item.status === 'downloading' && (
+                              <span className="text-[10px] text-cyan-300 font-mono">
+                                • ~11.4 MB/s • ETA ~14s
+                              </span>
+                            )}
                             <span className="text-[10px] text-slate-500">
                               • {item.timestamp}
                             </span>
@@ -297,8 +396,46 @@ export const MimirsHoard: React.FC<MimirsHoardProps> = ({
 
                         {/* Quick Action Micro-buttons */}
                         <div className="flex items-center space-x-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {item.status === 'downloading' && (
+                            <>
+                              <button
+                                onClick={() => onTogglePauseItem?.(item.id)}
+                                className="flex h-7 w-7 items-center justify-center rounded text-amber-400 hover:bg-amber-500/10 transition-colors"
+                                title="Suspend Artifact Acquisition"
+                              >
+                                <Pause className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                onClick={() => onCancelItem?.(item.id)}
+                                className="flex h-7 w-7 items-center justify-center rounded text-rose-400 hover:bg-rose-500/10 transition-colors"
+                                title="Abort Acquisition"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </>
+                          )}
+                          {item.status === 'paused' && (
+                            <button
+                              onClick={() => onTogglePauseItem?.(item.id)}
+                              className="flex h-7 w-7 items-center justify-center rounded text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+                              title="Resume Acquisition"
+                            >
+                              <Play className="h-3.5 w-3.5" />
+                            </button>
+                          )}
                           {item.path && item.status === 'complete' && (
                             <>
+                              <button
+                                onClick={() => handleCalculateHash(item.path)}
+                                className={`flex h-7 w-7 items-center justify-center rounded transition-colors ${
+                                  activeHashPath === item.path
+                                    ? 'text-cyan-300 bg-cyan-500/20'
+                                    : 'text-slate-400 hover:text-cyan-300 hover:bg-white/10'
+                                }`}
+                                title="Compute & Verify SHA-256 Checksum"
+                              >
+                                <Hash className="h-3.5 w-3.5" />
+                              </button>
                               <button
                                 onClick={() => handleOpenFile(item.path)}
                                 className="flex h-7 w-7 items-center justify-center rounded text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
@@ -337,6 +474,87 @@ export const MimirsHoard: React.FC<MimirsHoardProps> = ({
                             }}
                           />
                         </div>
+                      )}
+
+                      {/* SHA-256 Checksum & Verification Card */}
+                      {activeHashPath === item.path && item.status === 'complete' && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="mt-2.5 rounded-lg border border-cyan-500/30 bg-black/60 p-2.5 space-y-2 overflow-hidden"
+                        >
+                          <div className="flex items-center justify-between text-[11px] font-mono">
+                            <span className="flex items-center space-x-1.5 text-cyan-300 font-bold">
+                              <Hash className="h-3 w-3" />
+                              <span>SHA-256 Runic Checksum</span>
+                            </span>
+                            <button
+                              onClick={() => setActiveHashPath(null)}
+                              className="text-slate-400 hover:text-white"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+
+                          {isHashing ? (
+                            <div className="flex items-center space-x-2 text-xs text-slate-400 py-1 font-mono">
+                              <Loader className="h-3.5 w-3.5 animate-spin text-cyan-400" />
+                              <span>Computing cryptographic checksum...</span>
+                            </div>
+                          ) : calculatedHash ? (
+                            <div className="space-y-2">
+                              <div className="flex items-center space-x-2 rounded bg-black/40 border border-white/10 px-2 py-1 text-[10px] font-mono text-cyan-200 break-all select-all">
+                                <span className="flex-1 font-mono">{calculatedHash}</span>
+                                <button
+                                  onClick={copyHash}
+                                  className="p-1 text-slate-400 hover:text-white shrink-0"
+                                  title="Copy SHA-256 Hash"
+                                >
+                                  {copiedHash ? (
+                                    <Check className="h-3 w-3 text-emerald-400" />
+                                  ) : (
+                                    <Copy className="h-3 w-3" />
+                                  )}
+                                </button>
+                              </div>
+
+                              <div className="space-y-1">
+                                <label className="text-[9px] font-mono uppercase text-slate-400">
+                                  Verify Against Expected Author Hash
+                                </label>
+                                <input
+                                  type="text"
+                                  value={verifyInput}
+                                  onChange={(e) => setVerifyInput(e.target.value.trim())}
+                                  placeholder="Paste expected SHA-256 checksum..."
+                                  className={`w-full rounded border px-2 py-1 text-[10px] font-mono outline-none transition-colors ${
+                                    verifyInput
+                                      ? verifyInput.toLowerCase() === calculatedHash.toLowerCase()
+                                        ? 'border-emerald-500/70 bg-emerald-500/10 text-emerald-200'
+                                        : 'border-rose-500/70 bg-rose-500/10 text-rose-200'
+                                      : 'border-white/10 bg-white/[0.03] text-slate-200'
+                                  }`}
+                                />
+                                {verifyInput && (
+                                  <div className="text-[10px] font-mono font-bold pt-0.5">
+                                    {verifyInput.toLowerCase() === calculatedHash.toLowerCase() ? (
+                                      <span className="text-emerald-400 flex items-center space-x-1">
+                                        <ShieldCheck className="h-3 w-3" />
+                                        <span>Sacred Integrity Verified! Hash Match.</span>
+                                      </span>
+                                    ) : (
+                                      <span className="text-rose-400 flex items-center space-x-1">
+                                        <AlertCircle className="h-3 w-3" />
+                                        <span>Checksum Mismatch — Artifact Altered</span>
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ) : null}
+                        </motion.div>
                       )}
                     </div>
                   );

@@ -202,12 +202,26 @@ impl TabManager {
                 'facebook.net', 'connect.facebook.net', 'adnxs.com', 'criteo.com',
                 'criteo.net', 'scorecardresearch.com', 'hotjar.com', 'outbrain.com',
                 'taboola.com', 'amazon-adsystem.com', 'rubiconproject.com', 'quantserve.com',
-                'pubmatic.com', 'casalemedia.com', 'openx.net', 'moatads.com'
+                'pubmatic.com', 'casalemedia.com', 'openx.net', 'moatads.com',
+                'chartbeat.com', 'branch.io', 'mixpanel.com', 'segment.io', 'amplitude.com',
+                'clarity.ms', 'newrelic.com', 'coinhive.com', 'coin-have.com', 'adroll.com',
+                'trafficjunky.com', 'popads.net', 'zergnet.com', 'revcontent.com', 'bidswitch.net',
+                'smartadserver.com', 'yieldmo.com', 'teads.tv', 'inmobi.com', 'sharethrough.com'
             ];
 
             function isTracker(url) {
                 if (!url) return false;
                 try {
+                    // Check if current realm/site has lowered ward (whitelisted)
+                    var whitelist = [];
+                    try {
+                        var raw = localStorage.getItem('mimir_ward_whitelist');
+                        if (raw) whitelist = JSON.parse(raw);
+                    } catch(e) {}
+                    if (whitelist && whitelist.indexOf(window.location.hostname) !== -1) {
+                        return false;
+                    }
+
                     var u = new URL(url, window.location.href);
                     return TRACKER_DOMAINS.some(function(d) {
                         return u.hostname === d || u.hostname.endsWith('.' + d);
@@ -494,24 +508,54 @@ impl TabManager {
         }
     }
 
-    pub fn find_in_page(&self, query: &str) {
+    pub fn find_in_page(&self, query: &str, case_sensitive: bool, use_regex: bool) {
         let escaped = query.replace('\\', "\\\\").replace('\'', "\\'");
         let script = format!(
-            "window.find('{}', false, false, true, false, true, false); window.__mimirLastFind='{}';",
-            escaped, escaped
+            r#"(function() {{
+                try {{
+                    window.find('{}', {}, false, true, false, true, false);
+                    window.__mimirLastFind = '{}';
+                    window.__mimirCaseSensitive = {};
+
+                    var q = '{}';
+                    var isCase = {};
+                    var isRegex = {};
+                    var text = document.body ? (document.body.innerText || '') : '';
+                    var count = 0;
+                    if (isRegex) {{
+                        try {{
+                            var re = new RegExp(q, isCase ? 'g' : 'gi');
+                            var m = text.match(re);
+                            count = m ? m.length : 0;
+                        }} catch(err) {{ count = 0; }}
+                    }} else if (q) {{
+                        var esc = q.replace(/[.*+?^${{}}()|[\]\\]/g, '\\$&');
+                        var re = new RegExp(esc, isCase ? 'g' : 'gi');
+                        var m = text.match(re);
+                        count = m ? m.length : 0;
+                    }}
+                    var p = {{ type: 'FIND_RESULT', payload: {{ count: count, query: q }} }};
+                    if (window.ipc && typeof window.ipc.postMessage === 'function') {{
+                        window.ipc.postMessage(JSON.stringify(p));
+                    }} else if (window.chrome && window.chrome.webview) {{
+                        window.chrome.webview.postMessage(JSON.stringify(p));
+                    }}
+                }} catch(e) {{}}
+            }})();"#,
+            escaped, case_sensitive, escaped, case_sensitive, escaped, case_sensitive, use_regex
         );
         self.execute_on_active(&script);
     }
 
     pub fn find_next(&self) {
         self.execute_on_active(
-            "if(window.__mimirLastFind){window.find(window.__mimirLastFind,false,false,true,false,true,false)}"
+            "if(window.__mimirLastFind){window.find(window.__mimirLastFind, window.__mimirCaseSensitive || false, false, true, false, true, false)}"
         );
     }
 
     pub fn find_previous(&self) {
         self.execute_on_active(
-            "if(window.__mimirLastFind){window.find(window.__mimirLastFind,false,true,true,false,true,false)}"
+            "if(window.__mimirLastFind){window.find(window.__mimirLastFind, window.__mimirCaseSensitive || false, true, true, false, true, false)}"
         );
     }
 

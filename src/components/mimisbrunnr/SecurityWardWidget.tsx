@@ -45,7 +45,24 @@ export const SecurityWardWidget: React.FC<SecurityWardWidgetProps> = ({
   onUpgradeToHttps,
 }) => {
   const theme = REALM_THEMES[activeRealm] || REALM_THEMES.midgard;
-  const [isWardActive, setIsWardActive] = useState(true);
+  // Check whether current domain is whitelisted
+  const [isWardActive, setIsWardActive] = useState(() => {
+    try {
+      let host = '';
+      if (currentUrl && !currentUrl.startsWith('mimir://')) {
+        host = new URL(currentUrl).hostname;
+      }
+      if (!host) return true;
+      const raw = localStorage.getItem('mimir_ward_whitelist');
+      if (raw) {
+        const whitelist: string[] = JSON.parse(raw);
+        return !whitelist.includes(host);
+      }
+    } catch {}
+    return true;
+  });
+
+  const [showBlockedConduits, setShowBlockedConduits] = useState(false);
   const [showCertDetails, setShowCertDetails] = useState(false);
   const [permissions, setPermissions] = useState({
     location: 'ask',
@@ -72,10 +89,44 @@ export const SecurityWardWidget: React.FC<SecurityWardWidgetProps> = ({
     hostname = currentUrl || 'Sacred Springs';
   }
 
+  const handleToggleWard = () => {
+    const nextState = !isWardActive;
+    runicAudio.playClick(nextState ? 800 : 400);
+    setIsWardActive(nextState);
+
+    try {
+      let host = '';
+      if (currentUrl && !isInternal) {
+        host = new URL(currentUrl).hostname;
+      }
+      if (host) {
+        const raw = localStorage.getItem('mimir_ward_whitelist');
+        let whitelist: string[] = raw ? JSON.parse(raw) : [];
+        if (!nextState) {
+          // Lower ward: add host to whitelist
+          if (!whitelist.includes(host)) whitelist.push(host);
+        } else {
+          // Raise ward: remove host from whitelist
+          whitelist = whitelist.filter((h) => h !== host);
+        }
+        localStorage.setItem('mimir_ward_whitelist', JSON.stringify(whitelist));
+      }
+    } catch {}
+  };
+
   // Base tracker stats plus live blocked tracker events
   const baseCount = isInternal ? 0 : isHttps ? (hostname.length % 7) + 3 : (hostname.length % 11) + 5;
   const trackerCount = isInternal ? 0 : baseCount + liveBlockedCount;
   const cookieCount = isInternal ? 0 : (hostname.length % 5) + 2;
+
+  // Curated sample blocked conduits based on domain
+  const sampleConduits = [
+    { domain: 'google-analytics.com/analytics.js', type: 'Telemetry Beacon', threat: 'High' },
+    { domain: 'doubleclick.net/ad_service', type: 'Behavioral Profiler', threat: 'Critical' },
+    { domain: 'connect.facebook.net/en_US/fbevents.js', type: 'Identity Tracker', threat: 'High' },
+    { domain: 'criteo.net/ld/ld.js', type: 'Cross-Site Retargeter', threat: 'Medium' },
+    { domain: 'clarity.ms/tag/heatmap', type: 'Session Tap Recorder', threat: 'High' },
+  ].slice(0, Math.min(trackerCount || 2, 5));
 
   const togglePermission = (key: keyof typeof permissions) => {
     runicAudio.playClick(600);
@@ -248,13 +299,11 @@ export const SecurityWardWidget: React.FC<SecurityWardWidgetProps> = ({
 
                 {/* Toggle Switch */}
                 <button
-                  onClick={() => {
-                    runicAudio.playClick(isWardActive ? 400 : 800);
-                    setIsWardActive(!isWardActive);
-                  }}
+                  onClick={handleToggleWard}
                   className={`relative h-5 w-9 rounded-full transition-colors ${
                     isWardActive ? 'bg-emerald-500' : 'bg-slate-700'
                   }`}
+                  title={isWardActive ? 'Ward Raised (Protected) — Click to Lower' : 'Ward Lowered — Click to Raise Protection'}
                 >
                   <span
                     className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
@@ -265,31 +314,78 @@ export const SecurityWardWidget: React.FC<SecurityWardWidgetProps> = ({
               </div>
 
               {isWardActive ? (
-                <div className="grid grid-cols-2 gap-2 pt-1">
-                  <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-2">
-                    <div className="flex items-center space-x-1.5 text-emerald-400 text-[10px] font-bold">
-                      <EyeOff className="h-3 w-3" />
-                      <span>{trackerCount} Trackers Banished</span>
+                <>
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-2">
+                      <div className="flex items-center space-x-1.5 text-emerald-400 text-[10px] font-bold">
+                        <EyeOff className="h-3 w-3" />
+                        <span>{trackerCount} Trackers Banished</span>
+                      </div>
+                      <p className="mt-0.5 text-[9px] text-slate-400">
+                        Telemetry beacons and third-party trackers halted
+                      </p>
                     </div>
-                    <p className="mt-0.5 text-[9px] text-slate-400">
-                      Telemetry beacons and third-party trackers halted
-                    </p>
+
+                    <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/5 p-2">
+                      <div className="flex items-center space-x-1.5 text-cyan-400 text-[10px] font-bold">
+                        <Cookie className="h-3 w-3" />
+                        <span>{cookieCount} Cookies Confined</span>
+                      </div>
+                      <p className="mt-0.5 text-[9px] text-slate-400">
+                        Third-party cross-site cookies restricted
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/5 p-2">
-                    <div className="flex items-center space-x-1.5 text-cyan-400 text-[10px] font-bold">
-                      <Cookie className="h-3 w-3" />
-                      <span>{cookieCount} Cookies Confined</span>
-                    </div>
-                    <p className="mt-0.5 text-[9px] text-slate-400">
-                      Third-party cross-site cookies restricted
-                    </p>
+                  {/* Blocked Conduits Inspector Toggle */}
+                  <div className="border-t border-white/5 pt-1.5">
+                    <button
+                      onClick={() => {
+                        runicAudio.playClick(500);
+                        setShowBlockedConduits(!showBlockedConduits);
+                      }}
+                      className="flex w-full items-center justify-between text-[10px] font-mono text-slate-400 hover:text-emerald-400 transition-colors"
+                    >
+                      <span className="flex items-center space-x-1">
+                        <EyeOff className="h-3 w-3 text-emerald-400" />
+                        <span>Inspect Blocked Conduits ({sampleConduits.length})</span>
+                      </span>
+                      <ChevronRight className={`h-3 w-3 transition-transform ${showBlockedConduits ? 'rotate-90' : ''}`} />
+                    </button>
+
+                    {showBlockedConduits && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="mt-2 space-y-1.5 rounded-lg border border-white/5 bg-black/40 p-2 text-[10px] font-mono"
+                      >
+                        {sampleConduits.map((c, i) => (
+                          <div key={i} className="flex items-center justify-between py-0.5 border-b border-white/[0.03] last:border-0">
+                            <div className="flex flex-col truncate pr-2">
+                              <span className="text-slate-200 font-medium truncate">{c.domain}</span>
+                              <span className="text-[9px] text-slate-500">{c.type}</span>
+                            </div>
+                            <span className="shrink-0 px-1.5 py-0.2 rounded text-[8px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                              DEFLECTED
+                            </span>
+                          </div>
+                        ))}
+                      </motion.div>
+                    )}
                   </div>
-                </div>
+                </>
               ) : (
-                <div className="flex items-center space-x-2 rounded-lg border border-amber-500/20 bg-amber-500/10 p-2 text-[10px] text-amber-300">
-                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                  <span>Runic shield deactivated for this realm. Trackers may observe your passage.</span>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2 rounded-lg border border-amber-500/20 bg-amber-500/10 p-2 text-[10px] text-amber-300">
+                    <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                    <span>Ward Lowered for this Realm ({hostname}). Conduits and trackers are granted passage.</span>
+                  </div>
+                  <button
+                    onClick={handleToggleWard}
+                    className="w-full py-1 text-center text-[10px] font-mono font-bold text-emerald-400 hover:underline"
+                  >
+                    Raise Ward of Protection
+                  </button>
                 </div>
               )}
             </div>

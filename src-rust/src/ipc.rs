@@ -86,6 +86,12 @@ pub enum IpcCommand {
     #[serde(rename = "WINDOW_CLOSE")]
     WindowClose,
 
+    #[serde(rename = "CANCEL_DOWNLOAD")]
+    CancelDownload { payload: CancelDownloadPayload },
+
+    #[serde(rename = "CALCULATE_HASH")]
+    CalculateHash { payload: CalculateHashPayload },
+
     // Internal and child webview relayed events
     #[serde(rename = "DOWNLOAD_STARTED")]
     DownloadStarted { payload: DownloadStartedPayload },
@@ -98,6 +104,12 @@ pub enum IpcCommand {
 
     #[serde(rename = "TRACKER_BLOCKED")]
     TrackerBlocked { payload: TrackerBlockedPayload },
+
+    #[serde(rename = "FIND_RESULT")]
+    FindResult { payload: FindResultPayload },
+
+    #[serde(rename = "HASH_RESULT")]
+    HashResult { payload: HashResultPayload },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -187,6 +199,32 @@ pub struct SwitchTabPayload {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FindInPagePayload {
     pub query: String,
+    #[serde(default, rename = "caseSensitive")]
+    pub case_sensitive: bool,
+    #[serde(default, rename = "useRegex")]
+    pub use_regex: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FindResultPayload {
+    pub count: usize,
+    pub query: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CancelDownloadPayload {
+    pub id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CalculateHashPayload {
+    pub path: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HashResultPayload {
+    pub path: String,
+    pub hash: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

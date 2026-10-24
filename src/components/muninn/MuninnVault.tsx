@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { RealmId, Tab } from '@/types';
 import { REALMS } from '@/core/realms';
 import { REALM_THEMES } from '@/components/themes/realmThemes';
@@ -17,6 +17,9 @@ import {
   Compass,
   Download,
   Upload,
+  CheckSquare,
+  Square,
+  Calendar,
 } from 'lucide-react';
 
 export interface Runestone {
@@ -89,6 +92,7 @@ export const MuninnVault: React.FC<MuninnVaultProps> = ({
   const [activeView, setActiveView] = useState<'runestones' | 'history'>('runestones');
   const [searchFilter, setSearchFilter] = useState('');
   const [selectedRealmFilter, setSelectedRealmFilter] = useState<RealmId | 'all'>('all');
+  const [selectedThreadIds, setSelectedThreadIds] = useState<Set<string>>(new Set());
 
   const realm = REALMS[activeRealm];
   const theme = REALM_THEMES[activeRealm] || REALM_THEMES.midgard;
@@ -190,30 +194,50 @@ export const MuninnVault: React.FC<MuninnVaultProps> = ({
     reader.onload = (event) => {
       try {
         const content = event.target?.result as string;
-        const parsed = JSON.parse(content);
-        if (Array.isArray(parsed)) {
-          const validRunes: Runestone[] = parsed
-            .filter((item) => item && typeof item.url === 'string')
-            .map((item, idx) => ({
-              id: item.id || `imported-rune-${Date.now()}-${idx}`,
-              title: item.title || item.url,
-              url: item.url,
-              realm: (item.realm as RealmId) || 'midgard',
-              rune: item.rune || 'ᛚ',
-              dateAdded: item.dateAdded || new Date().toLocaleDateString(),
-            }));
+        let validRunes: Runestone[] = [];
 
-          if (validRunes.length > 0) {
-            runicAudio.playChime();
-            setRunestones((prev) => {
-              const existingUrls = new Set(prev.map((r) => r.url));
-              const newRunes = validRunes.filter((r) => !existingUrls.has(r.url));
-              return [...newRunes, ...prev];
-            });
+        if (content.includes('<DL>') || content.includes('<DT>') || content.includes('<A HREF=')) {
+          // Netscape Bookmark HTML format parser
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(content, 'text/html');
+          const links = Array.from(doc.querySelectorAll('a'));
+          validRunes = links
+            .filter((a) => a.getAttribute('href')?.startsWith('http'))
+            .map((a, idx) => ({
+              id: `imported-html-${Date.now()}-${idx}`,
+              title: a.textContent?.trim() || a.getAttribute('href') || 'Runestone',
+              url: a.getAttribute('href') || '',
+              realm: 'midgard',
+              rune: 'ᛚ',
+              dateAdded: new Date().toLocaleDateString(),
+            }));
+        } else {
+          // JSON format parser
+          const parsed = JSON.parse(content);
+          if (Array.isArray(parsed)) {
+            validRunes = parsed
+              .filter((item) => item && typeof item.url === 'string')
+              .map((item, idx) => ({
+                id: item.id || `imported-rune-${Date.now()}-${idx}`,
+                title: item.title || item.url,
+                url: item.url,
+                realm: (item.realm as RealmId) || 'midgard',
+                rune: item.rune || 'ᛚ',
+                dateAdded: item.dateAdded || new Date().toLocaleDateString(),
+              }));
           }
         }
+
+        if (validRunes.length > 0) {
+          runicAudio.playChime();
+          setRunestones((prev) => {
+            const existingUrls = new Set(prev.map((r) => r.url));
+            const newRunes = validRunes.filter((r) => !existingUrls.has(r.url));
+            return [...newRunes, ...prev];
+          });
+        }
       } catch (err) {
-        console.error('Failed to parse runestones JSON', err);
+        console.error('Failed to parse bookmarks file', err);
       }
     };
     reader.readAsText(file);
@@ -223,7 +247,24 @@ export const MuninnVault: React.FC<MuninnVaultProps> = ({
   const handleClearHistory = () => {
     runicAudio.playClick(350);
     setThreads([]);
+    setSelectedThreadIds(new Set());
     localStorage.removeItem('mimir_fate_threads');
+  };
+
+  const handleToggleSelectThread = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedThreadIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleBulkDeleteThreads = () => {
+    runicAudio.playClick(400);
+    setThreads((prev) => prev.filter((t) => !selectedThreadIds.has(t.id)));
+    setSelectedThreadIds(new Set());
   };
 
   const filteredRunestones = runestones.filter((r) => {
@@ -241,6 +282,34 @@ export const MuninnVault: React.FC<MuninnVaultProps> = ({
     const matchesRealm = selectedRealmFilter === 'all' || t.realm === selectedRealmFilter;
     return matchesSearch && matchesRealm;
   });
+
+  const groupedThreads = useMemo(() => {
+    const today = new Date().toDateString();
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+
+    const groups: { [key: string]: FateThread[] } = {
+      'Today': [],
+      'Yesterday': [],
+      'Elder Epochs': [],
+    };
+
+    filteredThreads.forEach((thread) => {
+      let threadDate = 'Today';
+      if (thread.id.startsWith('thread-')) {
+        const ms = parseInt(thread.id.replace('thread-', ''), 10);
+        if (!isNaN(ms)) {
+          const d = new Date(ms).toDateString();
+          if (d === today) threadDate = 'Today';
+          else if (d === yesterday) threadDate = 'Yesterday';
+          else threadDate = 'Elder Epochs';
+        }
+      }
+      if (!groups[threadDate]) groups[threadDate] = [];
+      groups[threadDate].push(thread);
+    });
+
+    return Object.entries(groups).filter(([_, items]) => items.length > 0);
+  }, [filteredThreads]);
 
   return (
     <AnimatePresence>
@@ -351,7 +420,7 @@ export const MuninnVault: React.FC<MuninnVaultProps> = ({
                       type="file"
                       ref={fileInputRef}
                       onChange={handleImportRunestones}
-                      accept=".json"
+                      accept=".json,.html,.htm"
                       className="hidden"
                     />
                     <button
@@ -360,10 +429,10 @@ export const MuninnVault: React.FC<MuninnVaultProps> = ({
                         fileInputRef.current?.click();
                       }}
                       className="flex items-center space-x-1 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs font-bold text-slate-300 hover:bg-white/10 hover:text-white transition-all"
-                      title="Import Runestones from JSON file"
+                      title="Import Runestones from Netscape HTML or JSON file"
                     >
                       <Upload className="h-3.5 w-3.5" />
-                      <span>Import</span>
+                      <span>Import (HTML/JSON)</span>
                     </button>
                     <button
                       onClick={handleExportRunestones}
@@ -390,14 +459,47 @@ export const MuninnVault: React.FC<MuninnVaultProps> = ({
                     </button>
                   </>
                 ) : (
-                  <button
-                    onClick={handleClearHistory}
-                    disabled={threads.length === 0}
-                    className="flex items-center space-x-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-bold text-red-300 hover:bg-red-500/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <RotateCcw className="h-3.5 w-3.5" />
-                    <span>Sever Threads</span>
-                  </button>
+                  <div className="flex items-center space-x-1.5">
+                    {filteredThreads.length > 0 && (
+                      <button
+                        onClick={() => {
+                          if (selectedThreadIds.size === filteredThreads.length) {
+                            setSelectedThreadIds(new Set());
+                          } else {
+                            setSelectedThreadIds(new Set(filteredThreads.map((t) => t.id)));
+                          }
+                        }}
+                        className="flex items-center space-x-1 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-all"
+                      >
+                        <CheckSquare className="h-3 w-3" />
+                        <span>
+                          {selectedThreadIds.size === filteredThreads.length
+                            ? 'Deselect All'
+                            : 'Select All'}
+                        </span>
+                      </button>
+                    )}
+
+                    {selectedThreadIds.size > 0 && (
+                      <button
+                        onClick={handleBulkDeleteThreads}
+                        className="flex items-center space-x-1.5 rounded-lg border border-rose-500/40 bg-rose-500/20 px-2.5 py-1.5 text-xs font-bold text-rose-300 hover:bg-rose-500/30 transition-all"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        <span>Purge Selected ({selectedThreadIds.size})</span>
+                      </button>
+                    )}
+
+                    <button
+                      onClick={handleClearHistory}
+                      disabled={threads.length === 0}
+                      className="flex items-center space-x-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-bold text-red-300 hover:bg-red-500/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                      title="Sever all threads of fate"
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" />
+                      <span>Sever All</span>
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -528,49 +630,99 @@ export const MuninnVault: React.FC<MuninnVaultProps> = ({
                   </p>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {filteredThreads.map((thread) => {
-                    const rConfig = REALMS[thread.realm] || REALMS.midgard;
-                    return (
-                      <div
-                        key={thread.id}
-                        onClick={() => {
-                          runicAudio.playChime();
-                          onNavigate(thread.url);
-                          onClose();
-                        }}
-                        className="group flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] p-3 hover:border-white/20 hover:bg-white/[0.05] transition-all cursor-pointer"
-                      >
-                        <div className="flex items-center space-x-3 min-w-0 flex-1">
-                          <span
-                            className="font-mono text-xs font-bold shrink-0"
-                            style={{ color: rConfig.accentColor }}
-                          >
-                            {rConfig.rune}
-                          </span>
-                          <div className="flex flex-col min-w-0 flex-1">
-                            <span className="truncate text-xs font-medium text-slate-200 group-hover:text-cyan-300">
-                              {thread.title}
-                            </span>
-                            <span className="truncate text-[10px] text-slate-500 font-mono">
-                              {thread.url}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center space-x-2 text-[10px] text-slate-500 font-mono ml-3 shrink-0">
-                          <span>{thread.timestamp}</span>
-                          <span
-                            className="rounded px-1.5 py-0.2 uppercase"
-                            style={{ color: rConfig.accentColor }}
-                          >
-                            {rConfig.name}
-                          </span>
-                          <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </div>
+                <div className="space-y-5">
+                  {groupedThreads.map(([epoch, epochThreads]) => (
+                    <div key={epoch} className="space-y-1.5">
+                      <div className="flex items-center space-x-2 text-[10px] font-mono uppercase tracking-wider text-slate-400 px-1">
+                        <Calendar className="h-3 w-3 text-cyan-400" />
+                        <span className="font-bold text-slate-300">{epoch}</span>
+                        <span className="text-slate-600 font-normal">({epochThreads.length})</span>
                       </div>
-                    );
-                  })}
+
+                      <div className="space-y-1.5">
+                        {epochThreads.map((thread) => {
+                          const rConfig = REALMS[thread.realm] || REALMS.midgard;
+                          const isSelected = selectedThreadIds.has(thread.id);
+
+                          let domain = '';
+                          try {
+                            domain = new URL(thread.url).hostname;
+                          } catch {}
+
+                          return (
+                            <div
+                              key={thread.id}
+                              onClick={() => {
+                                runicAudio.playChime();
+                                onNavigate(thread.url);
+                                onClose();
+                              }}
+                              className={`group flex items-center justify-between rounded-lg border p-2.5 transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'border-cyan-500/40 bg-cyan-500/10'
+                                  : 'border-white/5 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.05]'
+                              }`}
+                            >
+                              <div className="flex items-center space-x-2.5 min-w-0 flex-1">
+                                {/* Bulk Selection Checkbox */}
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleToggleSelectThread(thread.id, e)}
+                                  className="p-0.5 text-slate-400 hover:text-white"
+                                  title={isSelected ? 'Deselect thread' : 'Select thread'}
+                                >
+                                  {isSelected ? (
+                                    <CheckSquare className="h-3.5 w-3.5 text-cyan-400" />
+                                  ) : (
+                                    <Square className="h-3.5 w-3.5 text-slate-600 group-hover:text-slate-400" />
+                                  )}
+                                </button>
+
+                                {/* Favicon with Runic Fallback */}
+                                {domain ? (
+                                  <img
+                                    src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`}
+                                    alt=""
+                                    className="h-4 w-4 rounded-sm shrink-0"
+                                    onError={(e) => {
+                                      (e.target as HTMLElement).style.display = 'none';
+                                    }}
+                                  />
+                                ) : (
+                                  <span
+                                    className="font-mono text-xs font-bold shrink-0"
+                                    style={{ color: rConfig.accentColor }}
+                                  >
+                                    {rConfig.rune}
+                                  </span>
+                                )}
+
+                                <div className="flex flex-col min-w-0 flex-1">
+                                  <span className="truncate text-xs font-medium text-slate-200 group-hover:text-cyan-300">
+                                    {thread.title}
+                                  </span>
+                                  <span className="truncate text-[10px] text-slate-500 font-mono">
+                                    {thread.url}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center space-x-2 text-[10px] text-slate-500 font-mono ml-3 shrink-0">
+                                <span>{thread.timestamp}</span>
+                                <span
+                                  className="rounded px-1.5 py-0.2 uppercase font-bold"
+                                  style={{ color: rConfig.accentColor }}
+                                >
+                                  {rConfig.name}
+                                </span>
+                                <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

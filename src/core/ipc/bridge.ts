@@ -37,6 +37,16 @@ export interface NativeTrackerBlockedEvent {
   url: string;
 }
 
+export interface NativeFindResultEvent {
+  count: number;
+  query: string;
+}
+
+export interface NativeHashResultEvent {
+  path: string;
+  hash: string;
+}
+
 export type IpcCommand =
   | { type: 'NAVIGATE'; payload: { url: string; tabId?: string } }
   | { type: 'GO_BACK' }
@@ -50,14 +60,16 @@ export type IpcCommand =
   | { type: 'ZOOM_OUT' }
   | { type: 'ZOOM_RESET' }
   | { type: 'PRINT' }
-  | { type: 'FIND_IN_PAGE'; payload: { query: string } }
+  | { type: 'FIND_IN_PAGE'; payload: { query: string; caseSensitive?: boolean; useRegex?: boolean } }
   | { type: 'FIND_NEXT' }
   | { type: 'FIND_PREVIOUS' }
   | { type: 'FIND_CLOSE' }
   | { type: 'DUPLICATE_TAB'; payload: { tabId: string; newTabId: string } }
   | { type: 'OPEN_PATH'; payload: { path: string; isDir?: boolean } }
   | { type: 'DOWNLOAD_URL'; payload: { url: string; filename?: string } }
+  | { type: 'CANCEL_DOWNLOAD'; payload: { id: string } }
   | { type: 'DELETE_FILE'; payload: { path: string } }
+  | { type: 'CALCULATE_HASH'; payload: { path: string } }
   | { type: 'SHOW_DEVTOOLS' }
   | { type: 'EXECUTE_SCRIPT'; payload: { script: string } }
   | { type: 'WINDOW_MINIMIZE' }
@@ -68,12 +80,16 @@ type DownloadStartedListener = (event: NativeDownloadStartedEvent) => void;
 type DownloadCompletedListener = (event: NativeDownloadCompletedEvent) => void;
 type ContextMenuListener = (event: NativeContextMenuEvent) => void;
 type TrackerBlockedListener = (event: NativeTrackerBlockedEvent) => void;
+type FindResultListener = (event: NativeFindResultEvent) => void;
+type HashResultListener = (event: NativeHashResultEvent) => void;
 
 class MimirIpcBridge {
   private downloadStartedListeners: Set<DownloadStartedListener> = new Set();
   private downloadCompletedListeners: Set<DownloadCompletedListener> = new Set();
   private contextMenuListeners: Set<ContextMenuListener> = new Set();
   private trackerBlockedListeners: Set<TrackerBlockedListener> = new Set();
+  private findResultListeners: Set<FindResultListener> = new Set();
+  private hashResultListeners: Set<HashResultListener> = new Set();
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -93,6 +109,14 @@ class MimirIpcBridge {
 
       win.__mimirOnTrackerBlocked = (payload: NativeTrackerBlockedEvent) => {
         this.trackerBlockedListeners.forEach((l) => l(payload));
+      };
+
+      win.__mimirOnFindResult = (payload: NativeFindResultEvent) => {
+        this.findResultListeners.forEach((l) => l(payload));
+      };
+
+      win.__mimirOnHashResult = (payload: NativeHashResultEvent) => {
+        this.hashResultListeners.forEach((l) => l(payload));
       };
     }
   }
@@ -156,6 +180,30 @@ class MimirIpcBridge {
   public onTrackerBlocked(listener: TrackerBlockedListener): () => void {
     this.trackerBlockedListeners.add(listener);
     return () => this.trackerBlockedListeners.delete(listener);
+  }
+
+  public onFindResult(listener: FindResultListener): () => void {
+    this.findResultListeners.add(listener);
+    return () => this.findResultListeners.delete(listener);
+  }
+
+  public onHashResult(listener: HashResultListener): () => void {
+    this.hashResultListeners.add(listener);
+    return () => this.hashResultListeners.delete(listener);
+  }
+
+  public calculateHash(path: string) {
+    this.send({
+      type: 'CALCULATE_HASH',
+      payload: { path },
+    });
+  }
+
+  public cancelDownload(id: string) {
+    this.send({
+      type: 'CANCEL_DOWNLOAD',
+      payload: { id },
+    });
   }
 }
 

@@ -31,6 +31,7 @@ interface HuginnPanelProps {
   onClose: () => void;
   activeRealm: RealmId;
   currentTab?: Tab;
+  initialPrompt?: string;
 }
 
 const HUGINN_INTROS = [
@@ -45,14 +46,21 @@ export const HuginnPanel: React.FC<HuginnPanelProps> = ({
   onClose,
   activeRealm,
   currentTab,
+  initialPrompt,
 }) => {
   const realm = REALMS[activeRealm];
   const theme = REALM_THEMES[activeRealm] || REALM_THEMES.midgard;
 
-  const [inputVal, setInputVal] = useState('');
+  const [inputVal, setInputVal] = useState(initialPrompt || '');
   const [isTyping, setIsTyping] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const chatBottomRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (initialPrompt) {
+      setInputVal(initialPrompt);
+    }
+  }, [initialPrompt]);
 
   const initialWelcome: HuginnMessage = {
     id: 'welcome-1',
