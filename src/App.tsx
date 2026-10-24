@@ -108,6 +108,27 @@ export const App: React.FC = () => {
   const [sidecarWidth, setSidecarWidth] = useState(340);
   const [isReaderSanctumOpen, setIsReaderSanctumOpen] = useState(false);
 
+  // Animated Realm Backgrounds (Option A)
+  const [isAnimatedBackground, setIsAnimatedBackground] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem('mimir_animated_realms');
+      return stored !== null ? stored === 'true' : true;
+    } catch {
+      return true;
+    }
+  });
+
+  const handleToggleAnimatedRealms = () => {
+    setIsAnimatedBackground((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('mimir_animated_realms', String(next));
+      } catch {}
+      runicAudio.playClick(next ? 880 : 540);
+      return next;
+    });
+  };
+
   // Download artifacts telemetry & localStorage persistence
   const [downloads, setDownloads] = useState<DownloadItem[]>(() => {
     try {
@@ -948,6 +969,8 @@ const formatEtaSeconds = (secs: number): string => {
             setSplitTabId(currentActive);
             runicAudio.playClick(650);
           }}
+          isAnimatedBackground={isAnimatedBackground}
+          onToggleAnimatedBackground={handleToggleAnimatedRealms}
         />
 
         {/* Persistent Runic Sidecar (Scratchpad, Huginn AI, Telemetry) */}
@@ -1051,6 +1074,8 @@ const formatEtaSeconds = (secs: number): string => {
             const auto = sessionManager.getAutoSavedSession();
             if (auto) handleRestoreSession(auto);
           }}
+          isAnimatedBackground={isAnimatedBackground}
+          onToggleAnimatedRealms={handleToggleAnimatedRealms}
         />
 
         {/* Overlay 6: Rune Seeker (Find in Page) */}

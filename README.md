@@ -1,7 +1,7 @@
 # ᛗ MÍMIR
 ### *The Hypermodern, Runic-Forged Web Explorer*
 
-[![Release](https://img.shields.io/badge/Release-v0.5.0-10b981?style=for-the-badge&logo=github)](https://github.com/indoctrinatedrecluse/Mimir/releases/tag/v0.5.0)
+[![Release](https://img.shields.io/badge/Release-v0.6.0-10b981?style=for-the-badge&logo=github)](https://github.com/indoctrinatedrecluse/Mimir/releases/tag/v0.6.0)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20(WebView2)-00f5ff?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/indoctrinatedrecluse/Mimir)
 [![Core Engine](https://img.shields.io/badge/Core-Rust%20%2B%20Wry-f97316?style=for-the-badge&logo=rust&logoColor=white)](https://github.com/tauri-apps/wry)
 [![UI HUD](https://img.shields.io/badge/HUD-React%2019%20%2B%20Vite-61dafb?style=for-the-badge&logo=react&logoColor=black)](https://vitejs.dev/)
@@ -13,14 +13,14 @@
 
 ---
 
-## ⚡ Download Mímir (v0.5.0)
+## ⚡ Download Mímir (v0.6.0)
 
 Ready-to-use releases for 64-bit Windows are packaged and distributed with zero manual prerequisites:
 
 | Package | Format | Description |
 | :--- | :--- | :--- |
-| [**Windows Setup Installer**](https://github.com/indoctrinatedrecluse/Mimir/releases/download/v0.5.0/mimir-v0.5.0-windows-x64-setup.exe) | `.exe` (~10 MB) | Full setup wizard with Desktop and Start Menu shortcuts, auto-launch option, and bundled Microsoft WebView2 Evergreen Bootstrapper for fresh or LTSC Windows systems. |
-| [**Portable Archive**](https://github.com/indoctrinatedrecluse/Mimir/releases/download/v0.5.0/mimir-v0.5.0-windows-x64-portable.zip) | `.zip` (~8 MB) | Standalone portable bundle. Extract and launch `mimir.exe` directly without installation. |
+| [**Windows Setup Installer**](https://github.com/indoctrinatedrecluse/Mimir/releases/download/v0.6.0/mimir-v0.6.0-windows-x64-setup.exe) | `.exe` (~10 MB) | Full setup wizard with Desktop and Start Menu shortcuts, auto-launch option, and bundled Microsoft WebView2 Evergreen Bootstrapper for fresh or LTSC Windows systems. |
+| [**Portable Archive**](https://github.com/indoctrinatedrecluse/Mimir/releases/download/v0.6.0/mimir-v0.6.0-windows-x64-portable.zip) | `.zip` (~8 MB) | Standalone portable bundle. Extract and launch `mimir.exe` directly without installation. |
 
 ---
 
@@ -188,6 +188,25 @@ graph TD
 - [x] **Persistent Theme Selection**: Active realm auto-saved to `localStorage`; restored on next launch.
 - [x] **Command Palette Expansion**: Find, Downloads, Zoom, Print, Pin, Duplicate, and Clear Data all callable from Hliðskjálf.
 
+### Phase 6: Valhalla Revival, Turbo Acceleration & Naglfar Swarm *(Completed in v0.5.0)*
+- [x] **Bifröst Turbo Multi-Strand Accelerator**: Native parallel byte-range chunked downloading engine with isolated `.strand_{i}` parts, live aggregate speeds, ETA telemetry, and temporary strand cleanup.
+- [x] **Naglfar Swarm BitTorrent Engine**: Pure Rust BitTorrent client powered by `librqbit` (v9.0) supporting magnet URIs (`magnet:?xt=...`), local `.torrent` file parsing (via base64 and native file picker), automatic webview download interception, peer telemetry, and piece verification.
+- [x] **Valhalla Revival & Crash Sentinel**: Continuous state preservation, unexpected halt detection, and one-click session hierarchy restoration banner.
+- [x] **Reader Sanctum**: Cleanse web pages into distraction-free Obsidian, Elder Parchment, and Rune Sepia reading views (`Alt+R`) with text-to-speech recitation.
+- [x] **Runic Sidecar**: Docked persistent sidebar panel (`Ctrl+B`) featuring Scratchpad Notes, concurrent Huginn AI Skáli, and live conduit network telemetry.
+- [x] **Realm Inscription Rules Engine**: Define and auto-inject domain user-scripts and CSS rules matched by URL glob patterns and realm tags.
+
+### Phase 7: Living Animated Sanctums & Hliðskjálf Universal Integration *(Completed in v0.6.0)*
+- [x] **Animated Realm Sanctums (Option A: Atmospheric Particles & Ken Burns Drift)**:
+  - Dynamic 42-second GPU-accelerated Ken Burns ambient drift on realm sovereign artwork.
+  - Native HTML5 Canvas particle simulations tailored to each realm (Muspelheim embers, Niflheim frost mist, Asgard auroras, Helheim soul wisps, Jotunheim blizzards, Nidavellir sparks, Vanaheim nature spores).
+  - Quick-toggle button in the bottom realm switcher bar (`MOTION: ON / STATIC`) and `Ctrl+K` command for instant switching.
+  - Zero performance footprint: 0 MB added download bloat, auto-pausing on tab/window hide, and `prefers-reduced-motion` compliance.
+- [x] **Hliðskjálf Command Palette Universal Integration**:
+  - Direct keyboard accessibility for Naglfar Swarm (`Ctrl+Shift+U`), Bifröst Turbo (`Ctrl+Shift+J`), Reader Sanctum (`Alt+R`), Runic Sidecar (`Ctrl+B`), Valhalla Revival, and Atmospheric Realms.
+- [x] **Future Visual Upgrade Roadmap (Option B)**:
+  - *Roadmap*: Future major iterations will introduce **Option B: Seamless Looping Cinematic Generative Video Backgrounds** with user-selectable Video / Particle FX / Static modes.
+
 ---
 
 ## ⌨️ Essential Keyboard Shortcuts
@@ -195,6 +214,10 @@ graph TD
 | Shortcut | Action |
 | :--- | :--- |
 | `Ctrl + K` / `Ctrl + Shift + P` | Open **Hliðskjálf Command Palette** |
+| `Ctrl + Shift + U` | Open **Naglfar Swarm** (BitTorrent Client) |
+| `Ctrl + Shift + J` | Open **Bifröst Turbo** (Download Accelerator) |
+| `Ctrl + B` | Toggle **Runic Sidecar** (Docked Scratchpad & Notes) |
+| `Alt + R` | Enter **Reader Sanctum** (Distraction-Free Reading) |
 | `Ctrl + T` | Open New Tab (Branch of Yggdrasil) |
 | `Ctrl + W` | Sever Active Tab Thread (if not pinned) |
 | `Ctrl + L` | Focus **Mímisbrunnr (Omnibar)** |
@@ -206,6 +229,7 @@ graph TD
 | `Ctrl + P` | **Inscribe Parchment** (Print Page) |
 | `Ctrl + +` / `Ctrl + -` | Zoom In / Zoom Out |
 | `Ctrl + 0` | Reset Zoom to 100% |
+| `Alt + 1` .. `Alt + 9` | Instant Realm Teleportation |
 | `Ctrl + Shift + Del` | **Fate Thread Purge** (Clear Browsing Data) |
 | `Escape` | Dismiss Active Modal, Command Palette, or AI Drawer |
 

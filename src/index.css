@@ -177,6 +177,30 @@
   animation: ripplePulse 6s cubic-bezier(0, 0.2, 0.8, 1) infinite;
 }
 
+/* Animated Realm Sanctums: Ken Burns Ambient Drift */
+@keyframes realmKenBurns {
+  0% {
+    transform: scale(1.0) translate(0%, 0%);
+  }
+  25% {
+    transform: scale(1.05) translate(-1.2%, -0.8%);
+  }
+  50% {
+    transform: scale(1.08) translate(1.0%, -1.4%);
+  }
+  75% {
+    transform: scale(1.04) translate(-0.7%, 0.8%);
+  }
+  100% {
+    transform: scale(1.0) translate(0%, 0%);
+  }
+}
+
+.animate-realm-drift {
+  animation: realmKenBurns 42s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
 /* Custom sleek scrollbar */
 ::-webkit-scrollbar {
   width: 4px;

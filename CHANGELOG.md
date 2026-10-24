@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.6.0] - 2026-10-24 *(Animated Realm Sanctums & Command Palette Universal Integration)*
+
+This release elevates Mímir's sensory and mythological experience with living, animated theme backgrounds and brings universal command palette accessibility across all newly added browser systems.
+
+### Added
+
+#### Animated Realm Sanctums — Living Atmospheric Themes (`RealmAtmosphereCanvas.tsx`, `index.css`, `ContentViewport.tsx`)
+* **Ken Burns Ambient Drift**: Implemented continuous 42-second smooth GPU-accelerated breathing transform (`realmKenBurns` keyframe animation) on realm ruler artwork, breathing life into every new tab sanctuary (`mimir://newtab`).
+* **Procedural Particle Canvas Simulations (Option A)**:
+  * **Muspelheim**: Rising fire sparks, glowing volcanic embers, and flickering heat distortion shimmer.
+  * **Niflheim**: Drifting icy frost mist and swirling translucent ice crystals floating downwards.
+  * **Asgard**: Shimmering golden auroras and animated celestial light motes with soft radial halos.
+  * **Helheim**: Spectral soul-wisps and ghost-green glowing embers drifting on sine wave trajectories.
+  * **Midgard**: Golden dust motes and soft atmospheric haze drifting in the wind.
+  * **Alfheim**: Bioluminescent stardust, glowing pollen motes, and radiant celestial sparkles.
+  * **Jotunheim**: Blowing blizzards and frost flurries with wind gusts accelerating sideways.
+  * **Nidavellir**: Blacksmith forge sparks bursting upwards with rhythmic hearth warmth.
+  * **Vanaheim**: Drifting golden nature spores and rotating autumn foliage floating gently.
+* **Instant Static/Motion Switch**: Built-in toggle button in the bottom realm bar (`MOTION: ON / STATIC`) and command palette action allowing instantaneous switching between animated dynamic mode and classic static artwork.
+* **Zero Performance & Bundle Cost**: 0 MB extra download size; automatically halts animation loops when windows or tabs are hidden (`document.hidden`), respects `prefers-reduced-motion`, and maintains a locked 60 FPS.
+* **Future Upgrade Roadmap**: Documented roadmap to Option B (Seamless Looping Generative Video Backgrounds) with selectable Video / Particle / Static modes.
+
+#### Hliðskjálf Command Palette Universal Integration (`CommandPalette.tsx`, `App.tsx`)
+* **Direct Subsystem Navigation**:
+  * **Naglfar Swarm (`Ctrl+Shift+U`)**: Direct command palette entry to open Mímir's Hoard tabbed into the P2P BitTorrent seeder/leecher console.
+  * **Bifröst Turbo (`Ctrl+Shift+J`)**: Direct command palette entry to open Mímir's Hoard tabbed into the multi-strand parallel chunked download manager.
+  * **Atmospheric Realms Toggle (`ᛞ`)**: Direct command palette entry to switch between Animated Particle/Drift and Static Artwork.
+  * **Native .torrent File Ingestion**: Ingest local `.torrent` files or paste magnet URIs directly from the Swarm interface.
+
+---
+
 ## [0.5.0] - 2026-10-24 *(Valhalla Revival, Bifröst Turbo Accelerator & Naglfar Swarm)*
 
 This major milestone marks Mímir's graduation from Alpha into standard production releases. It introduces powerful new browsing systems including native multi-strand accelerated downloads, a full-featured native BitTorrent swarm client, persistent multi-mode sidebars, automated session revival, distraction-free reading sanctuaries, realm-level CSS/JS rule injection, and deep bundle optimizations.

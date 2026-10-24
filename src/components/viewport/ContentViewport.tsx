@@ -9,6 +9,7 @@ import { MimirSigil } from '@/components/brand/MimirSigil';
 import { getRandomHavamal, HavamalStanza } from '@/core/havamal';
 import { Compass, Sparkles, Globe, Terminal, Shield, BookOpen, RefreshCw, Feather, Flame, Search, Columns, ArrowLeftRight, X, Plus, Layers } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { RealmAtmosphereCanvas } from '@/components/themes/RealmAtmosphereCanvas';
 
 interface ContentViewportProps {
   activeTab?: Tab;
@@ -22,6 +23,8 @@ interface ContentViewportProps {
   onCloseSplitGaze?: () => void;
   onSwapSplitTabs?: () => void;
   onNewTabInSplit?: (realm: RealmId) => void;
+  isAnimatedBackground?: boolean;
+  onToggleAnimatedBackground?: () => void;
 }
 
 const SPEED_DIALS = [
@@ -43,6 +46,8 @@ export const ContentViewport: React.FC<ContentViewportProps> = ({
   onCloseSplitGaze,
   onSwapSplitTabs,
   onNewTabInSplit,
+  isAnimatedBackground = true,
+  onToggleAnimatedBackground,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [showIframeInDev, setShowIframeInDev] = useState(false);
@@ -105,7 +110,9 @@ export const ContentViewport: React.FC<ContentViewportProps> = ({
     <div className="relative flex h-full w-full flex-col items-center justify-between p-6 overflow-y-auto z-10">
       {/* Realm Ruler Cinematic Background Image with Atmospheric Vignette (Sharp & Prominent) */}
       <div
-        className="absolute inset-0 z-0 bg-cover bg-center transition-all duration-1000 scale-100"
+        className={`absolute inset-0 z-0 bg-cover bg-center transition-all duration-1000 ${
+          isAnimatedBackground ? 'animate-realm-drift' : 'scale-100'
+        }`}
         style={{
           backgroundImage: `url('${r.bgUrl}')`,
         }}
@@ -120,6 +127,9 @@ export const ContentViewport: React.FC<ContentViewportProps> = ({
           style={{ backgroundColor: th.accentColor }}
         />
       </div>
+
+      {/* Atmospheric Realm Canvas Particle Simulation (Option A) */}
+      <RealmAtmosphereCanvas realmId={r.id} enabled={isAnimatedBackground} />
 
       {/* Background Decorative Layer: Yggdrasil Roots & Ambient Knotwork */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
@@ -385,6 +395,23 @@ export const ContentViewport: React.FC<ContentViewportProps> = ({
             </button>
           );
         })}
+
+        {/* Animated vs Static Realm Backdrop Mode Toggle */}
+        {onToggleAnimatedBackground && (
+          <button
+            onClick={onToggleAnimatedBackground}
+            className="ml-2 flex items-center space-x-1.5 rounded-lg border bg-black/40 px-2.5 py-1 text-[10px] font-mono transition-all hover:bg-black/60 shadow-md backdrop-blur-md"
+            style={{
+              borderColor: isAnimatedBackground ? `${th.accentColor}60` : 'rgba(255,255,255,0.12)',
+              color: isAnimatedBackground ? th.accentColor : '#94a3b8',
+              boxShadow: isAnimatedBackground ? `0 0 12px ${th.glowColor}` : undefined,
+            }}
+            title={isAnimatedBackground ? 'Switch to Static Realm Artwork' : 'Awaken Animated Drift & Particle Simulation (Option A)'}
+          >
+            <Sparkles className="h-3 w-3" />
+            <span>{isAnimatedBackground ? 'MOTION: ON' : 'MOTION: STATIC'}</span>
+          </button>
+        )}
       </div>
     </div>
   );

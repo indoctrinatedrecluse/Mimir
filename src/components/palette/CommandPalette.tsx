@@ -80,6 +80,8 @@ interface CommandPaletteProps {
   onRestoreValhalla?: () => void;
   onOpenSwarm?: () => void;
   onOpenTurbo?: () => void;
+  isAnimatedBackground?: boolean;
+  onToggleAnimatedRealms?: () => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
@@ -112,6 +114,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onRestoreValhalla,
   onOpenSwarm,
   onOpenTurbo,
+  isAnimatedBackground = true,
+  onToggleAnimatedRealms,
 }) => {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -262,6 +266,17 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         rune: 'ᛞ',
         icon: isAmbientPlaying ? VolumeX : Volume2,
         action: onToggleAmbient,
+      },
+      {
+        id: 'toggle-animated-realms',
+        category: 'Viewports & Tools',
+        title: isAnimatedBackground
+          ? 'Atmospheric Realms: Switch to Static Artwork'
+          : 'Atmospheric Realms: Awaken Animated Drift & Particles',
+        description: 'Toggle dynamic Ken Burns breathing drift and realm-specific atmospheric particle simulations (Option A)',
+        rune: 'ᛞ',
+        icon: Sparkles,
+        action: () => onToggleAnimatedRealms?.(),
       },
 
       // Security, Wards & Browser Operations
