@@ -17,8 +17,10 @@ import { MimirsHoard, DownloadItem } from '@/components/hud/MimirsHoard';
 import { FateThreadPurge } from '@/components/hud/FateThreadPurge';
 import { Tab, RealmId } from '@/types';
 import { runicAudio } from '@/core/audio/runicAudio';
-import { mimirIpc } from '@/core/ipc/bridge';
+import { mimirIpc, NativeContextMenuEvent } from '@/core/ipc/bridge';
 import { AnimatePresence } from 'framer-motion';
+import { NorseContextMenu } from '@/components/chrome/NorseContextMenu';
+import { detectFileType } from '@/components/hud/MimirsHoard';
 
 const getInitialRealm = (): RealmId => {
   try {
@@ -81,29 +83,27 @@ export const App: React.FC = () => {
   const [isAmbientPlaying, setIsAmbientPlaying] = useState(runicAudio.isAmbientEnabled());
   const [showSplash, setShowSplash] = useState(true);
 
-  // Download artifacts telemetry
-  const [downloads, setDownloads] = useState<DownloadItem[]>([
-    {
-      id: 'dl-1',
-      filename: 'poetic_edda_voluspa.pdf',
-      url: 'https://sacred-texts.com/cla/poe/voluspa.htm',
-      size: '2.8 MB',
-      progress: 100,
-      status: 'complete',
-      timestamp: 'Just now',
-      type: 'document',
-    },
-    {
-      id: 'dl-2',
-      filename: 'yggdrasil_realm_cartography.png',
-      url: 'https://mimir-archives.org/cartography/yggdrasil.png',
-      size: '14.2 MB',
-      progress: 100,
-      status: 'complete',
-      timestamp: '18 min ago',
-      type: 'image',
-    },
-  ]);
+  // Download artifacts telemetry & localStorage persistence
+  const [downloads, setDownloads] = useState<DownloadItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('mimir_downloads');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Context Menu & Security Telemetry state
+  const [contextMenuEvent, setContextMenuEvent] = useState<NativeContextMenuEvent | null>(null);
+  const [isContextMenuOpen, setIsContextMenuOpen] = useState(false);
+  const [blockedTrackersCount, setBlockedTrackersCount] = useState<number>(0);
+
+  // Synchronize downloads to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('mimir_downloads', JSON.stringify(downloads));
+    } catch {}
+  }, [downloads]);
 
   // Persistent bookmarks storage
   const [bookmarks, setBookmarks] = useState<string[]>(() => {
@@ -124,6 +124,71 @@ export const App: React.FC = () => {
       type: 'CREATE_TAB',
       payload: { tabId: 'tab-1', url: 'mimir://newtab', realm: activeRealm },
     });
+  }, []);
+
+  // Subscribe to native host events (downloads, context menu, tracker interception)
+  useEffect(() => {
+    const unDownloadStarted = mimirIpc.onDownloadStarted((ev) => {
+      runicAudio.playRunicHum();
+      setDownloads((prev) => {
+        const existingIdx = prev.findIndex((d) => d.id === ev.id || d.url === ev.url);
+        const newItem: DownloadItem = {
+          id: ev.id,
+          filename: ev.filename,
+          url: ev.url,
+          path: ev.path,
+          size: 'Acquiring...',
+          progress: 30,
+          status: 'downloading',
+          timestamp: 'Just now',
+          type: detectFileType(ev.filename),
+        };
+        if (existingIdx >= 0) {
+          const updated = [...prev];
+          updated[existingIdx] = newItem;
+          return updated;
+        }
+        return [newItem, ...prev];
+      });
+    });
+
+    const unDownloadCompleted = mimirIpc.onDownloadCompleted((ev) => {
+      if (ev.success) {
+        runicAudio.playChime();
+      } else {
+        runicAudio.playClick(300);
+      }
+      setDownloads((prev) =>
+        prev.map((d) => {
+          if (d.url === ev.url || (ev.path && d.path === ev.path)) {
+            return {
+              ...d,
+              path: ev.path || d.path,
+              size: ev.size && ev.size !== '0 B' ? ev.size : d.size,
+              status: ev.success ? 'complete' : 'failed',
+              progress: ev.success ? 100 : 0,
+            };
+          }
+          return d;
+        })
+      );
+    });
+
+    const unContextMenu = mimirIpc.onContextMenu((ev) => {
+      setContextMenuEvent(ev);
+      setIsContextMenuOpen(true);
+    });
+
+    const unTracker = mimirIpc.onTrackerBlocked(() => {
+      setBlockedTrackersCount((prev) => prev + 1);
+    });
+
+    return () => {
+      unDownloadStarted();
+      unDownloadCompleted();
+      unContextMenu();
+      unTracker();
+    };
   }, []);
 
   // Update ambient audio if active realm changes
@@ -415,6 +480,40 @@ export const App: React.FC = () => {
     });
   };
 
+  const handleAcquireUrl = (url: string) => {
+    if (!url.trim()) return;
+    mimirIpc.send({ type: 'DOWNLOAD_URL', payload: { url: url.trim() } });
+    const parts = url.split('/');
+    const rawFilename = parts[parts.length - 1] || 'artifact.bin';
+    const filename = rawFilename.split('?')[0] || 'artifact.bin';
+    const tempItem: DownloadItem = {
+      id: `dl-${Date.now()}`,
+      filename,
+      url: url.trim(),
+      path: '',
+      size: 'Acquiring...',
+      progress: 25,
+      status: 'downloading',
+      timestamp: 'Just now',
+      type: detectFileType(filename),
+    };
+    setDownloads((prev) => [tempItem, ...prev]);
+  };
+
+  const handleDeleteDownloadItem = (id: string, path: string) => {
+    if (path) {
+      mimirIpc.send({ type: 'DELETE_FILE', payload: { path } });
+    }
+    setDownloads((prev) => prev.filter((d) => d.id !== id));
+  };
+
+  const handleUpgradeToHttps = () => {
+    if (activeTab && activeTab.url.startsWith('http://')) {
+      const upgraded = activeTab.url.replace(/^http:\/\//, 'https://');
+      handleNavigate(upgraded);
+    }
+  };
+
   return (
     <div className="relative flex h-screen w-screen flex-col overflow-hidden bg-[#05070a] text-slate-100 font-sans">
       {/* Cinematic Splash Screen */}
@@ -464,6 +563,8 @@ export const App: React.FC = () => {
         isDownloadsOpen={isDownloadsOpen}
         onBookmarkCurrent={() => handleToggleBookmark(activeTab?.url || '')}
         isCurrentBookmarked={bookmarks.includes(activeTab?.url || '')}
+        liveBlockedCount={blockedTrackersCount}
+        onUpgradeToHttps={handleUpgradeToHttps}
       />
 
       {/* Layer 3: Main Workspace (Yggdrasil Tree + Content Viewport) */}
@@ -480,6 +581,7 @@ export const App: React.FC = () => {
           onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
           onTogglePinTab={handleTogglePinTab}
           onDuplicateTab={handleDuplicateTab}
+          onReorderTabs={(newTabs) => setTabs(newTabs)}
         />
 
         <ContentViewport
@@ -587,6 +689,8 @@ export const App: React.FC = () => {
         activeRealm={activeRealm}
         downloads={downloads}
         onClearCompleted={() => setDownloads((prev) => prev.filter((d) => d.status !== 'complete'))}
+        onAcquireUrl={handleAcquireUrl}
+        onDeleteItem={handleDeleteDownloadItem}
       />
 
       {/* Overlay 8: Fate Thread Purge (Clear Browsing Data) */}
@@ -602,6 +706,43 @@ export const App: React.FC = () => {
         onClose={() => setIsHuginnOpen(false)}
         activeRealm={activeRealm}
         currentTab={activeTab}
+      />
+
+      {/* Custom Themed Norse Context Menu */}
+      <NorseContextMenu
+        isOpen={isContextMenuOpen}
+        onClose={() => setIsContextMenuOpen(false)}
+        activeRealm={activeRealm}
+        eventData={contextMenuEvent}
+        onOpenInNewTab={(url) => handleNewTab(url)}
+        onOpenInSplitGaze={(url) => {
+          const newId = `tab-${Date.now()}`;
+          const newTab: Tab = {
+            id: newId,
+            title: url.replace(/^https?:\/\//, ''),
+            url,
+            isActive: false,
+            isLoading: false,
+            isMuted: false,
+            isPinned: false,
+            realm: activeRealm,
+            rune: 'ᚱ',
+            zoomLevel: 100,
+          };
+          setTabs((prev) => [...prev, newTab]);
+          setSplitTabId(newId);
+          setIsSplitGaze(true);
+          mimirIpc.send({ type: 'CREATE_TAB', payload: { tabId: newId, url, realm: activeRealm } });
+        }}
+        onDownloadUrl={(url) => {
+          handleAcquireUrl(url);
+          setIsDownloadsOpen(true);
+        }}
+        onBookmarkUrl={(url) => handleToggleBookmark(url)}
+        onSearchQuery={(query) => {
+          const searchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(query)}`;
+          handleNewTab(searchUrl);
+        }}
       />
     </div>
   );

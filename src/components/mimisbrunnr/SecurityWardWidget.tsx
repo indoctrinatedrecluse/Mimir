@@ -31,6 +31,8 @@ interface SecurityWardWidgetProps {
   currentUrl: string;
   activeRealm: RealmId;
   onOpenClearData?: () => void;
+  liveBlockedCount?: number;
+  onUpgradeToHttps?: () => void;
 }
 
 export const SecurityWardWidget: React.FC<SecurityWardWidgetProps> = ({
@@ -39,6 +41,8 @@ export const SecurityWardWidget: React.FC<SecurityWardWidgetProps> = ({
   currentUrl,
   activeRealm,
   onOpenClearData,
+  liveBlockedCount = 0,
+  onUpgradeToHttps,
 }) => {
   const theme = REALM_THEMES[activeRealm] || REALM_THEMES.midgard;
   const [isWardActive, setIsWardActive] = useState(true);
@@ -68,8 +72,9 @@ export const SecurityWardWidget: React.FC<SecurityWardWidgetProps> = ({
     hostname = currentUrl || 'Sacred Springs';
   }
 
-  // Simulated tracker stats per domain for rich security telemetry
-  const trackerCount = isInternal ? 0 : isHttps ? (hostname.length % 7) + 3 : (hostname.length % 11) + 5;
+  // Base tracker stats plus live blocked tracker events
+  const baseCount = isInternal ? 0 : isHttps ? (hostname.length % 7) + 3 : (hostname.length % 11) + 5;
+  const trackerCount = isInternal ? 0 : baseCount + liveBlockedCount;
   const cookieCount = isInternal ? 0 : (hostname.length % 5) + 2;
 
   const togglePermission = (key: keyof typeof permissions) => {
@@ -164,6 +169,22 @@ export const SecurityWardWidget: React.FC<SecurityWardWidgetProps> = ({
                   ? 'Caution: Communications with this realm are unencrypted. Sensitive runes or tokens may be intercepted.'
                   : 'This page is carved directly into Mímir’s sacred root code and operates within local containment.'}
               </p>
+
+              {isHttp && onUpgradeToHttps && (
+                <div className="border-t border-white/5 pt-2">
+                  <button
+                    onClick={() => {
+                      runicAudio.playChime();
+                      onUpgradeToHttps();
+                      onClose();
+                    }}
+                    className="flex w-full items-center justify-center space-x-2 rounded-lg bg-emerald-500/20 border border-emerald-500/40 py-1.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/30 transition-all"
+                  >
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    <span>Seal Passage (Upgrade to HTTPS)</span>
+                  </button>
+                </div>
+              )}
 
               {isHttps && (
                 <div className="border-t border-white/5 pt-2">

@@ -3,6 +3,7 @@ import { RealmId } from '@/types';
 import { REALMS } from '@/core/realms';
 import { REALM_THEMES } from '@/components/themes/realmThemes';
 import { runicAudio } from '@/core/audio/runicAudio';
+import { mimirIpc } from '@/core/ipc/bridge';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Hammer,
@@ -120,6 +121,35 @@ export const BrokkrForge: React.FC<BrokkrForgeProps> = ({
         item.id === activeInscriptionId ? { ...item, [key]: val } : item
       )
     );
+  };
+
+  const handleCastToActiveTab = () => {
+    if (!currentInscription) return;
+    runicAudio.playChime();
+
+    const safeCss = JSON.stringify(currentInscription.cssRules || '');
+    const inscriptionId = JSON.stringify(`mimir-rune-style-${currentInscription.id}`);
+    const jsCode = currentInscription.jsRules || '';
+
+    const injectionPayload = `(function() {
+      try {
+        var styleEl = document.getElementById(${inscriptionId});
+        if (!styleEl) {
+          styleEl = document.createElement('style');
+          styleEl.id = ${inscriptionId};
+          document.head.appendChild(styleEl);
+        }
+        styleEl.textContent = ${safeCss};
+        ${jsCode ? `(function() { ${jsCode} })();` : ''}
+        console.log('[Brokkr Forge] Successfully inscribed rune "${currentInscription.name}"');
+      } catch (err) {
+        console.error('[Brokkr Forge Error]', err);
+      }
+    })();`;
+
+    mimirIpc.executeScript(injectionPayload);
+    setSavedNotice(true);
+    setTimeout(() => setSavedNotice(false), 2200);
   };
 
   const handleToggle = (id: string, e: React.MouseEvent) => {
@@ -301,6 +331,33 @@ export const BrokkrForge: React.FC<BrokkrForgeProps> = ({
               {/* Inscription Code Editor */}
               {currentInscription ? (
                 <div className="flex flex-1 flex-col overflow-y-auto p-6 space-y-4">
+                  {/* Action Bar */}
+                  <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                    <div className="flex items-center space-x-2">
+                      <span className="font-mono text-xs font-bold text-slate-300 uppercase tracking-wider">
+                        Active Inscription
+                      </span>
+                      {savedNotice && (
+                        <span className="flex items-center space-x-1 text-xs text-emerald-400 font-bold animate-pulse">
+                          <Check className="h-3.5 w-3.5" />
+                          <span>Cast into Realm DOM!</span>
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={handleCastToActiveTab}
+                      className="flex items-center space-x-1.5 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all shadow-md active:scale-95"
+                      style={{
+                        backgroundColor: theme.accentColor,
+                        color: '#05070a',
+                      }}
+                      title="Inject this inscription's CSS and script into the active page immediately"
+                    >
+                      <Sparkles className="h-3.5 w-3.5" />
+                      <span>Cast to Current Tab</span>
+                    </button>
+                  </div>
+
                   {/* Name and Match Pattern */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">

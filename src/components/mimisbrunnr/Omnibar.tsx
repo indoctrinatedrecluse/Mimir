@@ -63,6 +63,8 @@ interface OmnibarProps {
   onPrint?: () => void;
   onOpenClearData?: () => void;
   isDownloadsOpen?: boolean;
+  liveBlockedCount?: number;
+  onUpgradeToHttps?: () => void;
 }
 
 export const Omnibar: React.FC<OmnibarProps> = ({
@@ -92,6 +94,8 @@ export const Omnibar: React.FC<OmnibarProps> = ({
   onPrint,
   onOpenClearData,
   isDownloadsOpen = false,
+  liveBlockedCount = 0,
+  onUpgradeToHttps,
 }) => {
   const [inputVal, setInputVal] = useState(currentUrl);
   const [isFocused, setIsFocused] = useState(false);
@@ -648,6 +652,8 @@ export const Omnibar: React.FC<OmnibarProps> = ({
         currentUrl={currentUrl}
         activeRealm={activeRealm}
         onOpenClearData={onOpenClearData}
+        liveBlockedCount={liveBlockedCount}
+        onUpgradeToHttps={onUpgradeToHttps}
       />
     </div>
   );

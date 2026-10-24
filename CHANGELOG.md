@@ -31,58 +31,73 @@ This release brings a comprehensive set of common browser functions, privacy con
 * Auto-focuses and auto-selects text on open; clears selection on close.
 * Full Norse realm theming with accent glow and rune marker.
 
-#### Mímir's Hoard — Downloads Manager (`MimirsHoard.tsx`)
-* Downloads panel accessible via the `Download` button in the Omnibar (`Ctrl+J`) or Command Palette.
-* Shows filename, file type icon (document/image/archive/video/audio), download size, progress bar, and status badges.
-* Colour-coded status: *Acquiring…* (cyan), *Complete* (emerald), *Failed* (rose), *Paused* (amber).
-* **Clear Completed** button to flush finished entries.
+#### Mímir's Hoard — Full Native Downloads Manager (`MimirsHoard.tsx`)
+* **Real Native WebView2 Download Handlers**:
+  * Intercepts `with_download_started_handler` in Rust to track destination path, filename, and unique download IDs.
+  * Intercepts `with_download_completed_handler` to determine exact file size on disk and success state.
+  * Relays real-time `DOWNLOAD_STARTED` and `DOWNLOAD_COMPLETED` events across IPC to the HUD.
+* **Artifact Actions & Hoard Controls**:
+  * **Open Artifact**: Launches the downloaded file using default system association.
+  * **Reveal in Windows Explorer**: Spawns `explorer.exe /select,"<path>"` to highlight the acquired file in its folder.
+  * **Purge Artifact from Disk**: Sends `DELETE_FILE` IPC to delete the physical file from the file system.
+  * **Manual Artifact Acquisition (Acquire URL)**: Slide-out drawer allowing users to acquire any URL directly via native background `curl.exe` to `%USERPROFILE%\Downloads`.
+  * **Status Filter Tabs**: Filter hoard items by All, In Progress, Complete, and Failed.
 
-#### Fate Thread Purge — Clear Browsing Data (`FateThreadPurge.tsx`)
-* Modal for clearing browsing data (`Ctrl+Shift+Del`) with:
-  * Time range selector: Last Hour / Last 24 Hours / Last 7 Days / All Time.
-  * Granular toggles for: Browsing History (*Threads of Fate*), Cookies & Site Data (*Hospitality Tokens*), Cached Images & Files (*Cached Artifacts*), Local Storage (*Runic Inscriptions*).
-  * Animated confirmation sequence with Norse purge visual.
+#### Norse Themed Context Menu (`NorseContextMenu.tsx`)
+* Custom obsidian glass context menu replacing default WebView2 context menu.
+* Injected click and coordinate listener captures context details (`linkUrl`, `srcUrl`, `selectionText`, coordinates).
+* Context-aware actions:
+  * **Open in New Tab** / **Open in Split-Gaze** for hyperlinks.
+  * **Copy Link Address** to system clipboard with audio chime.
+  * **Save Image As...** & **Copy Image Address** for image targets.
+  * **Search Web for Selection** using DuckDuckGo.
+  * **Add to Runestones** (Quick Bookmark).
+  * **Print Rune** (`Ctrl+P`) and **Inspect Element (DevTools)**.
 
-#### Omnibar Enhancements
-* **Zoom controls** cluster: Zoom In (`Ctrl++`), Zoom % display (click to reset to 100%), Zoom Out (`Ctrl+-`).
-* **Downloads badge button** with active download count indicator.
-* **Print button** (`Ctrl+P`) → sends `PRINT` IPC to trigger `window.print()` in the WebView.
-* **Find button** → opens Rune Seeker overlay.
-* **Bookmark button**: now wired to real persistent state via `localStorage`, showing `BookmarkCheck` icon when current URL is bookmarked.
+#### True Helheim Isolation (Incognito Engine)
+* Real sandboxed container isolation via dedicated `WebContext` pointing to `%TEMP%\mimir_helheim_isolated`.
+* Helheim tabs do not share cookies, cache, localStorage, or session states with the main profile.
 
-#### Tab Pinning & Duplication (`TabTree.tsx`)
-* **Pin/Unpin tab**: Accent dot indicator on pinned tab rune, `Pin` icon inline in expanded title row. Pinned tabs cannot be closed via `Ctrl+W` or the close button.
-* **Duplicate Tab**: Clone button with `Copy` icon clones the active tab's URL + realm into a new branch. Sends `DUPLICATE_TAB` IPC command.
-* Right-side micro-button cluster on each tab: Pin, Duplicate, Close (hidden by default, revealed on hover).
+#### Runic Ward Ad & Tracker Protection
+* Script-level interceptor automatically injected into child webviews on DOM initialization.
+* Neutralizes calls to known ad, tracking, and telemetry domains (`doubleclick.net`, `google-analytics.com`, `facebook.net`, etc.).
+* Relays live `TRACKER_BLOCKED` events via IPC to the Omnibar's `SecurityWardWidget`, displaying real-time blocked tracker counters.
 
-#### Command Palette Expansion (`CommandPalette.tsx`)
-* **New commands added**:
-  * Rune Seeker (Find in Page) — `Ctrl+F`
-  * Mímir's Hoard (Downloads) — `Ctrl+J`
-  * Zoom In / Zoom Out / Zoom Reset — `Ctrl++` / `Ctrl+-` / `Ctrl+0`
-  * Print Page — `Ctrl+P`
-  * Pin Active Tab / Duplicate Active Tab
-  * Purge Threads of Fate (Clear Browsing Data) — `Ctrl+Shift+Del`
+#### HTTPS-Only Mode & Direct Upgrade
+* Visual connection wards (🔒 Secure / ⚠️ Insecure / 🛡 Sanctuary).
+* Added one-click **"Seal Passage (Upgrade to HTTPS)"** action inside the Security Ward widget to safely elevate unencrypted HTTP connections.
 
-#### Persistent Theme Selection
-* Active realm is now persisted to `localStorage` under `mimir_active_realm`.
-* On every browser launch, the previously selected realm is restored immediately — no splash race, no flicker.
-* Realm changes are written synchronously on every `handleSelectRealm` call.
+#### Runestone Vault — JSON Import & Export (`MuninnVault.tsx`)
+* Full **JSON Export** of all bookmarks with ISO timestamps and formatted filenames.
+* Robust **JSON Import** featuring schema validation, duplicates rejection, count reports, and procedural audio cues.
+
+#### Tab Physics & Drag-to-Reorder (`TabTree.tsx`)
+* Integrated Framer Motion `Reorder.Group` and `Reorder.Item` physics.
+* Seamless drag-to-reorder tab branches in the Yggdrasil tree with dynamic height calculations and spring transitions.
+
+#### Brokkr's Extension Forge — Live Script & Style Injection (`BrokkrForge.tsx`)
+* Added `EXECUTE_SCRIPT` IPC pipeline to compile and cast inscriptions on demand.
+* **"Cast to Current Tab"** button injects custom CSS `<style>` and executes JavaScript rules into the active DOM.
+
+#### Bifröst Matrix — Latency & Reachability Probing (`BifrostMatrix.tsx`)
+* Added **"Probe Conduit"** button measuring real-time latency (ms) and connectivity against configured DoH resolvers.
 
 #### New Rust/IPC Commands (`ipc.rs`, `tab_manager.rs`, `main.rs`)
-* `ZOOM_IN` / `ZOOM_OUT` / `ZOOM_RESET` — adjusts `document.body.style.zoom` on the active WebView.
-* `PRINT` — triggers `window.print()` in the active WebView.
-* `FIND_IN_PAGE { query }` — calls `window.find()` with wrap + multi-match flags.
-* `FIND_NEXT` / `FIND_PREVIOUS` — re-uses `window.__mimirLastFind` for stateful navigation.
-* `FIND_CLOSE` — clears all selections via `window.getSelection().removeAllRanges()`.
-* `DUPLICATE_TAB { tabId, newTabId }` — clones the source tab's URL and realm into a new WebView.
-* `execute_on_active()` helper method added to `TabManager` to DRY all script-evaluation calls.
+* `OPEN_PATH` — reveals files in Windows Explorer or executes them.
+* `DOWNLOAD_URL` — triggers background file acquisition via native `curl.exe`.
+* `DELETE_FILE` — deletes downloaded artifacts from disk.
+* `SHOW_DEVTOOLS` — activates the WebView2 developer tools window.
+* `EXECUTE_SCRIPT` — evaluates arbitrary JavaScript / CSS DOM overrides in the active webview.
+* `DOWNLOAD_STARTED` / `DOWNLOAD_COMPLETED` — bidirectional download telemetry.
+* `CONTEXT_MENU` — passes coordinates and context targets to HUD.
+* `TRACKER_BLOCKED` — live telemetry for deflected telemetry requests.
 
 ### Changed
 * `Tab` interface gained `isPinned: boolean` and `zoomLevel: number` fields.
-* `IpcCommand` TypeScript union type extended with all 9 new command variants.
+* `IpcCommand` TypeScript union type extended with all new command variants.
 * `handleCloseTab` respects `isPinned` — pinned tabs are immune to `Ctrl+W`.
 * Bookmarks now persist to `localStorage` under `mimir_bookmarked_urls`.
+* Download history persists to `localStorage` under `mimir_downloads_history`.
 
 ---
 

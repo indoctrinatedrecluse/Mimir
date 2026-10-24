@@ -1,10 +1,27 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 use tao::dpi::{LogicalPosition, LogicalSize, Position, Size};
+use tao::event_loop::EventLoopProxy;
 use tao::window::Window;
-use wry::{Rect, WebView, WebViewBuilder};
-use crate::ipc::ViewportBounds;
+use wry::{Rect, WebContext, WebView, WebViewBuilder};
+use crate::ipc::{DownloadCompletedPayload, DownloadStartedPayload, IpcCommand, ViewportBounds};
 use crate::logger;
+
+pub fn format_bytes(bytes: u64) -> String {
+    const KB: u64 = 1024;
+    const MB: u64 = KB * 1024;
+    const GB: u64 = MB * 1024;
+
+    if bytes >= GB {
+        format!("{:.1} GB", bytes as f64 / GB as f64)
+    } else if bytes >= MB {
+        format!("{:.1} MB", bytes as f64 / MB as f64)
+    } else if bytes >= KB {
+        format!("{:.0} KB", bytes as f64 / KB as f64)
+    } else {
+        format!("{} B", bytes)
+    }
+}
 
 pub struct TabInstance {
     pub id: String,
@@ -17,15 +34,26 @@ pub struct TabManager {
     pub tabs: HashMap<String, TabInstance>,
     pub active_tab_id: Option<String>,
     pub current_bounds: Option<ViewportBounds>,
+    pub proxy: Option<EventLoopProxy<IpcCommand>>,
+    pub helheim_context: Option<WebContext>,
 }
 
 impl TabManager {
     pub fn new() -> Self {
+        let helheim_dir = std::env::temp_dir().join("mimir_helheim_isolated");
+        let helheim_context = Some(WebContext::new(Some(helheim_dir)));
+
         Self {
             tabs: HashMap::new(),
             active_tab_id: None,
             current_bounds: None,
+            proxy: None,
+            helheim_context,
         }
+    }
+
+    pub fn set_proxy(&mut self, proxy: EventLoopProxy<IpcCommand>) {
+        self.proxy = Some(proxy);
     }
 
     pub fn to_wry_rect(bounds: &ViewportBounds) -> Rect {
@@ -53,6 +81,205 @@ impl TabManager {
                 if let Some(wv) = &mut tab.webview {
                     let _ = wv.set_bounds(rect);
                 }
+            }
+        }
+    }
+
+    fn build_child_webview(
+        &mut self,
+        window: &Arc<Window>,
+        rect: Rect,
+        url: &str,
+        realm: &str,
+    ) -> Option<WebView> {
+        let is_helheim = realm == "helheim";
+        let mut builder = if is_helheim {
+            if let Some(ctx) = &mut self.helheim_context {
+                logger::info("Engaging isolated Helheim shroud (Ephemeral In-Private WebContext)");
+                WebViewBuilder::with_web_context(ctx)
+            } else {
+                WebViewBuilder::new()
+            }
+        } else {
+            WebViewBuilder::new()
+        };
+
+        builder = builder
+            .with_bounds(rect)
+            .with_url(url)
+            .with_background_color((5, 7, 10, 255))
+            .with_devtools(true);
+
+        // 1. Download started handler
+        if let Some(proxy_start) = self.proxy.clone() {
+            builder = builder.with_download_started_handler(move |uri, path| {
+                let filename = path
+                    .file_name()
+                    .map(|f| f.to_string_lossy().to_string())
+                    .unwrap_or_else(|| "artifact".to_string());
+                let id = format!(
+                    "dl-{}",
+                    std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap()
+                        .as_millis()
+                );
+                logger::info(&format!("Acquiring artifact from Bifröst: {} -> {}", uri, path.display()));
+                let _ = proxy_start.send_event(IpcCommand::DownloadStarted {
+                    payload: DownloadStartedPayload {
+                        id,
+                        filename,
+                        url: uri,
+                        path: path.to_string_lossy().to_string(),
+                    },
+                });
+                true
+            });
+        }
+
+        // 2. Download completed handler
+        if let Some(proxy_comp) = self.proxy.clone() {
+            builder = builder.with_download_completed_handler(move |uri, path_opt, success| {
+                let (path_str, size_str) = if let Some(p) = &path_opt {
+                    let size = std::fs::metadata(p)
+                        .map(|m| format_bytes(m.len()))
+                        .unwrap_or_else(|_| "Unknown size".into());
+                    (p.to_string_lossy().to_string(), size)
+                } else {
+                    ("".to_string(), "Unknown size".into())
+                };
+
+                logger::info(&format!(
+                    "Artifact acquisition finished (success={}): {} ({})",
+                    success, path_str, size_str
+                ));
+
+                let _ = proxy_comp.send_event(IpcCommand::DownloadCompleted {
+                    payload: DownloadCompletedPayload {
+                        url: uri,
+                        path: path_str,
+                        success,
+                        size: size_str,
+                    },
+                });
+            });
+        }
+
+        // 3. Script injection: Context menu interceptor + Runic Shield ad & tracker protection
+        let init_script = r#"
+        (function() {
+            // A. Context Menu Interceptor: Dispatches right-click payload to Mímir HUD
+            window.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                var linkEl = e.target.closest ? e.target.closest('a') : null;
+                var imgEl = e.target.closest ? e.target.closest('img') : null;
+                var sel = window.getSelection() ? window.getSelection().toString() : '';
+
+                var payload = {
+                    type: 'CONTEXT_MENU',
+                    payload: {
+                        x: e.clientX,
+                        y: e.clientY,
+                        linkUrl: linkEl ? linkEl.href : null,
+                        imageUrl: imgEl ? imgEl.src : null,
+                        selectedText: sel ? sel.trim() : null,
+                        pageUrl: window.location.href,
+                        pageTitle: document.title || window.location.hostname
+                    }
+                };
+
+                if (window.ipc && typeof window.ipc.postMessage === 'function') {
+                    window.ipc.postMessage(JSON.stringify(payload));
+                } else if (window.chrome && window.chrome.webview && typeof window.chrome.webview.postMessage === 'function') {
+                    window.chrome.webview.postMessage(JSON.stringify(payload));
+                }
+            }, true);
+
+            // B. Runic Shield: Intercept and neutralize ad/telemetry trackers
+            var TRACKER_DOMAINS = [
+                'google-analytics.com', 'analytics.google.com', 'googletagmanager.com',
+                'doubleclick.net', 'adservice.google.com', 'googlesyndication.com',
+                'facebook.net', 'connect.facebook.net', 'adnxs.com', 'criteo.com',
+                'criteo.net', 'scorecardresearch.com', 'hotjar.com', 'outbrain.com',
+                'taboola.com', 'amazon-adsystem.com', 'rubiconproject.com', 'quantserve.com',
+                'pubmatic.com', 'casalemedia.com', 'openx.net', 'moatads.com'
+            ];
+
+            function isTracker(url) {
+                if (!url) return false;
+                try {
+                    var u = new URL(url, window.location.href);
+                    return TRACKER_DOMAINS.some(function(d) {
+                        return u.hostname === d || u.hostname.endsWith('.' + d);
+                    });
+                } catch(err) { return false; }
+            }
+
+            function reportBlock(url) {
+                try {
+                    var u = new URL(url, window.location.href);
+                    var p = {
+                        type: 'TRACKER_BLOCKED',
+                        payload: { domain: u.hostname, category: 'telemetry_tracker', url: url }
+                    };
+                    if (window.ipc && typeof window.ipc.postMessage === 'function') {
+                        window.ipc.postMessage(JSON.stringify(p));
+                    } else if (window.chrome && window.chrome.webview) {
+                        window.chrome.webview.postMessage(JSON.stringify(p));
+                    }
+                } catch(e) {}
+            }
+
+            var origFetch = window.fetch;
+            if (origFetch) {
+                window.fetch = function() {
+                    var url = typeof arguments[0] === 'string' ? arguments[0] : (arguments[0] && arguments[0].url);
+                    if (isTracker(url)) {
+                        reportBlock(url);
+                        return Promise.reject(new Error('[Mímir Runic Ward] Blocked tracker: ' + url));
+                    }
+                    return origFetch.apply(this, arguments);
+                };
+            }
+
+            var origOpen = XMLHttpRequest.prototype.open;
+            XMLHttpRequest.prototype.open = function(method, url) {
+                if (isTracker(url)) {
+                    reportBlock(url);
+                    this.send = function() {};
+                    return;
+                }
+                return origOpen.apply(this, arguments);
+            };
+        })();
+        "#;
+        builder = builder.with_initialization_script(init_script);
+
+        // 4. Child IPC handler for messages originating in child webview
+        if let Some(proxy_ipc) = self.proxy.clone() {
+            builder = builder.with_ipc_handler(move |req: wry::http::Request<String>| {
+                let msg = req.body();
+                match serde_json::from_str::<IpcCommand>(msg) {
+                    Ok(cmd) => {
+                        let _ = proxy_ipc.send_event(cmd);
+                    }
+                    Err(e) => {
+                        logger::warn(&format!("Unrecognized rune from child webview: {} ({})", msg, e));
+                    }
+                }
+            });
+        }
+
+        match builder.build_as_child(window.as_ref()) {
+            Ok(wv) => {
+                logger::info(&format!("Spawned child WebView2 for ({})", url));
+                let _ = wv.set_visible(true);
+                let _ = wv.focus();
+                Some(wv)
+            }
+            Err(e) => {
+                logger::error(&format!("Failed to spawn child WebView2 for {}: {}", url, e));
+                None
             }
         }
     }
@@ -105,7 +332,8 @@ impl TabManager {
         let bounds = self.get_effective_bounds();
         let rect = Self::to_wry_rect(&bounds);
 
-        // If tab already exists, update its URL and show its child webview
+        // If tab already exists and has a webview, update its URL and show it
+        let mut needs_spawn = false;
         if let Some(tab) = self.tabs.get_mut(&id) {
             tab.url = url.clone();
             tab.realm = realm.clone();
@@ -116,59 +344,31 @@ impl TabManager {
                 let _ = wv.set_visible(true);
                 let _ = wv.focus();
                 logger::info(&format!("Navigated existing child WebView2 for tab {} to {}", id, url));
+                self.active_tab_id = Some(id);
+                return;
             } else {
-                // Spawn child WebView2 docked into viewport bounds
-                match WebViewBuilder::new()
-                    .with_bounds(rect)
-                    .with_url(&url)
-                    .with_background_color((5, 7, 10, 255))
-                    .with_devtools(true)
-                    .build_as_child(window.as_ref())
-                {
-                    Ok(wv) => {
-                        logger::info(&format!("Spawned child WebView2 for tab {} ({})", id, url));
-                        let _ = wv.set_visible(true);
-                        let _ = wv.focus();
-                        tab.webview = Some(wv);
-                    }
-                    Err(e) => {
-                        logger::error(&format!("Failed to spawn child WebView2 for tab {}: {}", id, e));
-                    }
-                }
+                needs_spawn = true;
             }
-            self.active_tab_id = Some(id);
-            return;
         }
 
         // Spawn new child WebView2 docked into current_bounds
-        let new_wv = match WebViewBuilder::new()
-            .with_bounds(rect)
-            .with_url(&url)
-            .with_background_color((5, 7, 10, 255))
-            .with_devtools(true)
-            .build_as_child(window.as_ref())
-        {
-            Ok(wv) => {
-                logger::info(&format!("Spawned new child WebView2 for tab {} ({})", id, url));
-                let _ = wv.set_visible(true);
-                let _ = wv.focus();
-                Some(wv)
-            }
-            Err(e) => {
-                logger::error(&format!("Failed to spawn child WebView2 for tab {}: {}", id, e));
-                None
-            }
-        };
+        let new_wv = self.build_child_webview(window, rect, &url, &realm);
 
-        self.tabs.insert(
-            id.clone(),
-            TabInstance {
-                id: id.clone(),
-                url,
-                realm,
-                webview: new_wv,
-            },
-        );
+        if needs_spawn {
+            if let Some(tab) = self.tabs.get_mut(&id) {
+                tab.webview = new_wv;
+            }
+        } else {
+            self.tabs.insert(
+                id.clone(),
+                TabInstance {
+                    id: id.clone(),
+                    url,
+                    realm,
+                    webview: new_wv,
+                },
+            );
+        }
         self.active_tab_id = Some(id);
     }
 
@@ -284,24 +484,32 @@ impl TabManager {
         self.execute_on_active("window.print()");
     }
 
+    pub fn open_devtools(&self) {
+        if let Some(active_id) = &self.active_tab_id {
+            if let Some(tab) = self.tabs.get(active_id) {
+                if let Some(wv) = &tab.webview {
+                    wv.open_devtools();
+                }
+            }
+        }
+    }
+
     pub fn find_in_page(&self, query: &str) {
         let escaped = query.replace('\\', "\\\\").replace('\'', "\\'");
         let script = format!(
-            "window.find('{}', false, false, true, false, true, false)",
-            escaped
+            "window.find('{}', false, false, true, false, true, false); window.__mimirLastFind='{}';",
+            escaped, escaped
         );
         self.execute_on_active(&script);
     }
 
     pub fn find_next(&self) {
-        // window.find with same params searches forward
         self.execute_on_active(
             "if(window.__mimirLastFind){window.find(window.__mimirLastFind,false,false,true,false,true,false)}"
         );
     }
 
     pub fn find_previous(&self) {
-        // window.find with backwards=true
         self.execute_on_active(
             "if(window.__mimirLastFind){window.find(window.__mimirLastFind,false,true,true,false,true,false)}"
         );
@@ -319,6 +527,10 @@ impl TabManager {
                 self.open_or_navigate_tab(window, new_id, url, realm);
             }
         }
+    }
+
+    pub fn execute_script_on_active(&self, script: &str) {
+        self.execute_on_active(script);
     }
 
     fn execute_on_active(&self, script: &str) {

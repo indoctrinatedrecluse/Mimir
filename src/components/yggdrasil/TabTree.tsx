@@ -4,8 +4,8 @@ import { runicAudio } from '@/core/audio/runicAudio';
 import { mimirIpc } from '@/core/ipc/bridge';
 import { REALM_THEMES } from '@/components/themes/realmThemes';
 import { NorseKnotworkRibbon } from '@/components/themes/NorsePatterns';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X, Volume2, VolumeX, ChevronLeft, ChevronRight, History, Terminal, Pin, PinOff, Copy } from 'lucide-react';
+import { motion, AnimatePresence, Reorder } from 'framer-motion';
+import { Plus, X, Volume2, VolumeX, ChevronLeft, ChevronRight, History, Terminal, Pin, PinOff, Copy, GripVertical } from 'lucide-react';
 
 interface TabTreeProps {
   tabs: Tab[];
@@ -19,6 +19,7 @@ interface TabTreeProps {
   onOpenCommandPalette?: () => void;
   onTogglePinTab?: (id: string) => void;
   onDuplicateTab?: (id: string) => void;
+  onReorderTabs?: (newTabs: Tab[]) => void;
 }
 
 export const TabTree: React.FC<TabTreeProps> = ({
@@ -33,6 +34,7 @@ export const TabTree: React.FC<TabTreeProps> = ({
   onOpenCommandPalette,
   onTogglePinTab,
   onDuplicateTab,
+  onReorderTabs,
 }) => {
   const theme = REALM_THEMES[activeRealm] || REALM_THEMES.midgard;
 
@@ -122,19 +124,22 @@ export const TabTree: React.FC<TabTreeProps> = ({
         )}
       </div>
 
-      {/* Tabs List with Framer Motion Spring Physics */}
+      {/* Tabs List with Framer Motion Spring Physics & Drag-to-Reorder */}
       <div className="flex-1 space-y-1.5 overflow-y-auto p-2">
-        <AnimatePresence initial={false}>
+        <Reorder.Group
+          axis="y"
+          values={tabs}
+          onReorder={(newTabs) => onReorderTabs?.(newTabs)}
+          className="space-y-1.5"
+        >
           {tabs.map((tab) => {
             const isActive = tab.id === activeTabId;
             return (
-              <motion.div
+              <Reorder.Item
                 key={tab.id}
-                layout
-                initial={{ opacity: 0, x: -15 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.15 } }}
-                transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                value={tab}
+                id={tab.id}
+                whileDrag={{ scale: 1.02, zIndex: 30 }}
                 className="relative"
               >
                 {/* Active Glow Backdrop */}
@@ -264,10 +269,10 @@ export const TabTree: React.FC<TabTreeProps> = ({
                     </div>
                   )}
                 </div>
-              </motion.div>
+              </Reorder.Item>
             );
           })}
-        </AnimatePresence>
+        </Reorder.Group>
       </div>
 
       {/* Bottom Section: Muninn History & "Grow Branch" */}

@@ -123,9 +123,39 @@ export const BifrostMatrix: React.FC<BifrostMatrixProps> = ({
 
   const [selectedRealm, setSelectedRealm] = useState<RealmId>(activeRealm);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [probeStatus, setProbeStatus] = useState<string | null>(null);
+  const [isProbing, setIsProbing] = useState(false);
 
   const theme = REALM_THEMES[selectedRealm] || REALM_THEMES.midgard;
   const currentConfig = matrix[selectedRealm] || DEFAULT_MATRIX[selectedRealm];
+
+  const handleProbeConduit = async () => {
+    setIsProbing(true);
+    setProbeStatus(null);
+    runicAudio.playClick(600);
+    const start = performance.now();
+    try {
+      const target = currentConfig.dnsOverHttps || 'https://cloudflare-dns.com/dns-query';
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
+      await fetch(target, { method: 'HEAD', mode: 'no-cors', signal: controller.signal });
+      clearTimeout(timeoutId);
+      const latency = Math.round(performance.now() - start);
+      setProbeStatus(`${latency}ms — Conduit Flowing`);
+      runicAudio.playChime();
+    } catch {
+      const latency = Math.round(performance.now() - start);
+      if (latency < 3900) {
+        setProbeStatus(`${latency}ms — Reachable`);
+        runicAudio.playChime();
+      } else {
+        setProbeStatus('Unreachable');
+        runicAudio.playClick(300);
+      }
+    } finally {
+      setIsProbing(false);
+    }
+  };
 
   const handleUpdate = <K extends keyof RealmProxyConfig>(key: K, value: RealmProxyConfig[K]) => {
     setMatrix((prev) => {
@@ -386,13 +416,25 @@ export const BifrostMatrix: React.FC<BifrostMatrixProps> = ({
 
             {/* Footer Buttons */}
             <div className="flex items-center justify-between border-t border-white/10 bg-white/[0.02] p-5">
-              <button
-                onClick={handleReset}
-                className="flex items-center space-x-1.5 rounded-lg border border-white/10 px-3.5 py-2 text-xs font-semibold text-slate-400 hover:bg-white/5 hover:text-white transition-colors"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-                <span>Reset to Default</span>
-              </button>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={handleReset}
+                  className="flex items-center space-x-1.5 rounded-lg border border-white/10 px-3.5 py-2 text-xs font-semibold text-slate-400 hover:bg-white/5 hover:text-white transition-colors"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  <span>Reset to Default</span>
+                </button>
+
+                <button
+                  onClick={handleProbeConduit}
+                  disabled={isProbing}
+                  className="flex items-center space-x-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3.5 py-2 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/20 transition-colors disabled:opacity-50"
+                  title="Probe network latency and DoH resolver reachability"
+                >
+                  <Zap className={`h-3.5 w-3.5 ${isProbing ? 'animate-spin' : ''}`} />
+                  <span>{isProbing ? 'Probing...' : probeStatus ? probeStatus : 'Probe Conduit'}</span>
+                </button>
+              </div>
 
               <div className="flex items-center space-x-3">
                 {savedSuccess && (

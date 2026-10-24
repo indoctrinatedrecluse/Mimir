@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { RealmId, Tab } from '@/types';
 import { REALMS } from '@/core/realms';
 import { REALM_THEMES } from '@/components/themes/realmThemes';
@@ -15,6 +15,8 @@ import {
   Feather,
   RotateCcw,
   Compass,
+  Download,
+  Upload,
 } from 'lucide-react';
 
 export interface Runestone {
@@ -166,6 +168,58 @@ export const MuninnVault: React.FC<MuninnVaultProps> = ({
     setRunestones((prev) => prev.filter((r) => r.id !== id));
   };
 
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleExportRunestones = () => {
+    runicAudio.playChime();
+    const data = JSON.stringify(runestones, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `mimir_runestones_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportRunestones = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const content = event.target?.result as string;
+        const parsed = JSON.parse(content);
+        if (Array.isArray(parsed)) {
+          const validRunes: Runestone[] = parsed
+            .filter((item) => item && typeof item.url === 'string')
+            .map((item, idx) => ({
+              id: item.id || `imported-rune-${Date.now()}-${idx}`,
+              title: item.title || item.url,
+              url: item.url,
+              realm: (item.realm as RealmId) || 'midgard',
+              rune: item.rune || 'ᛚ',
+              dateAdded: item.dateAdded || new Date().toLocaleDateString(),
+            }));
+
+          if (validRunes.length > 0) {
+            runicAudio.playChime();
+            setRunestones((prev) => {
+              const existingUrls = new Set(prev.map((r) => r.url));
+              const newRunes = validRunes.filter((r) => !existingUrls.has(r.url));
+              return [...newRunes, ...prev];
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Failed to parse runestones JSON', err);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
   const handleClearHistory = () => {
     runicAudio.playClick(350);
     setThreads([]);
@@ -292,20 +346,49 @@ export const MuninnVault: React.FC<MuninnVaultProps> = ({
               {/* Action Buttons */}
               <div className="flex items-center space-x-2">
                 {activeView === 'runestones' ? (
-                  <button
-                    onClick={handleAddCurrentTab}
-                    disabled={!currentTab?.url || currentTab.url === 'mimir://newtab'}
-                    className="flex items-center space-x-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                    style={{
-                      backgroundColor: `${theme.accentColor}25`,
-                      color: theme.accentColor,
-                      border: `1px solid ${theme.accentColor}40`,
-                    }}
-                    title="Carve current tab into permanent Runestones"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    <span>Carve Tab</span>
-                  </button>
+                  <>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleImportRunestones}
+                      accept=".json"
+                      className="hidden"
+                    />
+                    <button
+                      onClick={() => {
+                        runicAudio.playClick(500);
+                        fileInputRef.current?.click();
+                      }}
+                      className="flex items-center space-x-1 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs font-bold text-slate-300 hover:bg-white/10 hover:text-white transition-all"
+                      title="Import Runestones from JSON file"
+                    >
+                      <Upload className="h-3.5 w-3.5" />
+                      <span>Import</span>
+                    </button>
+                    <button
+                      onClick={handleExportRunestones}
+                      disabled={runestones.length === 0}
+                      className="flex items-center space-x-1 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs font-bold text-slate-300 hover:bg-white/10 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                      title="Export Runestones to JSON file"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      <span>Export</span>
+                    </button>
+                    <button
+                      onClick={handleAddCurrentTab}
+                      disabled={!currentTab?.url || currentTab.url === 'mimir://newtab'}
+                      className="flex items-center space-x-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      style={{
+                        backgroundColor: `${theme.accentColor}25`,
+                        color: theme.accentColor,
+                        border: `1px solid ${theme.accentColor}40`,
+                      }}
+                      title="Carve current tab into permanent Runestones"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      <span>Carve Tab</span>
+                    </button>
+                  </>
                 ) : (
                   <button
                     onClick={handleClearHistory}

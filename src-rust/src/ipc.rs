@@ -62,6 +62,21 @@ pub enum IpcCommand {
     #[serde(rename = "DUPLICATE_TAB")]
     DuplicateTab { payload: DuplicateTabPayload },
 
+    #[serde(rename = "OPEN_PATH")]
+    OpenPath { payload: OpenPathPayload },
+
+    #[serde(rename = "DOWNLOAD_URL")]
+    DownloadUrl { payload: DownloadUrlPayload },
+
+    #[serde(rename = "DELETE_FILE")]
+    DeleteFile { payload: DeleteFilePayload },
+
+    #[serde(rename = "SHOW_DEVTOOLS")]
+    ShowDevtools,
+
+    #[serde(rename = "EXECUTE_SCRIPT")]
+    ExecuteScript { payload: ExecuteScriptPayload },
+
     #[serde(rename = "WINDOW_MINIMIZE")]
     WindowMinimize,
 
@@ -70,6 +85,76 @@ pub enum IpcCommand {
 
     #[serde(rename = "WINDOW_CLOSE")]
     WindowClose,
+
+    // Internal and child webview relayed events
+    #[serde(rename = "DOWNLOAD_STARTED")]
+    DownloadStarted { payload: DownloadStartedPayload },
+
+    #[serde(rename = "DOWNLOAD_COMPLETED")]
+    DownloadCompleted { payload: DownloadCompletedPayload },
+
+    #[serde(rename = "CONTEXT_MENU")]
+    ContextMenu { payload: ContextMenuPayload },
+
+    #[serde(rename = "TRACKER_BLOCKED")]
+    TrackerBlocked { payload: TrackerBlockedPayload },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OpenPathPayload {
+    pub path: String,
+    #[serde(default, rename = "isDir")]
+    pub is_dir: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DownloadUrlPayload {
+    pub url: String,
+    pub filename: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DeleteFilePayload {
+    pub path: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DownloadStartedPayload {
+    pub id: String,
+    pub filename: String,
+    pub url: String,
+    pub path: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DownloadCompletedPayload {
+    pub url: String,
+    pub path: String,
+    pub success: bool,
+    pub size: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ContextMenuPayload {
+    pub x: i32,
+    pub y: i32,
+    #[serde(default, rename = "linkUrl")]
+    pub link_url: Option<String>,
+    #[serde(default, rename = "imageUrl")]
+    pub image_url: Option<String>,
+    #[serde(default, rename = "selectedText")]
+    pub selected_text: Option<String>,
+    #[serde(default, rename = "pageUrl")]
+    pub page_url: String,
+    #[serde(default, rename = "pageTitle")]
+    pub page_title: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TrackerBlockedPayload {
+    pub domain: String,
+    pub category: String,
+    pub url: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -111,3 +196,10 @@ pub struct DuplicateTabPayload {
     #[serde(rename = "newTabId")]
     pub new_tab_id: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ExecuteScriptPayload {
+    pub script: String,
+}
+
+

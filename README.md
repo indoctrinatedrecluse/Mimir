@@ -172,15 +172,21 @@ graph TD
 ### Phase 5: Sacred Wards, Browser Mastery & Privacy Controls *(Completed in v0.4.0)*
 - [x] **Security Ward Widget (HTTPS Lock Icon)**: Clickable lock icon exposing TLS cipher suite, certificate authority, OCSP status, Runic Shield tracker blocker toggle, and per-site permission controls.
 - [x] **Rune Seeker (Find in Page)**: Floating `Ctrl+F` text search overlay with prev/next navigation, IPC-backed `window.find()` integration.
-- [x] **Mímir's Hoard (Downloads Manager)**: `Ctrl+J` panel showing acquired file artifacts with type icons, progress bars, and status badges.
+- [x] **Mímir's Hoard (Full Native Downloads Manager)**: `Ctrl+J` panel with real WebView2 native download hooks, real-time download telemetry (`DOWNLOAD_STARTED` / `DOWNLOAD_COMPLETED`), open file, reveal in Windows Explorer (`explorer.exe /select`), disk file deletion, and manual background URL acquisition via `curl.exe`.
+- [x] **Norse Themed Context Menu**: Custom obsidian right-click menu replacing default browser context menu with link actions, image saving, selection searching, quick bookmarking, printing, and DevTools.
+- [x] **True Helheim Isolation**: Separate ephemeral `WebContext` targeting `%TEMP%\mimir_helheim_isolated` for Helheim tabs (strict zero-trace cookie/storage/cache separation).
+- [x] **Runic Shield Ad & Tracker Protection**: Injected script blocker neutralizing telemetry requests to known tracker networks with real-time HUD counter updates.
+- [x] **HTTPS-Only Mode & "Seal Passage" Upgrade**: Direct one-click elevation of unencrypted HTTP connections in `SecurityWardWidget`.
+- [x] **Runestone Vault JSON Import & Export**: Full bookmark export and import with schema validation and audio feedback in `MuninnVault`.
+- [x] **Yggdrasil Tab Drag-and-Drop Reordering**: Framer Motion `Reorder.Group` physics for smooth branch repositioning.
+- [x] **Brokkr's Extension Forge — Live Script & Style Inscription**: User-scripts and custom CSS/JS with live DOM injection via `EXECUTE_SCRIPT` IPC.
+- [x] **Bifröst Matrix Conduits & Probe**: Per-realm proxy configs, DoH resolvers, and live latency probing.
 - [x] **Fate Thread Purge (Clear Browsing Data)**: `Ctrl+Shift+Del` modal with time range selector and granular data category toggles.
 - [x] **Omnibar Zoom Controls**: Inline Zoom In / Zoom % Reset / Zoom Out cluster with per-tab IPC-backed `document.body.style.zoom` control.
 - [x] **Print Page**: `Ctrl+P` dispatches `window.print()` via IPC.
-- [x] **Tab Pinning**: Pin/Unpin tabs via hover micro-button; pinned tabs immune to `Ctrl+W` closure.
-- [x] **Duplicate Tab**: Clone any tab's URL + realm into a new branch via IPC `DUPLICATE_TAB`.
+- [x] **Tab Pinning & Duplication**: Pin/Unpin tabs via hover micro-button; duplicate tab with `Copy` icon via IPC.
 - [x] **Persistent Theme Selection**: Active realm auto-saved to `localStorage`; restored on next launch.
 - [x] **Command Palette Expansion**: Find, Downloads, Zoom, Print, Pin, Duplicate, and Clear Data all callable from Hliðskjálf.
-- [x] **Bookmark Persistence**: Bookmarks survive page reloads via `localStorage` under `mimir_bookmarked_urls`.
 
 ---
 

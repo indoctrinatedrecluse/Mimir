@@ -388,6 +388,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let mut tab_manager = TabManager::new();
+    tab_manager.set_proxy(event_loop_proxy.clone());
     let window_clone = Arc::clone(&window);
     let _hud = _hud_webview;
 
@@ -498,6 +499,134 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 IpcCommand::DuplicateTab { payload } => {
                     logger::info(&format!("Duplicating tab {} as {}", payload.tab_id, payload.new_tab_id));
                     tab_manager.duplicate_tab(&window_clone, &payload.tab_id, payload.new_tab_id);
+                }
+                IpcCommand::OpenPath { payload } => {
+                    logger::info(&format!("Opening path: {} (is_dir={})", payload.path, payload.is_dir));
+                    let path = payload.path;
+                    if payload.is_dir {
+                        let _ = std::process::Command::new("explorer")
+                            .arg(format!("/select,{}", path))
+                            .spawn();
+                    } else {
+                        let _ = std::process::Command::new("cmd")
+                            .args(["/c", "start", "", &path])
+                            .spawn();
+                    }
+                }
+                IpcCommand::DeleteFile { payload } => {
+                    logger::info(&format!("Deleting file from realm: {}", payload.path));
+                    let p = std::path::Path::new(&payload.path);
+                    if p.exists() {
+                        let _ = std::fs::remove_file(p);
+                    }
+                }
+                IpcCommand::DownloadUrl { payload } => {
+                    logger::info(&format!("Initiating background download for: {}", payload.url));
+                    let proxy_dl = event_loop_proxy.clone();
+                    std::thread::spawn(move || {
+                        let url = payload.url;
+                        let mut filename = payload.filename.unwrap_or_default();
+                        if filename.is_empty() {
+                            filename = url
+                                .split('/')
+                                .last()
+                                .unwrap_or("artifact.bin")
+                                .split('?')
+                                .next()
+                                .unwrap_or("artifact.bin")
+                                .to_string();
+                        }
+                        if filename.is_empty() {
+                            filename = "artifact.bin".to_string();
+                        }
+
+                        let download_dir = if let Ok(userprofile) = std::env::var("USERPROFILE") {
+                            let p = std::path::PathBuf::from(userprofile).join("Downloads");
+                            if p.exists() {
+                                p
+                            } else {
+                                std::env::temp_dir()
+                            }
+                        } else {
+                            std::env::temp_dir()
+                        };
+
+                        let dest_path = download_dir.join(&filename);
+                        let dest_str = dest_path.to_string_lossy().to_string();
+                        let id = format!(
+                            "dl-{}",
+                            std::time::SystemTime::now()
+                                .duration_since(std::time::UNIX_EPOCH)
+                                .unwrap()
+                                .as_millis()
+                        );
+
+                        let _ = proxy_dl.send_event(IpcCommand::DownloadStarted {
+                            payload: crate::ipc::DownloadStartedPayload {
+                                id,
+                                filename,
+                                url: url.clone(),
+                                path: dest_str.clone(),
+                            },
+                        });
+
+                        let status = std::process::Command::new("curl.exe")
+                            .args(["-L", "-s", "-o", &dest_str, &url])
+                            .status();
+
+                        let success = status.map(|s| s.success()).unwrap_or(false) && dest_path.exists();
+                        let size_str = if success {
+                            std::fs::metadata(&dest_path)
+                                .map(|m| tab_manager::format_bytes(m.len()))
+                                .unwrap_or_else(|_| "Unknown size".into())
+                        } else {
+                            "0 B".into()
+                        };
+
+                        let _ = proxy_dl.send_event(IpcCommand::DownloadCompleted {
+                            payload: crate::ipc::DownloadCompletedPayload {
+                                url,
+                                path: dest_str,
+                                success,
+                                size: size_str,
+                            },
+                        });
+                    });
+                }
+                IpcCommand::ShowDevtools => {
+                    logger::info("Opening devtools on active thread");
+                    tab_manager.open_devtools();
+                }
+                IpcCommand::ExecuteScript { payload } => {
+                    tab_manager.execute_script_on_active(&payload.script);
+                }
+                IpcCommand::DownloadStarted { payload } => {
+                    if let Ok(json) = serde_json::to_string(&payload) {
+                        let script = format!("window.__mimirOnDownloadStarted && window.__mimirOnDownloadStarted({});", json);
+                        let _ = _hud.evaluate_script(&script);
+                    }
+                }
+                IpcCommand::DownloadCompleted { payload } => {
+                    if let Ok(json) = serde_json::to_string(&payload) {
+                        let script = format!("window.__mimirOnDownloadCompleted && window.__mimirOnDownloadCompleted({});", json);
+                        let _ = _hud.evaluate_script(&script);
+                    }
+                }
+                IpcCommand::ContextMenu { payload } => {
+                    let bounds = tab_manager.get_effective_bounds();
+                    let mut adjusted = payload;
+                    adjusted.x += bounds.x;
+                    adjusted.y += bounds.y;
+                    if let Ok(json) = serde_json::to_string(&adjusted) {
+                        let script = format!("window.__mimirOnContextMenu && window.__mimirOnContextMenu({});", json);
+                        let _ = _hud.evaluate_script(&script);
+                    }
+                }
+                IpcCommand::TrackerBlocked { payload } => {
+                    if let Ok(json) = serde_json::to_string(&payload) {
+                        let script = format!("window.__mimirOnTrackerBlocked && window.__mimirOnTrackerBlocked({});", json);
+                        let _ = _hud.evaluate_script(&script);
+                    }
                 }
             },
             Event::WindowEvent {
