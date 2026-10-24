@@ -205,18 +205,29 @@ impl TorrentManager {
         custom_dir: Option<String>,
     ) -> anyhow::Result<String> {
         let input = input.trim();
-        logger::info(&format!("ᛗ Ingesting artifact into Naglfar Swarm: {}", input));
+        let mut clean_input = input.trim();
+        if (clean_input.starts_with('"') && clean_input.ends_with('"'))
+            || (clean_input.starts_with('\'') && clean_input.ends_with('\''))
+        {
+            clean_input = &clean_input[1..clean_input.len() - 1];
+        }
 
-        let add = if input.starts_with("magnet:") {
-            AddTorrent::from_url(input)
-        } else if input.starts_with("http://") || input.starts_with("https://") {
+        let add = if clean_input.starts_with("magnet:") {
+            AddTorrent::from_url(clean_input)
+        } else if clean_input.starts_with("http://") || clean_input.starts_with("https://") {
             let client = reqwest::Client::builder()
                 .timeout(Duration::from_secs(30))
                 .build()?;
-            let bytes = client.get(input).send().await?.bytes().await?;
+            let bytes = client.get(clean_input).send().await?.bytes().await?;
             AddTorrent::from_bytes(bytes)
+        } else if clean_input.starts_with("data:") {
+            let comma_idx = clean_input.find(',').unwrap_or(0);
+            let b64 = &clean_input[comma_idx + 1..];
+            use base64::prelude::*;
+            let decoded = BASE64_STANDARD.decode(b64.trim())?;
+            AddTorrent::from_bytes(decoded)
         } else {
-            let path = PathBuf::from(input);
+            let path = PathBuf::from(clean_input);
             let bytes = tokio::fs::read(&path).await?;
             AddTorrent::from_bytes(bytes)
         };

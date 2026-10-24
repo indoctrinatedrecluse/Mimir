@@ -219,6 +219,8 @@ export const MimirsHoard: React.FC<MimirsHoardProps> = ({
     setShowAcquireInput(false);
   };
 
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
   const handleSwarmSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!swarmInput.trim()) return;
@@ -226,6 +228,22 @@ export const MimirsHoard: React.FC<MimirsHoardProps> = ({
     onAddTorrent?.(swarmInput.trim());
     setSwarmInput('');
     setShowSwarmInput(false);
+  };
+
+  const handleTorrentFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      if (result) {
+        runicAudio.playRunicHum();
+        onAddTorrent?.(result);
+        setShowSwarmInput(false);
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
   const totalSwarmPeers = torrents.reduce((acc, t) => acc + (t.peers || 0), 0);
@@ -478,6 +496,22 @@ export const MimirsHoard: React.FC<MimirsHoardProps> = ({
                   placeholder="magnet:?xt=... or https://.../file.torrent or local path"
                   autoFocus
                   className="flex-1 bg-black/50 border border-purple-500/30 rounded px-2.5 py-1 text-xs text-purple-100 placeholder:text-slate-500 outline-none focus:border-purple-400"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center space-x-1 rounded px-2.5 py-1 text-xs font-bold bg-white/10 hover:bg-white/20 text-slate-200 border border-white/10 transition-all"
+                  title="Select local .torrent file"
+                >
+                  <FolderOpen className="h-3 w-3" />
+                  <span>.torrent</span>
+                </button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept=".torrent"
+                  onChange={handleTorrentFileChange}
+                  className="hidden"
                 />
                 <button
                   type="submit"
@@ -804,16 +838,25 @@ export const MimirsHoard: React.FC<MimirsHoardProps> = ({
                 <p className="text-[10px] text-slate-500 mt-1 max-w-[280px]">
                   Harness the peer-to-peer conduits of the cosmos. Ingest magnet links, .torrent URLs, or local files to sail the swarm.
                 </p>
-                <button
-                  onClick={() => {
-                    runicAudio.playClick(500);
-                    onAddTorrent?.(SAMPLE_UBUNTU_MAGNET);
-                  }}
-                  className="mt-3 flex items-center space-x-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 px-3 py-1 text-xs font-mono font-bold text-purple-300 hover:bg-purple-500/20 transition-all"
-                >
-                  <Radio className="h-3.5 w-3.5 text-purple-400" />
-                  <span>Ignite Swarm with Ubuntu ISO</span>
-                </button>
+                <div className="mt-3 flex items-center space-x-2">
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center space-x-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 px-3 py-1 text-xs font-mono font-bold text-purple-200 hover:bg-purple-500/20 transition-all"
+                  >
+                    <FolderOpen className="h-3.5 w-3.5 text-purple-300" />
+                    <span>Ingest .torrent File</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      runicAudio.playClick(500);
+                      onAddTorrent?.(SAMPLE_UBUNTU_MAGNET);
+                    }}
+                    className="flex items-center space-x-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-mono font-bold text-cyan-300 hover:bg-cyan-500/20 transition-all"
+                  >
+                    <Radio className="h-3.5 w-3.5 text-cyan-400" />
+                    <span>Ubuntu ISO Swarm</span>
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="space-y-2">
