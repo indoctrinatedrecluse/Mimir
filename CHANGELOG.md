@@ -7,11 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.5.0] - 2026-10-24 *(Valhalla Revival, Runic Sidecar & Reader Sanctum)*
+## [0.5.0] - 2026-10-24 *(Valhalla Revival, Bifröst Turbo Accelerator & Naglfar Swarm)*
 
-This major milestone marks Mímir's graduation from Alpha into standard production releases. It introduces powerful new browsing systems including persistent multi-mode sidebars, automated session revival, distraction-free reading sanctuaries, realm-level CSS/JS rule injection, and deep bundle optimizations.
+This major milestone marks Mímir's graduation from Alpha into standard production releases. It introduces powerful new browsing systems including native multi-strand accelerated downloads, a full-featured native BitTorrent swarm client, persistent multi-mode sidebars, automated session revival, distraction-free reading sanctuaries, realm-level CSS/JS rule injection, and deep bundle optimizations.
 
 ### Added
+
+#### Bifröst Turbo Multi-Strand Download Accelerator (`accelerator.rs`, `MimirsHoard.tsx`)
+* **Parallel Chunked Streaming**: Implemented native Rust multi-strand download engine (`reqwest` + `tokio`) splitting file acquisitions across isolated `.strand_{i}` part files on Windows to eliminate file-locking conflicts.
+* **Intelligent Server Negotiation**: Automatically probes server headers for `Accept-Ranges: bytes` and file length; gracefully falls back to single-stream chunking when range requests are unsupported.
+* **Cancellation & State Recovery**: Safe runtime cancellation with automated temporary strand cleanup.
+* **Live Segmented Visualizer**: Real-time HUD telemetry in Mímir's Hoard showing aggregate transfer speeds, remaining ETA, and individual segment progress bars for each parallel strand.
+
+#### Naglfar Swarm — Native BitTorrent Client Engine (`torrent.rs`, `MimirsHoard.tsx`)
+* **Pure Rust Swarm Protocol**: Integrated battle-tested BitTorrent client powered by `librqbit` (v9.0.1) running concurrently on background tokio threads without impacting webview frame rates.
+* **Automatic Magnet Interception**: Webview navigation handler captures `magnet:?xt=...` links clicked on any webpage and channels them directly into the Naglfar Swarm engine.
+* **Versatile Ingestion**: Full support for magnet links, HTTP/HTTPS `.torrent` URLs, and local `.torrent` files.
+* **Live Swarm Telemetry**: 400ms broadcast ticker reporting active connected peers, seeders, upload/download speeds, piece verification progress, and time to completion.
+* **Swarm Lifecycle Controls**: Pause, resume, exile (delete from swarm with optional file removal), and open download directory in Explorer.
+* **Quick Vessel Testing**: One-click test button to ignite swarm testing with the official Ubuntu Mini ISO magnet link.
 
 #### Valhalla Revival & Crash Sentinel (`sessionManager.ts`, `ValhallaRevivalBanner.tsx`)
 * **Continuous Session Preservation**: Automatically captures active branches, zoom levels, split viewports, and realm hierarchy to persistent Valhalla memory.

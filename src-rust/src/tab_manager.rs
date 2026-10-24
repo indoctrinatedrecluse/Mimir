@@ -137,6 +137,23 @@ impl TabManager {
             });
         }
 
+        // 1b. Navigation handler: Intercept magnet URIs and channel to Naglfar Swarm
+        if let Some(proxy_nav) = self.proxy.clone() {
+            builder = builder.with_navigation_handler(move |uri| {
+                if uri.starts_with("magnet:") {
+                    logger::info(&format!("ᛗ Intercepted magnet link navigation: {}", uri));
+                    let _ = proxy_nav.send_event(IpcCommand::AddTorrent {
+                        payload: crate::ipc::AddTorrentPayload {
+                            url_or_magnet: uri,
+                            download_dir: None,
+                        },
+                    });
+                    return false;
+                }
+                true
+            });
+        }
+
         // 2. Download completed handler
         if let Some(proxy_comp) = self.proxy.clone() {
             builder = builder.with_download_completed_handler(move |uri, path_opt, success| {
@@ -156,6 +173,7 @@ impl TabManager {
 
                 let _ = proxy_comp.send_event(IpcCommand::DownloadCompleted {
                     payload: DownloadCompletedPayload {
+                        id: None,
                         url: uri,
                         path: path_str,
                         success,

@@ -62,5 +62,31 @@ export interface DownloadItem {
   status: 'downloading' | 'complete' | 'failed' | 'paused';
   timestamp: string;
   type: 'document' | 'image' | 'archive' | 'video' | 'audio' | 'other';
+  speed?: string;
+  speedBytesSec?: number;
+  receivedBytes?: number;
+  totalBytes?: number;
+  strands?: number;
+  strandProgress?: number[];
+  eta?: string;
+}
+
+export interface TorrentItem {
+  id: string;
+  infoHash: string;
+  name: string;
+  progress: number; // 0-100
+  downloadSpeed: string;
+  uploadSpeed: string;
+  downloadSpeedBytesSec: number;
+  uploadSpeedBytesSec: number;
+  totalBytes: number;
+  downloadedBytes: number;
+  uploadedBytes: number;
+  peers: number;
+  state: 'initializing' | 'downloading' | 'seeding' | 'paused' | 'finished' | 'error';
+  eta: string;
+  path?: string;
+  timestamp: string;
 }
 

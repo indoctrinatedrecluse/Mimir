@@ -6,7 +6,7 @@ import { ContentViewport } from '@/components/viewport/ContentViewport';
 import { StatusBar } from '@/components/hud/StatusBar';
 import { RunicAtmosphere } from '@/components/hud/RunicAtmosphere';
 import { SplashScreen } from '@/components/splash/SplashScreen';
-import { Tab, RealmId, DownloadItem } from '@/types';
+import { Tab, RealmId, DownloadItem, TorrentItem } from '@/types';
 import { runicAudio } from '@/core/audio/runicAudio';
 import { mimirIpc, NativeContextMenuEvent } from '@/core/ipc/bridge';
 import { AnimatePresence } from 'framer-motion';
@@ -117,6 +117,16 @@ export const App: React.FC = () => {
     }
   });
 
+  // Naglfar Swarm torrent telemetry & localStorage persistence
+  const [torrents, setTorrents] = useState<TorrentItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('mimir_torrents');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
   // Context Menu & Security Telemetry state
   const [contextMenuEvent, setContextMenuEvent] = useState<NativeContextMenuEvent | null>(null);
   const [isContextMenuOpen, setIsContextMenuOpen] = useState(false);
@@ -128,6 +138,13 @@ export const App: React.FC = () => {
       localStorage.setItem('mimir_downloads', JSON.stringify(downloads));
     } catch {}
   }, [downloads]);
+
+  // Synchronize torrents to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('mimir_torrents', JSON.stringify(torrents));
+    } catch {}
+  }, [torrents]);
 
   // Persistent bookmarks storage
   const [bookmarks, setBookmarks] = useState<string[]>(() => {
@@ -150,6 +167,32 @@ export const App: React.FC = () => {
     });
   }, []);
 
+const formatDownloadSpeed = (bytesSec: number): string => {
+  if (!bytesSec || bytesSec <= 0) return '0 B/s';
+  if (bytesSec >= 1024 * 1024 * 1024) return `${(bytesSec / (1024 * 1024 * 1024)).toFixed(1)} GB/s`;
+  if (bytesSec >= 1024 * 1024) return `${(bytesSec / (1024 * 1024)).toFixed(1)} MB/s`;
+  if (bytesSec >= 1024) return `${(bytesSec / 1024).toFixed(0)} KB/s`;
+  return `${bytesSec} B/s`;
+};
+
+const formatDownloadBytes = (bytes: number): string => {
+  if (!bytes || bytes <= 0) return '0 B';
+  if (bytes >= 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  if (bytes >= 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${bytes} B`;
+};
+
+const formatEtaSeconds = (secs: number): string => {
+  if (secs <= 0) return '';
+  if (secs < 60) return `${secs}s`;
+  const mins = Math.floor(secs / 60);
+  const remainingSecs = secs % 60;
+  if (mins < 60) return `${mins}m ${remainingSecs}s`;
+  const hours = Math.floor(mins / 60);
+  return `${hours}h ${mins % 60}m`;
+};
+
   // Subscribe to native host events (downloads, context menu, tracker interception)
   useEffect(() => {
     const unDownloadStarted = mimirIpc.onDownloadStarted((ev) => {
@@ -161,19 +204,53 @@ export const App: React.FC = () => {
           filename: ev.filename,
           url: ev.url,
           path: ev.path,
-          size: 'Acquiring...',
-          progress: 30,
+          size: 'Probing Bifröst conduits...',
+          progress: 0,
           status: 'downloading',
           timestamp: 'Just now',
           type: detectFileType(ev.filename),
+          speed: 'Accelerating...',
+          strands: 1,
         };
         if (existingIdx >= 0) {
           const updated = [...prev];
-          updated[existingIdx] = newItem;
+          updated[existingIdx] = { ...updated[existingIdx], ...newItem };
           return updated;
         }
         return [newItem, ...prev];
       });
+    });
+
+    const unDownloadProgress = mimirIpc.onDownloadProgress((ev) => {
+      setDownloads((prev) =>
+        prev.map((d) => {
+          if (d.id === ev.id || d.url === ev.id) {
+            const pct = ev.totalBytes > 0
+              ? Math.min(100, Math.round((ev.receivedBytes / ev.totalBytes) * 100))
+              : d.progress;
+            const remainingBytes = ev.totalBytes > ev.receivedBytes ? ev.totalBytes - ev.receivedBytes : 0;
+            const etaSecs = ev.speedBytesSec > 0 ? Math.ceil(remainingBytes / ev.speedBytesSec) : 0;
+            const sizeStr = ev.totalBytes > 0
+              ? `${formatDownloadBytes(ev.receivedBytes)} / ${formatDownloadBytes(ev.totalBytes)}`
+              : formatDownloadBytes(ev.receivedBytes);
+
+            return {
+              ...d,
+              progress: pct,
+              speed: formatDownloadSpeed(ev.speedBytesSec),
+              speedBytesSec: ev.speedBytesSec,
+              receivedBytes: ev.receivedBytes,
+              totalBytes: ev.totalBytes,
+              strands: ev.strands,
+              strandProgress: ev.strandProgress,
+              eta: formatEtaSeconds(etaSecs),
+              size: sizeStr,
+              status: 'downloading',
+            };
+          }
+          return d;
+        })
+      );
     });
 
     const unDownloadCompleted = mimirIpc.onDownloadCompleted((ev) => {
@@ -184,13 +261,15 @@ export const App: React.FC = () => {
       }
       setDownloads((prev) =>
         prev.map((d) => {
-          if (d.url === ev.url || (ev.path && d.path === ev.path)) {
+          if ((ev.id && d.id === ev.id) || d.url === ev.url || (ev.path && d.path === ev.path)) {
             return {
               ...d,
               path: ev.path || d.path,
               size: ev.size && ev.size !== '0 B' ? ev.size : d.size,
               status: ev.success ? 'complete' : 'failed',
               progress: ev.success ? 100 : 0,
+              speed: undefined,
+              eta: undefined,
             };
           }
           return d;
@@ -207,11 +286,95 @@ export const App: React.FC = () => {
       setBlockedTrackersCount((prev) => prev + 1);
     });
 
+    const unTorrentAdded = mimirIpc.onTorrentAdded((ev) => {
+      runicAudio.playRunicHum();
+      setTorrents((prev) => {
+        const existingIdx = prev.findIndex((t) => t.id === ev.id || t.infoHash === ev.infoHash);
+        const newItem: TorrentItem = {
+          id: ev.id,
+          infoHash: ev.infoHash,
+          name: ev.name || `Torrent ${ev.infoHash.slice(0, 8)}`,
+          progress: 0,
+          downloadSpeed: '0 B/s',
+          uploadSpeed: '0 B/s',
+          downloadSpeedBytesSec: 0,
+          uploadSpeedBytesSec: 0,
+          totalBytes: 0,
+          downloadedBytes: 0,
+          uploadedBytes: 0,
+          peers: 0,
+          state: 'initializing',
+          eta: 'Probing Swarm...',
+          timestamp: 'Just now',
+        };
+        if (existingIdx >= 0) {
+          const updated = [...prev];
+          updated[existingIdx] = { ...updated[existingIdx], ...newItem };
+          return updated;
+        }
+        return [newItem, ...prev];
+      });
+    });
+
+    const unTorrentProgress = mimirIpc.onTorrentProgress((ev) => {
+      setTorrents((prev) => {
+        const existingIdx = prev.findIndex((t) => t.id === ev.id || t.infoHash === ev.infoHash);
+        const updatedItem: TorrentItem = {
+          id: ev.id,
+          infoHash: ev.infoHash,
+          name: ev.name,
+          progress: Math.min(100, Math.round(ev.progress * 100)),
+          downloadSpeed: formatDownloadSpeed(ev.downloadSpeed),
+          uploadSpeed: formatDownloadSpeed(ev.uploadSpeed),
+          downloadSpeedBytesSec: ev.downloadSpeed,
+          uploadSpeedBytesSec: ev.uploadSpeed,
+          totalBytes: ev.totalBytes,
+          downloadedBytes: ev.downloadedBytes,
+          uploadedBytes: ev.uploadedBytes,
+          peers: ev.peers,
+          state: ev.state as TorrentItem['state'],
+          eta: ev.state === 'seeding' ? 'Seeding' : (ev.etaSeconds > 0 ? formatEtaSeconds(ev.etaSeconds) : 'Calculating...'),
+          timestamp: 'Active',
+        };
+        if (existingIdx >= 0) {
+          const next = [...prev];
+          next[existingIdx] = { ...next[existingIdx], ...updatedItem };
+          return next;
+        }
+        return [updatedItem, ...prev];
+      });
+    });
+
+    const unTorrentCompleted = mimirIpc.onTorrentCompleted((ev) => {
+      runicAudio.playChime();
+      setTorrents((prev) =>
+        prev.map((t) => {
+          if (t.id === ev.id || t.infoHash === ev.infoHash) {
+            return {
+              ...t,
+              name: ev.name || t.name,
+              totalBytes: ev.totalBytes || t.totalBytes,
+              path: ev.path,
+              progress: 100,
+              state: 'seeding',
+              downloadSpeed: '0 B/s',
+              eta: 'Seeding to Swarm',
+            };
+          }
+          return t;
+        })
+      );
+    });
+
     return () => {
       unDownloadStarted();
+      unDownloadProgress();
       unDownloadCompleted();
       unContextMenu();
       unTracker();
+      unTorrentAdded();
+      unTorrentProgress();
+      unTorrentCompleted();
     };
   }, []);
 
@@ -646,6 +809,34 @@ export const App: React.FC = () => {
     setDownloads((prev) => prev.filter((d) => d.id !== id));
   };
 
+  const handleAddTorrent = (urlOrMagnet: string, downloadDir?: string) => {
+    if (!urlOrMagnet.trim()) return;
+    runicAudio.playRunicHum();
+    mimirIpc.addTorrent(urlOrMagnet.trim(), downloadDir);
+  };
+
+  const handlePauseTorrent = (id: string) => {
+    runicAudio.playClick(500);
+    mimirIpc.pauseTorrent(id);
+    setTorrents((prev) =>
+      prev.map((t) => (t.id === id || t.infoHash === id ? { ...t, state: 'paused' } : t))
+    );
+  };
+
+  const handleResumeTorrent = (id: string) => {
+    runicAudio.playClick(600);
+    mimirIpc.resumeTorrent(id);
+    setTorrents((prev) =>
+      prev.map((t) => (t.id === id || t.infoHash === id ? { ...t, state: 'downloading' } : t))
+    );
+  };
+
+  const handleDeleteTorrent = (id: string, deleteFiles = false) => {
+    runicAudio.playClick(400);
+    mimirIpc.deleteTorrent(id, deleteFiles);
+    setTorrents((prev) => prev.filter((t) => t.id !== id && t.infoHash !== id));
+  };
+
   const handleUpgradeToHttps = () => {
     if (activeTab && activeTab.url.startsWith('http://')) {
       const upgraded = activeTab.url.replace(/^http:\/\//, 'https://');
@@ -857,17 +1048,22 @@ export const App: React.FC = () => {
           activeRealm={activeRealm}
         />
 
-        {/* Overlay 7: Mímir's Hoard (Downloads Manager) */}
+        {/* Overlay 7: Mímir's Hoard (Downloads Manager & Naglfar Swarm) */}
         <MimirsHoard
           isOpen={isDownloadsOpen}
           onClose={() => setIsDownloadsOpen(false)}
           activeRealm={activeRealm}
           downloads={downloads}
+          torrents={torrents}
           onClearCompleted={() => setDownloads((prev) => prev.filter((d) => d.status !== 'complete'))}
           onAcquireUrl={handleAcquireUrl}
           onDeleteItem={handleDeleteDownloadItem}
           onCancelItem={handleCancelDownloadItem}
           onTogglePauseItem={handleTogglePauseDownloadItem}
+          onAddTorrent={handleAddTorrent}
+          onPauseTorrent={handlePauseTorrent}
+          onResumeTorrent={handleResumeTorrent}
+          onDeleteTorrent={handleDeleteTorrent}
         />
 
         {/* Overlay 8: Fate Thread Purge (Clear Browsing Data) */}

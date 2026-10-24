@@ -25,28 +25,28 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
 
     const t1 = setTimeout(() => {
       setStepIndex(1);
-      setProgress(35);
-    }, 750);
+      setProgress(30);
+    }, 900);
 
     const t2 = setTimeout(() => {
       setStepIndex(2);
-      setProgress(60);
-    }, 1500);
+      setProgress(55);
+    }, 1800);
 
     const t3 = setTimeout(() => {
       setStepIndex(3);
-      setProgress(85);
-    }, 2300);
+      setProgress(80);
+    }, 2700);
 
     const t4 = setTimeout(() => {
       setStepIndex(4);
       setProgress(100);
       runicAudio.playChime();
-    }, 3100);
+    }, 3700);
 
     const t5 = setTimeout(() => {
       onComplete();
-    }, 3800);
+    }, 4500);
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {

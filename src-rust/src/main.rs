@@ -4,6 +4,8 @@
 mod ipc;
 mod logger;
 mod tab_manager;
+mod accelerator;
+mod torrent;
 
 use std::borrow::Cow;
 use std::path::PathBuf;
@@ -392,6 +394,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let window_clone = Arc::clone(&window);
     let _hud = _hud_webview;
 
+    let download_mgr = Arc::new(accelerator::DownloadManager::new());
+    let rt = Arc::new(
+        tokio::runtime::Builder::new_multi_thread()
+            .worker_threads(4)
+            .enable_all()
+            .build()
+            .expect("Failed to initialize Bifröst async runtime")
+    );
+
+    let default_download_dir = if let Ok(userprofile) = std::env::var("USERPROFILE") {
+        let p = std::path::PathBuf::from(userprofile).join("Downloads");
+        if p.exists() {
+            p
+        } else {
+            std::env::temp_dir()
+        }
+    } else {
+        std::env::temp_dir()
+    };
+
+    let torrent_mgr = rt.block_on(async {
+        torrent::TorrentManager::new(default_download_dir.clone(), event_loop_proxy.clone()).await
+    }).ok();
+
     logger::info("ᛗ Mímir Runic Conduit event loop running.");
 
     // Run Tao event loop
@@ -521,76 +547,59 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
                 IpcCommand::DownloadUrl { payload } => {
-                    logger::info(&format!("Initiating background download for: {}", payload.url));
+                    logger::info(&format!("Initiating accelerated download for: {}", payload.url));
                     let proxy_dl = event_loop_proxy.clone();
-                    std::thread::spawn(move || {
-                        let url = payload.url;
-                        let mut filename = payload.filename.unwrap_or_default();
-                        if filename.is_empty() {
-                            filename = url
-                                .split('/')
-                                .last()
-                                .unwrap_or("artifact.bin")
-                                .split('?')
-                                .next()
-                                .unwrap_or("artifact.bin")
-                                .to_string();
-                        }
-                        if filename.is_empty() {
-                            filename = "artifact.bin".to_string();
-                        }
+                    let url = payload.url;
+                    let mut filename = payload.filename.unwrap_or_default();
+                    if filename.is_empty() {
+                        filename = url
+                            .split('/')
+                            .last()
+                            .unwrap_or("artifact.bin")
+                            .split('?')
+                            .next()
+                            .unwrap_or("artifact.bin")
+                            .to_string();
+                    }
+                    if filename.is_empty() {
+                        filename = "artifact.bin".to_string();
+                    }
 
-                        let download_dir = if let Ok(userprofile) = std::env::var("USERPROFILE") {
-                            let p = std::path::PathBuf::from(userprofile).join("Downloads");
-                            if p.exists() {
-                                p
-                            } else {
-                                std::env::temp_dir()
-                            }
+                    let download_dir = if let Ok(userprofile) = std::env::var("USERPROFILE") {
+                        let p = std::path::PathBuf::from(userprofile).join("Downloads");
+                        if p.exists() {
+                            p
                         } else {
                             std::env::temp_dir()
-                        };
+                        }
+                    } else {
+                        std::env::temp_dir()
+                    };
 
-                        let dest_path = download_dir.join(&filename);
-                        let dest_str = dest_path.to_string_lossy().to_string();
-                        let id = format!(
-                            "dl-{}",
-                            std::time::SystemTime::now()
-                                .duration_since(std::time::UNIX_EPOCH)
-                                .unwrap()
-                                .as_millis()
-                        );
+                    let dest_path = download_dir.join(&filename);
+                    let dest_str = dest_path.to_string_lossy().to_string();
+                    let id = format!(
+                        "dl-{}",
+                        std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .unwrap()
+                            .as_millis()
+                    );
 
-                        let _ = proxy_dl.send_event(IpcCommand::DownloadStarted {
-                            payload: crate::ipc::DownloadStartedPayload {
-                                id,
-                                filename,
-                                url: url.clone(),
-                                path: dest_str.clone(),
-                            },
-                        });
+                    let cancel_flag = download_mgr.register_cancel(&id);
 
-                        let status = std::process::Command::new("curl.exe")
-                            .args(["-L", "-s", "-o", &dest_str, &url])
-                            .status();
+                    let _ = proxy_dl.send_event(IpcCommand::DownloadStarted {
+                        payload: crate::ipc::DownloadStartedPayload {
+                            id: id.clone(),
+                            filename,
+                            url: url.clone(),
+                            path: dest_str,
+                        },
+                    });
 
-                        let success = status.map(|s| s.success()).unwrap_or(false) && dest_path.exists();
-                        let size_str = if success {
-                            std::fs::metadata(&dest_path)
-                                .map(|m| tab_manager::format_bytes(m.len()))
-                                .unwrap_or_else(|_| "Unknown size".into())
-                        } else {
-                            "0 B".into()
-                        };
-
-                        let _ = proxy_dl.send_event(IpcCommand::DownloadCompleted {
-                            payload: crate::ipc::DownloadCompletedPayload {
-                                url,
-                                path: dest_str,
-                                success,
-                                size: size_str,
-                            },
-                        });
+                    let rt_handle = rt.clone();
+                    rt_handle.spawn(async move {
+                        accelerator::start_accelerated_download(id, url, dest_path, proxy_dl, cancel_flag).await;
                     });
                 }
                 IpcCommand::ShowDevtools => {
@@ -606,7 +615,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         let _ = _hud.evaluate_script(&script);
                     }
                 }
+                IpcCommand::DownloadProgress { payload } => {
+                    if let Ok(json) = serde_json::to_string(&payload) {
+                        let script = format!("window.__mimirOnDownloadProgress && window.__mimirOnDownloadProgress({});", json);
+                        let _ = _hud.evaluate_script(&script);
+                    }
+                }
                 IpcCommand::DownloadCompleted { payload } => {
+                    if let Some(id) = &payload.id {
+                        download_mgr.cleanup(id);
+                    }
                     if let Ok(json) = serde_json::to_string(&payload) {
                         let script = format!("window.__mimirOnDownloadCompleted && window.__mimirOnDownloadCompleted({});", json);
                         let _ = _hud.evaluate_script(&script);
@@ -624,6 +642,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 IpcCommand::CancelDownload { payload } => {
                     logger::info(&format!("Canceling download artifact {}", payload.id));
+                    download_mgr.cancel(&payload.id);
                 }
                 IpcCommand::ConfigureProxy { payload } => {
                     logger::info(&format!(
@@ -676,6 +695,70 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 IpcCommand::HashResult { payload } => {
                     if let Ok(json) = serde_json::to_string(&payload) {
                         let script = format!("window.__mimirOnHashResult && window.__mimirOnHashResult({});", json);
+                        let _ = _hud.evaluate_script(&script);
+                    }
+                }
+                IpcCommand::AddTorrent { payload } => {
+                    if let Some(mgr) = torrent_mgr.as_ref() {
+                        let mgr_clone = mgr.clone();
+                        let url_or_magnet = payload.url_or_magnet;
+                        let custom_dir = payload.download_dir;
+                        rt.spawn(async move {
+                            if let Err(e) = mgr_clone.add_torrent(&url_or_magnet, custom_dir).await {
+                                logger::error(&format!("Failed to add torrent to Naglfar Swarm: {}", e));
+                            }
+                        });
+                    }
+                }
+                IpcCommand::PauseTorrent { payload } => {
+                    if let Some(mgr) = torrent_mgr.as_ref() {
+                        let mgr_clone = mgr.clone();
+                        let id = payload.id;
+                        rt.spawn(async move {
+                            if let Err(e) = mgr_clone.pause_torrent(&id).await {
+                                logger::error(&format!("Failed to pause torrent {}: {}", id, e));
+                            }
+                        });
+                    }
+                }
+                IpcCommand::ResumeTorrent { payload } => {
+                    if let Some(mgr) = torrent_mgr.as_ref() {
+                        let mgr_clone = mgr.clone();
+                        let id = payload.id;
+                        rt.spawn(async move {
+                            if let Err(e) = mgr_clone.resume_torrent(&id).await {
+                                logger::error(&format!("Failed to resume torrent {}: {}", id, e));
+                            }
+                        });
+                    }
+                }
+                IpcCommand::DeleteTorrent { payload } => {
+                    if let Some(mgr) = torrent_mgr.as_ref() {
+                        let mgr_clone = mgr.clone();
+                        let id = payload.id;
+                        let delete_files = payload.delete_files;
+                        rt.spawn(async move {
+                            if let Err(e) = mgr_clone.delete_torrent(&id, delete_files).await {
+                                logger::error(&format!("Failed to delete torrent {}: {}", id, e));
+                            }
+                        });
+                    }
+                }
+                IpcCommand::TorrentAdded { payload } => {
+                    if let Ok(json) = serde_json::to_string(&payload) {
+                        let script = format!("window.__mimirOnTorrentAdded && window.__mimirOnTorrentAdded({});", json);
+                        let _ = _hud.evaluate_script(&script);
+                    }
+                }
+                IpcCommand::TorrentProgress { payload } => {
+                    if let Ok(json) = serde_json::to_string(&payload) {
+                        let script = format!("window.__mimirOnTorrentProgress && window.__mimirOnTorrentProgress({});", json);
+                        let _ = _hud.evaluate_script(&script);
+                    }
+                }
+                IpcCommand::TorrentCompleted { payload } => {
+                    if let Ok(json) = serde_json::to_string(&payload) {
+                        let script = format!("window.__mimirOnTorrentCompleted && window.__mimirOnTorrentCompleted({});", json);
                         let _ = _hud.evaluate_script(&script);
                     }
                 }

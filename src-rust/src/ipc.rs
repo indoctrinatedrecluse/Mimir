@@ -99,6 +99,9 @@ pub enum IpcCommand {
     #[serde(rename = "DOWNLOAD_STARTED")]
     DownloadStarted { payload: DownloadStartedPayload },
 
+    #[serde(rename = "DOWNLOAD_PROGRESS")]
+    DownloadProgress { payload: DownloadProgressPayload },
+
     #[serde(rename = "DOWNLOAD_COMPLETED")]
     DownloadCompleted { payload: DownloadCompletedPayload },
 
@@ -113,6 +116,27 @@ pub enum IpcCommand {
 
     #[serde(rename = "HASH_RESULT")]
     HashResult { payload: HashResultPayload },
+
+    #[serde(rename = "ADD_TORRENT")]
+    AddTorrent { payload: AddTorrentPayload },
+
+    #[serde(rename = "PAUSE_TORRENT")]
+    PauseTorrent { payload: TorrentActionPayload },
+
+    #[serde(rename = "RESUME_TORRENT")]
+    ResumeTorrent { payload: TorrentActionPayload },
+
+    #[serde(rename = "DELETE_TORRENT")]
+    DeleteTorrent { payload: DeleteTorrentPayload },
+
+    #[serde(rename = "TORRENT_ADDED")]
+    TorrentAdded { payload: TorrentAddedPayload },
+
+    #[serde(rename = "TORRENT_PROGRESS")]
+    TorrentProgress { payload: TorrentProgressPayload },
+
+    #[serde(rename = "TORRENT_COMPLETED")]
+    TorrentCompleted { payload: TorrentCompletedPayload },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -143,6 +167,8 @@ pub struct DownloadStartedPayload {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DownloadCompletedPayload {
+    #[serde(default)]
+    pub id: Option<String>,
     pub url: String,
     pub path: String,
     pub success: bool,
@@ -251,6 +277,84 @@ pub struct ConfigureProxyPayload {
     pub proxy_url: String,
     pub enabled: bool,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DownloadProgressPayload {
+    pub id: String,
+    #[serde(rename = "receivedBytes")]
+    pub received_bytes: u64,
+    #[serde(rename = "totalBytes")]
+    pub total_bytes: u64,
+    #[serde(rename = "speedBytesSec")]
+    pub speed_bytes_sec: u64,
+    pub strands: usize,
+    #[serde(rename = "strandProgress")]
+    pub strand_progress: Vec<f32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AddTorrentPayload {
+    #[serde(rename = "urlOrMagnet")]
+    pub url_or_magnet: String,
+    #[serde(default, rename = "downloadDir")]
+    pub download_dir: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TorrentActionPayload {
+    pub id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DeleteTorrentPayload {
+    pub id: String,
+    #[serde(default, rename = "deleteFiles")]
+    pub delete_files: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TorrentAddedPayload {
+    pub id: String,
+    #[serde(rename = "infoHash")]
+    pub info_hash: String,
+    pub name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TorrentProgressPayload {
+    pub id: String,
+    #[serde(rename = "infoHash")]
+    pub info_hash: String,
+    pub name: String,
+    pub progress: f64,
+    #[serde(rename = "downloadSpeed")]
+    pub download_speed: u64,
+    #[serde(rename = "uploadSpeed")]
+    pub upload_speed: u64,
+    #[serde(rename = "totalBytes")]
+    pub total_bytes: u64,
+    #[serde(rename = "downloadedBytes")]
+    pub downloaded_bytes: u64,
+    #[serde(rename = "uploadedBytes")]
+    pub uploaded_bytes: u64,
+    pub peers: usize,
+    pub state: String,
+    #[serde(rename = "etaSeconds")]
+    pub eta_seconds: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TorrentCompletedPayload {
+    pub id: String,
+    #[serde(rename = "infoHash")]
+    pub info_hash: String,
+    pub name: String,
+    #[serde(rename = "totalBytes")]
+    pub total_bytes: u64,
+    pub path: String,
+}
+
+
 
 
 
