@@ -35,6 +35,8 @@ import {
   Copy,
   BookOpen,
   PanelRight,
+  Zap,
+  Radio,
 } from 'lucide-react';
 
 export interface CommandItem {
@@ -76,6 +78,8 @@ interface CommandPaletteProps {
   onToggleReader?: () => void;
   onToggleSidecar?: () => void;
   onRestoreValhalla?: () => void;
+  onOpenSwarm?: () => void;
+  onOpenTurbo?: () => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
@@ -106,6 +110,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onToggleReader,
   onToggleSidecar,
   onRestoreValhalla,
+  onOpenSwarm,
+  onOpenTurbo,
 }) => {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -278,6 +284,26 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         rune: 'ᚠ',
         icon: Download,
         action: () => onOpenDownloads?.(),
+      },
+      {
+        id: 'naglfar-swarm',
+        category: 'Viewports & Tools',
+        title: 'Naglfar Swarm (Native BitTorrent Client)',
+        description: 'Ingest magnet links or .torrent files into background P2P seeder/leecher',
+        shortcut: 'Ctrl+Shift+U',
+        rune: 'ᛋ',
+        icon: Radio,
+        action: () => (onOpenSwarm ? onOpenSwarm() : onOpenDownloads?.()),
+      },
+      {
+        id: 'bifrost-turbo',
+        category: 'Viewports & Tools',
+        title: 'Bifröst Turbo (Multi-Strand Download Accelerator)',
+        description: 'Parallel chunked multi-byte stream acceleration for high-speed file acquisition',
+        shortcut: 'Ctrl+Shift+J',
+        rune: 'ᛉ',
+        icon: Zap,
+        action: () => (onOpenTurbo ? onOpenTurbo() : onOpenDownloads?.()),
       },
       {
         id: 'zoom-in',

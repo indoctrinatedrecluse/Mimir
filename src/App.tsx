@@ -85,6 +85,7 @@ export const App: React.FC = () => {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isFindOpen, setIsFindOpen] = useState(false);
   const [isDownloadsOpen, setIsDownloadsOpen] = useState(false);
+  const [hoardInitialTab, setHoardInitialTab] = useState<'artifacts' | 'swarm'>('artifacts');
   const [isClearDataOpen, setIsClearDataOpen] = useState(false);
   const [isSplitGaze, setIsSplitGaze] = useState(false);
   const [splitTabId, setSplitTabId] = useState<string | undefined>('tab-2');
@@ -1029,7 +1030,18 @@ const formatEtaSeconds = (secs: number): string => {
           onZoomReset={handleZoomReset}
           onPrint={handlePrint}
           onOpenFind={() => setIsFindOpen(true)}
-          onOpenDownloads={() => setIsDownloadsOpen(true)}
+          onOpenDownloads={() => {
+            setHoardInitialTab('artifacts');
+            setIsDownloadsOpen(true);
+          }}
+          onOpenSwarm={() => {
+            setHoardInitialTab('swarm');
+            setIsDownloadsOpen(true);
+          }}
+          onOpenTurbo={() => {
+            setHoardInitialTab('artifacts');
+            setIsDownloadsOpen(true);
+          }}
           onOpenClearData={() => setIsClearDataOpen(true)}
           onPinActiveTab={() => handleTogglePinTab(activeTabId)}
           onDuplicateActiveTab={() => handleDuplicateTab(activeTabId)}
@@ -1051,6 +1063,7 @@ const formatEtaSeconds = (secs: number): string => {
         {/* Overlay 7: Mímir's Hoard (Downloads Manager & Naglfar Swarm) */}
         <MimirsHoard
           isOpen={isDownloadsOpen}
+          initialTab={hoardInitialTab}
           onClose={() => setIsDownloadsOpen(false)}
           activeRealm={activeRealm}
           downloads={downloads}

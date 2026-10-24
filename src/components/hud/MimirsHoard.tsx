@@ -40,6 +40,7 @@ interface MimirsHoardProps {
   isOpen: boolean;
   onClose: () => void;
   activeRealm: RealmId;
+  initialTab?: 'artifacts' | 'swarm';
   downloads: DownloadItem[];
   torrents?: TorrentItem[];
   onClearCompleted: () => void;
@@ -148,6 +149,7 @@ export const MimirsHoard: React.FC<MimirsHoardProps> = ({
   isOpen,
   onClose,
   activeRealm,
+  initialTab,
   downloads,
   torrents = [],
   onClearCompleted,
@@ -161,7 +163,13 @@ export const MimirsHoard: React.FC<MimirsHoardProps> = ({
   onDeleteTorrent,
 }) => {
   const theme = REALM_THEMES[activeRealm] || REALM_THEMES.midgard;
-  const [activeHoardTab, setActiveHoardTab] = useState<'artifacts' | 'swarm'>('artifacts');
+  const [activeHoardTab, setActiveHoardTab] = useState<'artifacts' | 'swarm'>(initialTab || 'artifacts');
+
+  React.useEffect(() => {
+    if (isOpen && initialTab) {
+      setActiveHoardTab(initialTab);
+    }
+  }, [isOpen, initialTab]);
   const [manualUrl, setManualUrl] = useState('');
   const [showAcquireInput, setShowAcquireInput] = useState(false);
   const [swarmInput, setSwarmInput] = useState('');
