@@ -70,6 +70,7 @@ export type IpcCommand =
   | { type: 'CANCEL_DOWNLOAD'; payload: { id: string } }
   | { type: 'DELETE_FILE'; payload: { path: string } }
   | { type: 'CALCULATE_HASH'; payload: { path: string } }
+  | { type: 'CONFIGURE_PROXY'; payload: { realm: string; mode: string; proxyUrl: string; enabled: boolean } }
   | { type: 'SHOW_DEVTOOLS' }
   | { type: 'EXECUTE_SCRIPT'; payload: { script: string } }
   | { type: 'WINDOW_MINIMIZE' }
@@ -203,6 +204,13 @@ class MimirIpcBridge {
     this.send({
       type: 'CANCEL_DOWNLOAD',
       payload: { id },
+    });
+  }
+
+  public configureProxy(payload: { realm: string; mode: string; proxyUrl: string; enabled: boolean }) {
+    this.send({
+      type: 'CONFIGURE_PROXY',
+      payload,
     });
   }
 }

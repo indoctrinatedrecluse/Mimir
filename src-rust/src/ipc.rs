@@ -92,6 +92,9 @@ pub enum IpcCommand {
     #[serde(rename = "CALCULATE_HASH")]
     CalculateHash { payload: CalculateHashPayload },
 
+    #[serde(rename = "CONFIGURE_PROXY")]
+    ConfigureProxy { payload: ConfigureProxyPayload },
+
     // Internal and child webview relayed events
     #[serde(rename = "DOWNLOAD_STARTED")]
     DownloadStarted { payload: DownloadStartedPayload },
@@ -239,5 +242,15 @@ pub struct DuplicateTabPayload {
 pub struct ExecuteScriptPayload {
     pub script: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConfigureProxyPayload {
+    pub realm: String,
+    pub mode: String,
+    #[serde(default, rename = "proxyUrl")]
+    pub proxy_url: String,
+    pub enabled: bool,
+}
+
 
 

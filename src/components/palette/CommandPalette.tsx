@@ -33,6 +33,8 @@ import {
   Printer,
   Pin,
   Copy,
+  BookOpen,
+  PanelRight,
 } from 'lucide-react';
 
 export interface CommandItem {
@@ -71,6 +73,9 @@ interface CommandPaletteProps {
   onOpenClearData?: () => void;
   onPinActiveTab?: () => void;
   onDuplicateActiveTab?: () => void;
+  onToggleReader?: () => void;
+  onToggleSidecar?: () => void;
+  onRestoreValhalla?: () => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
@@ -98,6 +103,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onOpenClearData,
   onPinActiveTab,
   onDuplicateActiveTab,
+  onToggleReader,
+  onToggleSidecar,
+  onRestoreValhalla,
 }) => {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -178,6 +186,35 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         rune: 'ᛚ',
         icon: Bookmark,
         action: onToggleMuninn,
+      },
+      {
+        id: 'reader-sanctum',
+        category: 'Wisdom & Ravens',
+        title: 'Enter Reader Sanctum (Distraction-Free Reading)',
+        description: 'Cleanse page of trackers, ads, and sidebars into pure parchment or obsidian view',
+        shortcut: 'Alt+R',
+        rune: 'ᛗ',
+        icon: BookOpen,
+        action: onToggleReader || (() => {}),
+      },
+      {
+        id: 'runic-sidecar',
+        category: 'Wisdom & Ravens',
+        title: 'Toggle Runic Sidecar Dock',
+        description: 'Open persistent right sidebar with Scratchpad Notes, Huginn AI, and Telemetry',
+        shortcut: 'Ctrl+B',
+        rune: 'ᚠ',
+        icon: PanelRight,
+        action: onToggleSidecar || (() => {}),
+      },
+      {
+        id: 'valhalla-revival',
+        category: 'Wisdom & Ravens',
+        title: 'Revive Severed Session from Valhalla',
+        description: 'Restore previous quest tabs and window hierarchy from Valhalla memory',
+        rune: 'ᚲ',
+        icon: RotateCw,
+        action: onRestoreValhalla || (() => {}),
       },
 
       // Viewports & Tools

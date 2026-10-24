@@ -1,7 +1,7 @@
 # ᛗ MÍMIR
 ### *The Hypermodern, Runic-Forged Web Explorer*
 
-[![Release](https://img.shields.io/badge/Release-v0.4.0%20(Alpha)-10b981?style=for-the-badge&logo=github)](https://github.com/indoctrinatedrecluse/Mimir/releases/tag/v0.4.0)
+[![Release](https://img.shields.io/badge/Release-v0.5.0-10b981?style=for-the-badge&logo=github)](https://github.com/indoctrinatedrecluse/Mimir/releases/tag/v0.5.0)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20(WebView2)-00f5ff?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/indoctrinatedrecluse/Mimir)
 [![Core Engine](https://img.shields.io/badge/Core-Rust%20%2B%20Wry-f97316?style=for-the-badge&logo=rust&logoColor=white)](https://github.com/tauri-apps/wry)
 [![UI HUD](https://img.shields.io/badge/HUD-React%2019%20%2B%20Vite-61dafb?style=for-the-badge&logo=react&logoColor=black)](https://vitejs.dev/)
@@ -13,14 +13,14 @@
 
 ---
 
-## ⚡ Download Mímir (v0.4.0 Alpha)
+## ⚡ Download Mímir (v0.5.0)
 
 Ready-to-use releases for 64-bit Windows are packaged and distributed with zero manual prerequisites:
 
 | Package | Format | Description |
 | :--- | :--- | :--- |
-| [**Windows Setup Installer**](https://github.com/indoctrinatedrecluse/Mimir/releases/download/v0.4.0/mimir-v0.4.0-windows-x64-setup.exe) | `.exe` (~10 MB) | Full setup wizard with Desktop and Start Menu shortcuts, auto-launch option, and bundled Microsoft WebView2 Evergreen Bootstrapper for fresh or LTSC Windows systems. |
-| [**Portable Archive**](https://github.com/indoctrinatedrecluse/Mimir/releases/download/v0.4.0/mimir-v0.4.0-windows-x64-portable.zip) | `.zip` (~8 MB) | Standalone portable bundle. Extract and launch `mimir.exe` directly without installation. |
+| [**Windows Setup Installer**](https://github.com/indoctrinatedrecluse/Mimir/releases/download/v0.5.0/mimir-v0.5.0-windows-x64-setup.exe) | `.exe` (~10 MB) | Full setup wizard with Desktop and Start Menu shortcuts, auto-launch option, and bundled Microsoft WebView2 Evergreen Bootstrapper for fresh or LTSC Windows systems. |
+| [**Portable Archive**](https://github.com/indoctrinatedrecluse/Mimir/releases/download/v0.5.0/mimir-v0.5.0-windows-x64-portable.zip) | `.zip` (~8 MB) | Standalone portable bundle. Extract and launch `mimir.exe` directly without installation. |
 
 ---
 

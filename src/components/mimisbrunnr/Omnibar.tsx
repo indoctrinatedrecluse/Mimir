@@ -33,6 +33,8 @@ import {
   Printer,
   QrCode,
   ShieldOff,
+  PanelRight,
+  PanelRightClose,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getRankedSuggestions, SuggestionItem, cleanDisplayUrl, parseBangQuery, purifyUrl } from '@/core/navigation/autosuggest';
@@ -68,6 +70,10 @@ interface OmnibarProps {
   isDownloadsOpen?: boolean;
   liveBlockedCount?: number;
   onUpgradeToHttps?: () => void;
+  onToggleReader?: () => void;
+  isReaderOpen?: boolean;
+  onToggleSidecar?: () => void;
+  isSidecarOpen?: boolean;
 }
 
 export const Omnibar: React.FC<OmnibarProps> = ({
@@ -99,6 +105,10 @@ export const Omnibar: React.FC<OmnibarProps> = ({
   isDownloadsOpen = false,
   liveBlockedCount = 0,
   onUpgradeToHttps,
+  onToggleReader,
+  isReaderOpen = false,
+  onToggleSidecar,
+  isSidecarOpen = false,
 }) => {
   const [inputVal, setInputVal] = useState(currentUrl);
   const [isFocused, setIsFocused] = useState(false);
@@ -665,6 +675,38 @@ export const Omnibar: React.FC<OmnibarProps> = ({
           title="Brokkr's Forge (User-Scripts & Custom Runic Styles)"
         >
           <Hammer className="h-3.5 w-3.5" />
+        </button>
+
+        {/* Reader Sanctum (Distraction-Free) */}
+        <button
+          onClick={() => {
+            runicAudio.playChime();
+            onToggleReader?.();
+          }}
+          className={`flex h-8 w-8 items-center justify-center rounded border transition-all ${
+            isReaderOpen
+              ? 'border-amber-400 bg-amber-500/25 text-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.4)]'
+              : 'border-white/10 bg-white/[0.03] text-slate-400 hover:text-white hover:bg-white/[0.08]'
+          }`}
+          title="Reader Sanctum (Distraction-Free Reading Mode — Alt+R)"
+        >
+          <BookOpen className="h-3.5 w-3.5" />
+        </button>
+
+        {/* Runic Sidecar (Persistent Dock) */}
+        <button
+          onClick={() => {
+            runicAudio.playClick(600);
+            onToggleSidecar?.();
+          }}
+          className={`flex h-8 w-8 items-center justify-center rounded border transition-all ${
+            isSidecarOpen
+              ? 'border-cyan-400 bg-cyan-500/25 text-cyan-300 shadow-[0_0_10px_rgba(0,245,255,0.4)]'
+              : 'border-white/10 bg-white/[0.03] text-slate-400 hover:text-white hover:bg-white/[0.08]'
+          }`}
+          title="Runic Sidecar (Scratchpad, Huginn AI & Telemetry — Ctrl+B)"
+        >
+          {isSidecarOpen ? <PanelRightClose className="h-3.5 w-3.5" /> : <PanelRight className="h-3.5 w-3.5" />}
         </button>
 
         {/* Muninn's Vault (Memory & Runestones) */}

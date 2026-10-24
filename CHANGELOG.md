@@ -7,6 +7,88 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.0] - 2026-10-24 *(Valhalla Revival, Runic Sidecar & Reader Sanctum)*
+
+This major milestone marks Mímir's graduation from Alpha into standard production releases. It introduces powerful new browsing systems including persistent multi-mode sidebars, automated session revival, distraction-free reading sanctuaries, realm-level CSS/JS rule injection, and deep bundle optimizations.
+
+### Added
+
+#### Valhalla Revival & Crash Sentinel (`sessionManager.ts`, `ValhallaRevivalBanner.tsx`)
+* **Continuous Session Preservation**: Automatically captures active branches, zoom levels, split viewports, and realm hierarchy to persistent Valhalla memory.
+* **Crash Sentinel**: Gracefully detects unexpected halts or severed browser threads.
+* **Valhalla Revival Banner**: Presents an animated obsidian-and-gold prompt on launch allowing users to revive all prior conduits with a single click or begin anew.
+* **Named Quest Sessions**: Support for saving and loading named session snapshots.
+
+#### Runic Sidecar — Persistent Dock Panel (`RunicSidecar.tsx`)
+* **Docked Split Sidebar**: Resizable persistent panel docking alongside the primary web viewport (`Ctrl+B` / `Alt+S`).
+* **Runic Scratchpad (`ᚠ`)**: Quick-capture notepad supporting markdown, rune glyphs, and one-click copy to clipboard.
+* **Huginn AI Skáli (`ᚨ`)**: Embedded concurrent thought-scout chat, allowing users to converse with Huginn without closing their browsing workspace.
+* **Live Conduit Telemetry (`ᛋ`)**: Real-time event stream logging blocked surveillance conduits, network timings, and system heartbeats.
+
+#### Reader Sanctum — Distraction-Free Reading Mode (`ReaderSanctum.tsx`)
+* **Sanctum Typography View**: Strips away advertising noise, sticky headers, and trackers into an elegant reading sanctuary (`Alt+R` or Omnibar trigger).
+* **Three Norse Aesthetic Themes**:
+  * **Obsidian Sanctum**: Deep void darkness with glowing cyan and violet typography.
+  * **Elder Parchment**: Warm aged parchment with golden serif styling and rune watermark.
+  * **Rune Sepia**: Classic sepia tones for soft eye comfort during long research sessions.
+* **Reading Progress & Metrics**: Live scroll progress bar, total word count, and estimated reading time.
+* **Lore Recitation (TTS)**: Built-in voice recitation powered by speech synthesis with play/halt controls.
+
+#### Realm Inscription Rules Engine (`inscriptionEngine.ts`, `BrokkrForge.tsx`)
+* **Custom CSS & JS Injections**: Define user-scripts and custom CSS stylesheets matched by URL glob patterns and realm filters.
+* **Automated Injection**: Automatically executes inscribed rules upon navigating to matched web conduits via native Wry script evaluation.
+
+#### Bifröst Proxy Gateway Relaying (`BifrostMatrix.tsx`, `ipc.rs`)
+* **Per-Realm Proxy Configuration**: Support for configuring SOCKS5 and HTTP proxy endpoints per realm.
+* **Rust Engine Integration**: Relays `CONFIGURE_PROXY` commands from HUD directly into the native runtime.
+
+### Improved & Optimized
+
+#### Rune Seeker (Find-in-Page)
+* Added toggles for Case-Sensitive matching (`Aa`) and Regular Expression mode (`.*`).
+* Real-time match count telemetry dispatched from Rust back to the UI badge (`X matches`).
+* Seamless `Enter` (next match) and `Shift+Enter` (previous match) keyboard traversal.
+
+#### Mímir's Hoard (Download Manager)
+* Filter bar by status (*All*, *Active*, *Complete*, *Failed*) and file category (*Documents*, *Images*, *Archives*, *Media*).
+* Real-time download transfer speed (`MB/s`) and estimated time remaining (ETA).
+* Download controls: Pause, Resume, and Cancel actions.
+* Interactive SHA-256 file hash calculation via native Windows `certutil` with one-click comparison against clipboard hashes.
+
+#### Security Ward & Tracker Deflector
+* Expanded deflected tracker database to ~40 surveillance, telemetry, and advertising networks.
+* Persistent realm whitelist toggle (*"Lower Ward for this Realm"*).
+* Blocked Conduits Inspector drawer listing deflected network requests with status badges.
+
+#### Mímisbrunnr (Omnibar) & Autosuggest
+* Search bangs (`!g`, `!ddg`, `!gh`, `!yt`, `!w`, `!rust`, `!crate`) with prioritization in ranked suggestions.
+* Quick-action *"Purify URL"* button stripping tracking and telemetry query runes (`utm_*`, `fbclid`, `gclid`, `ref_`, `si`).
+* Pure TypeScript offline QR Code matrix generator and sharing popover.
+
+#### Yggdrasil Tab Tree
+* Quick search filter bar to find open tabs across sprawling trees.
+* Nested child branch indentation with `GitBranch` tree hierarchy.
+* 3-bar animated audio equalizer wave on playing tabs with instant mute button.
+* `Alt+1` through `Alt+9` keyboard hotkeys for instant realm switching.
+
+#### Muninn Vault (Bookmarks & History)
+* Standard Netscape HTML bookmark import (`.html`, `.htm`) via native `DOMParser`.
+* Chronological epoch grouping (*Today*, *Yesterday*, *Elder Epochs*).
+* Multi-select checkboxes with batch deletion (*"Purge Selected (N)"*).
+* Favicon resolution via Google Favicon API with runic icon fallback.
+
+#### Norse Context Menu
+* Text selection quick actions: *"Ask Huginn AI"*, *"Translate Rune / Text"*, and *"Copy as Markdown Link"*.
+* Automatically opens and prefills Huginn AI drawer.
+
+#### Engine Performance & Bundle Optimization
+* Lazy loading of all heavy modal overlays and side panels via React `Suspense`.
+* Vite Rollup manual chunking for vendor libraries (`vendor-react`, `vendor-framer`, `vendor-lucide`).
+* Dropped main bundle size from **>533 kB** to **347 kB** (102 kB gzipped), eliminating bundle size warnings.
+* Paced startup splash screen timing (3.8s) with module pre-warming and keyboard skip.
+
+---
+
 ## [0.4.0] - 2026-10-23 *(Sacred Wards, Hoard & Browser Mastery)*
 
 This release brings a comprehensive set of common browser functions, privacy controls, and security telemetry — wrapped in Mímir's distinctive Norse aesthetic. Every standard browser action a user expects is now present and themed.

@@ -625,6 +625,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 IpcCommand::CancelDownload { payload } => {
                     logger::info(&format!("Canceling download artifact {}", payload.id));
                 }
+                IpcCommand::ConfigureProxy { payload } => {
+                    logger::info(&format!(
+                        "Configuring Bifrost Proxy Conduit for realm '{}': mode={}, enabled={}, url={}",
+                        payload.realm, payload.mode, payload.enabled, payload.proxy_url
+                    ));
+                }
                 IpcCommand::CalculateHash { payload } => {
                     let path_clone = payload.path.clone();
                     let proxy_hash = event_loop_proxy.clone();

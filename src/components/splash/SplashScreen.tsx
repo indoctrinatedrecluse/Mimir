@@ -11,7 +11,8 @@ interface SplashScreenProps {
 const BOOT_STEPS = [
   { rune: 'ᚱ', text: 'Communing with the subterranean roots of Yggdrasil...' },
   { rune: 'ᚨ', text: 'Awakening Huginn & Muninn (Thought & Memory)...' },
-  { rune: 'ᛏ', text: 'Attuning the Bifröst crystal conduit...' },
+  { rune: 'ᛏ', text: 'Attuning the Bifröst crystal conduit & Nine Realms...' },
+  { rune: 'ᚦ', text: 'Inscribing Runic Wards & Pre-warming Sanctum...' },
   { rune: 'ᛗ', text: 'Drinking from Mímisbrunnr... Sanctum Ready.' },
 ];
 
@@ -24,23 +25,28 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
 
     const t1 = setTimeout(() => {
       setStepIndex(1);
-      setProgress(45);
-    }, 600);
+      setProgress(35);
+    }, 750);
 
     const t2 = setTimeout(() => {
       setStepIndex(2);
-      setProgress(75);
-    }, 1200);
+      setProgress(60);
+    }, 1500);
 
     const t3 = setTimeout(() => {
       setStepIndex(3);
-      setProgress(100);
-      runicAudio.playChime();
-    }, 1800);
+      setProgress(85);
+    }, 2300);
 
     const t4 = setTimeout(() => {
+      setStepIndex(4);
+      setProgress(100);
+      runicAudio.playChime();
+    }, 3100);
+
+    const t5 = setTimeout(() => {
       onComplete();
-    }, 2400);
+    }, 3800);
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
@@ -54,6 +60,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
       clearTimeout(t2);
       clearTimeout(t3);
       clearTimeout(t4);
+      clearTimeout(t5);
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [onComplete]);

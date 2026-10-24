@@ -13,6 +13,10 @@ import { AnimatePresence } from 'framer-motion';
 import { NorseContextMenu } from '@/components/chrome/NorseContextMenu';
 import { detectFileType } from '@/core/utils/fileType';
 
+import { sessionManager, SavedSession } from '@/core/session/sessionManager';
+import { ValhallaRevivalBanner } from '@/components/session/ValhallaRevivalBanner';
+import { inscriptionEngine } from '@/core/inscriptions/inscriptionEngine';
+
 // Engine & Bundle Optimization: Lazy-load heavy drawers and overlays
 const RealmSelector = lazy(() => import('@/components/realms/RealmSelector').then((m) => ({ default: m.RealmSelector })));
 const HuginnPanel = lazy(() => import('@/components/ai/HuginnPanel').then((m) => ({ default: m.HuginnPanel })));
@@ -23,6 +27,8 @@ const CommandPalette = lazy(() => import('@/components/palette/CommandPalette').
 const RuneSeeker = lazy(() => import('@/components/hud/RuneSeeker').then((m) => ({ default: m.RuneSeeker })));
 const MimirsHoard = lazy(() => import('@/components/hud/MimirsHoard').then((m) => ({ default: m.MimirsHoard })));
 const FateThreadPurge = lazy(() => import('@/components/hud/FateThreadPurge').then((m) => ({ default: m.FateThreadPurge })));
+const RunicSidecar = lazy(() => import('@/components/sidecar/RunicSidecar').then((m) => ({ default: m.RunicSidecar })));
+const ReaderSanctum = lazy(() => import('@/components/reader/ReaderSanctum').then((m) => ({ default: m.ReaderSanctum })));
 
 const getInitialRealm = (): RealmId => {
   try {
@@ -85,6 +91,21 @@ export const App: React.FC = () => {
   const [isAmbientPlaying, setIsAmbientPlaying] = useState(runicAudio.isAmbientEnabled());
   const [showSplash, setShowSplash] = useState(true);
   const [huginnPrompt, setHuginnPrompt] = useState<string>('');
+
+  // Session Restoration & Valhalla Crash Sentinel
+  const [pendingRevivalSession, setPendingRevivalSession] = useState<SavedSession | null>(() => {
+    try {
+      if (sessionManager.checkAbnormalTermination()) {
+        return sessionManager.getAutoSavedSession();
+      }
+    } catch {}
+    return null;
+  });
+
+  // Persistent Runic Sidecar & Reader Sanctum
+  const [isSidecarOpen, setIsSidecarOpen] = useState(false);
+  const [sidecarWidth, setSidecarWidth] = useState(340);
+  const [isReaderSanctumOpen, setIsReaderSanctumOpen] = useState(false);
 
   // Download artifacts telemetry & localStorage persistence
   const [downloads, setDownloads] = useState<DownloadItem[]>(() => {
@@ -206,6 +227,61 @@ export const App: React.FC = () => {
     } catch {}
   }, [activeRealm]);
 
+  // Session Lifecycle: mark running and clean shutdown
+  useEffect(() => {
+    sessionManager.markSessionRunning();
+    const handleBeforeUnload = () => {
+      sessionManager.markCleanShutdown();
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
+
+  // Continuous Auto-Save to Valhalla Session Memory
+  useEffect(() => {
+    if (tabs.length > 0) {
+      sessionManager.saveCurrentSessionAuto(tabs, activeTabId, activeRealm, splitTabId || null, isSplitGaze);
+    }
+  }, [tabs, activeTabId, activeRealm, splitTabId, isSplitGaze]);
+
+  // Automatic Realm Inscriptions Injection for Web Views
+  useEffect(() => {
+    if (activeTab?.url) {
+      inscriptionEngine.applyInscriptionsForTab(activeTab.url, activeRealm);
+    }
+  }, [activeTab?.url, activeRealm]);
+
+  const handleRestoreSession = (saved: SavedSession) => {
+    if (!saved.tabs || saved.tabs.length === 0) return;
+    runicAudio.playChime();
+    const revivedTabs: Tab[] = saved.tabs.map((t) => ({
+      id: t.id,
+      title: t.title,
+      url: t.url,
+      realm: t.realm,
+      rune: t.rune,
+      isActive: t.id === saved.activeTabId,
+      isLoading: false,
+      isMuted: false,
+      isPinned: Boolean(t.isPinned),
+      parentId: t.parentId,
+      zoomLevel: t.zoomLevel || 100,
+    }));
+    setTabs(revivedTabs);
+    setActiveTabId(saved.activeTabId || revivedTabs[0].id);
+    setActiveRealm(saved.realm || 'midgard');
+    if (saved.splitTabId) setSplitTabId(saved.splitTabId);
+    setIsSplitGaze(saved.isSplitGaze);
+    setPendingRevivalSession(null);
+    const activeUrl = revivedTabs.find((t) => t.id === saved.activeTabId)?.url || revivedTabs[0].url;
+    if (activeUrl && !activeUrl.startsWith('mimir://')) {
+      mimirIpc.send({
+        type: 'NAVIGATE',
+        payload: { url: activeUrl },
+      });
+    }
+  };
+
   // Global keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -282,6 +358,18 @@ export const App: React.FC = () => {
         e.preventDefault();
         runicAudio.playClick(750);
         setIsClearDataOpen((prev) => !prev);
+      }
+      // Ctrl+B: Toggle Runic Sidecar (Persistent Dock)
+      if (e.ctrlKey && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        runicAudio.playClick(600);
+        setIsSidecarOpen((prev) => !prev);
+      }
+      // Alt+R: Toggle Reader Sanctum (Distraction-Free)
+      if (e.altKey && !e.ctrlKey && e.key.toLowerCase() === 'r') {
+        e.preventDefault();
+        runicAudio.playChime();
+        setIsReaderSanctumOpen((prev) => !prev);
       }
       // Alt+1 to Alt+9: Realm Jump Hotkeys
       if (e.altKey && !e.ctrlKey && !e.shiftKey) {
@@ -616,9 +704,24 @@ export const App: React.FC = () => {
         isCurrentBookmarked={bookmarks.includes(activeTab?.url || '')}
         liveBlockedCount={blockedTrackersCount}
         onUpgradeToHttps={handleUpgradeToHttps}
+        onToggleReader={() => setIsReaderSanctumOpen((prev) => !prev)}
+        isReaderOpen={isReaderSanctumOpen}
+        onToggleSidecar={() => setIsSidecarOpen((prev) => !prev)}
+        isSidecarOpen={isSidecarOpen}
       />
 
-      {/* Layer 3: Main Workspace (Yggdrasil Tree + Content Viewport) */}
+      {/* Valhalla Revival Crash Sentinel Banner */}
+      <ValhallaRevivalBanner
+        session={pendingRevivalSession}
+        activeRealm={activeRealm}
+        onRestore={handleRestoreSession}
+        onDismiss={() => {
+          sessionManager.clearAutoSavedSession();
+          setPendingRevivalSession(null);
+        }}
+      />
+
+      {/* Layer 3: Main Workspace (Yggdrasil Tree + Content Viewport + Runic Sidecar) */}
       <div className="relative flex flex-1 overflow-hidden">
         <TabTree
           tabs={tabs}
@@ -654,6 +757,18 @@ export const App: React.FC = () => {
             runicAudio.playClick(650);
           }}
         />
+
+        {/* Persistent Runic Sidecar (Scratchpad, Huginn AI, Telemetry) */}
+        <Suspense fallback={null}>
+          <RunicSidecar
+            isOpen={isSidecarOpen}
+            onClose={() => setIsSidecarOpen(false)}
+            activeRealm={activeRealm}
+            activeTab={activeTab}
+            width={sidecarWidth}
+            onWidthChange={setSidecarWidth}
+          />
+        </Suspense>
       </div>
 
       {/* Layer 4: Status Telemetry HUD */}
@@ -727,6 +842,12 @@ export const App: React.FC = () => {
           onOpenClearData={() => setIsClearDataOpen(true)}
           onPinActiveTab={() => handleTogglePinTab(activeTabId)}
           onDuplicateActiveTab={() => handleDuplicateTab(activeTabId)}
+          onToggleReader={() => setIsReaderSanctumOpen((prev) => !prev)}
+          onToggleSidecar={() => setIsSidecarOpen((prev) => !prev)}
+          onRestoreValhalla={() => {
+            const auto = sessionManager.getAutoSavedSession();
+            if (auto) handleRestoreSession(auto);
+          }}
         />
 
         {/* Overlay 6: Rune Seeker (Find in Page) */}
@@ -764,6 +885,14 @@ export const App: React.FC = () => {
           currentTab={activeTab}
           initialPrompt={huginnPrompt}
         />
+
+        {/* Overlay 9: Reader Sanctum (Distraction-Free Reader Mode) */}
+        <ReaderSanctum
+          isOpen={isReaderSanctumOpen}
+          onClose={() => setIsReaderSanctumOpen(false)}
+          activeRealm={activeRealm}
+          activeTab={activeTab}
+        />
       </Suspense>
 
       {/* Custom Themed Norse Context Menu */}
@@ -773,6 +902,7 @@ export const App: React.FC = () => {
         activeRealm={activeRealm}
         eventData={contextMenuEvent}
         onOpenInNewTab={(url) => handleNewTab(url)}
+        onOpenReader={() => setIsReaderSanctumOpen(true)}
         onOpenInSplitGaze={(url) => {
           const newId = `tab-${Date.now()}`;
           const newTab: Tab = {

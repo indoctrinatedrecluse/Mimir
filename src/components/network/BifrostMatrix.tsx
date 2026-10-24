@@ -3,6 +3,7 @@ import { RealmId } from '@/types';
 import { REALMS } from '@/core/realms';
 import { REALM_THEMES } from '@/components/themes/realmThemes';
 import { runicAudio } from '@/core/audio/runicAudio';
+import { mimirIpc } from '@/core/ipc/bridge';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Network,
@@ -174,6 +175,12 @@ export const BifrostMatrix: React.FC<BifrostMatrixProps> = ({
     runicAudio.playChime();
     try {
       localStorage.setItem('mimir_bifrost_matrix', JSON.stringify(matrix));
+      mimirIpc.configureProxy({
+        realm: selectedRealm,
+        mode: currentConfig.mode,
+        proxyUrl: currentConfig.proxyUrl,
+        enabled: currentConfig.enabled,
+      });
       setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 2000);
     } catch (e) {

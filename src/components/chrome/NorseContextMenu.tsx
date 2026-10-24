@@ -23,6 +23,7 @@ import {
   Link2,
   Volume2,
   Repeat,
+  BookOpen,
 } from 'lucide-react';
 
 interface NorseContextMenuProps {
@@ -36,6 +37,7 @@ interface NorseContextMenuProps {
   onBookmarkUrl: (url: string, title?: string) => void;
   onSearchQuery: (query: string) => void;
   onAskHuginn?: (prompt: string) => void;
+  onOpenReader?: () => void;
 }
 
 export const NorseContextMenu: React.FC<NorseContextMenuProps> = ({
@@ -49,6 +51,7 @@ export const NorseContextMenu: React.FC<NorseContextMenuProps> = ({
   onBookmarkUrl,
   onSearchQuery,
   onAskHuginn,
+  onOpenReader,
 }) => {
   const menuRef = useRef<HTMLDivElement | null>(null);
   const theme = REALM_THEMES[activeRealm] || REALM_THEMES.midgard;
@@ -283,6 +286,18 @@ export const NorseContextMenu: React.FC<NorseContextMenuProps> = ({
             </div>
             <span className="text-[9px] font-mono text-slate-500">Ctrl+P</span>
           </button>
+          {onOpenReader && (
+            <button
+              onClick={() => handleAction(() => onOpenReader())}
+              className="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 hover:bg-white/10 hover:text-white transition-colors text-amber-300"
+            >
+              <div className="flex items-center space-x-2.5">
+                <BookOpen className="h-3.5 w-3.5 text-amber-400" />
+                <span>Enter Reader Sanctum</span>
+              </div>
+              <span className="text-[9px] font-mono text-slate-500">Alt+R</span>
+            </button>
+          )}
           <button
             onClick={() => handleAction(() => mimirIpc.send({ type: 'SHOW_DEVTOOLS' }))}
             className="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 hover:bg-white/10 hover:text-white transition-colors text-cyan-300 border-t border-white/5 pt-1.5 mt-1"
