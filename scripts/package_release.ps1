@@ -36,3 +36,13 @@ Write-Host "Created $PORTABLE_ZIP ($([math]::Round($zipSize / 1MB, 2)) MB)"
 # 4. Copy to installer payload
 Copy-Item -Path $PORTABLE_ZIP -Destination "src-rust/payload.zip" -Force
 Write-Host "Copied to src-rust/payload.zip"
+
+# 5. Video Pack Manual Release Reminder
+$REALM_PACK = "mimir-cinematic-realm-pack.zip"
+if (Test-Path $REALM_PACK) {
+    Write-Host "[!] RELEASE CHECKLIST: Because realm videos are git-ignored, you MUST manually attach '$REALM_PACK' to each new GitHub Release:" -ForegroundColor Yellow
+    Write-Host "    gh release upload <TAG> $REALM_PACK --clobber" -ForegroundColor Cyan
+} else {
+    Write-Host "[!] WARNING: '$REALM_PACK' not found locally. Run 'python scripts/package_realm_pack.py --build' first." -ForegroundColor Red
+}
+
