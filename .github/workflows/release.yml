@@ -111,5 +111,6 @@ jobs:
           files: |
             mimir-*-windows-x64-portable.zip
             mimir-*-windows-x64-setup.exe
+            mimir-cinematic-realm-pack.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
