@@ -6,6 +6,7 @@ mod logger;
 mod tab_manager;
 mod accelerator;
 mod torrent;
+mod adblocker;
 
 use std::borrow::Cow;
 use std::path::PathBuf;

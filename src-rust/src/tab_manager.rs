@@ -36,12 +36,14 @@ pub struct TabManager {
     pub current_bounds: Option<ViewportBounds>,
     pub proxy: Option<EventLoopProxy<IpcCommand>>,
     pub helheim_context: Option<WebContext>,
+    pub adblocker: Arc<crate::adblocker::AdBlocker>,
 }
 
 impl TabManager {
     pub fn new() -> Self {
         let helheim_dir = std::env::temp_dir().join("mimir_helheim_isolated");
         let helheim_context = Some(WebContext::new(Some(helheim_dir)));
+        let adblocker = Arc::new(crate::adblocker::AdBlocker::new());
 
         Self {
             tabs: HashMap::new(),
@@ -49,6 +51,7 @@ impl TabManager {
             current_bounds: None,
             proxy: None,
             helheim_context,
+            adblocker,
         }
     }
 
@@ -195,10 +198,9 @@ impl TabManager {
             });
         }
 
-        // 3. Script injection: Context menu interceptor + Runic Shield ad & tracker protection
-        let init_script = r#"
+        // 3. Script injection: Context menu interceptor + Sacred Shield (Adblock + YouTube Sentinel)
+        let context_menu_script = r#"
         (function() {
-            // A. Context Menu Interceptor: Dispatches right-click payload to Mímir HUD
             window.addEventListener('contextmenu', function(e) {
                 e.preventDefault();
                 var linkEl = e.target.closest ? e.target.closest('a') : null;
@@ -224,80 +226,12 @@ impl TabManager {
                     window.chrome.webview.postMessage(JSON.stringify(payload));
                 }
             }, true);
-
-            // B. Runic Shield: Intercept and neutralize ad/telemetry trackers
-            var TRACKER_DOMAINS = [
-                'google-analytics.com', 'analytics.google.com', 'googletagmanager.com',
-                'doubleclick.net', 'adservice.google.com', 'googlesyndication.com',
-                'facebook.net', 'connect.facebook.net', 'adnxs.com', 'criteo.com',
-                'criteo.net', 'scorecardresearch.com', 'hotjar.com', 'outbrain.com',
-                'taboola.com', 'amazon-adsystem.com', 'rubiconproject.com', 'quantserve.com',
-                'pubmatic.com', 'casalemedia.com', 'openx.net', 'moatads.com',
-                'chartbeat.com', 'branch.io', 'mixpanel.com', 'segment.io', 'amplitude.com',
-                'clarity.ms', 'newrelic.com', 'coinhive.com', 'coin-have.com', 'adroll.com',
-                'trafficjunky.com', 'popads.net', 'zergnet.com', 'revcontent.com', 'bidswitch.net',
-                'smartadserver.com', 'yieldmo.com', 'teads.tv', 'inmobi.com', 'sharethrough.com'
-            ];
-
-            function isTracker(url) {
-                if (!url) return false;
-                try {
-                    // Check if current realm/site has lowered ward (whitelisted)
-                    var whitelist = [];
-                    try {
-                        var raw = localStorage.getItem('mimir_ward_whitelist');
-                        if (raw) whitelist = JSON.parse(raw);
-                    } catch(e) {}
-                    if (whitelist && whitelist.indexOf(window.location.hostname) !== -1) {
-                        return false;
-                    }
-
-                    var u = new URL(url, window.location.href);
-                    return TRACKER_DOMAINS.some(function(d) {
-                        return u.hostname === d || u.hostname.endsWith('.' + d);
-                    });
-                } catch(err) { return false; }
-            }
-
-            function reportBlock(url) {
-                try {
-                    var u = new URL(url, window.location.href);
-                    var p = {
-                        type: 'TRACKER_BLOCKED',
-                        payload: { domain: u.hostname, category: 'telemetry_tracker', url: url }
-                    };
-                    if (window.ipc && typeof window.ipc.postMessage === 'function') {
-                        window.ipc.postMessage(JSON.stringify(p));
-                    } else if (window.chrome && window.chrome.webview) {
-                        window.chrome.webview.postMessage(JSON.stringify(p));
-                    }
-                } catch(e) {}
-            }
-
-            var origFetch = window.fetch;
-            if (origFetch) {
-                window.fetch = function() {
-                    var url = typeof arguments[0] === 'string' ? arguments[0] : (arguments[0] && arguments[0].url);
-                    if (isTracker(url)) {
-                        reportBlock(url);
-                        return Promise.reject(new Error('[Mímir Runic Ward] Blocked tracker: ' + url));
-                    }
-                    return origFetch.apply(this, arguments);
-                };
-            }
-
-            var origOpen = XMLHttpRequest.prototype.open;
-            XMLHttpRequest.prototype.open = function(method, url) {
-                if (isTracker(url)) {
-                    reportBlock(url);
-                    this.send = function() {};
-                    return;
-                }
-                return origOpen.apply(this, arguments);
-            };
         })();
         "#;
-        builder = builder.with_initialization_script(init_script);
+
+        let adblock_script = crate::adblocker::AdBlocker::generate_injection_script();
+        let full_init_script = format!("{}\n{}", context_menu_script, adblock_script);
+        builder = builder.with_initialization_script(&full_init_script);
 
         // 4. Child IPC handler for messages originating in child webview
         if let Some(proxy_ipc) = self.proxy.clone() {

@@ -9,25 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Planned (Next Release: v0.8.0)
+### Added
 
-#### Sacred Shield Mastery & YouTube Adblocking Engine
-* **High-Performance Rust Adblocking Engine**:
-  * Investigate and integrate native Cargo crates (such as `adblock-rust` / Brave's filtering engine) to deliver full EasyList, EasyPrivacy, and uBlock-grade rule matching directly at the native Rust layer.
-  * Native network resource blocking in WebView2 before requests hit the network stack, drastically improving page load times and reducing memory consumption.
-* **Specialized YouTube Adblock Sentinel**:
-  * Implement dedicated YouTube ad neutralization targeting pre-roll, mid-roll, and overlay advertisements.
-  * Evaluate native scriptlet injection vs. adapting specialized adblock extensions from the Microsoft Edge / Chrome ecosystem via WebView2's extension APIs.
-* **Enhanced Tracker & Telemetry Neutralization**:
-  * Expand Runic Shield to deep telemetry interception and real-time HUD analytics.
+#### Sacred Shield Mastery & YouTube Adblocking Engine (`adblocker.rs`, `tab_manager.rs`, `SecurityWardWidget.tsx`)
+* **Brave `adblock` (v0.13.3) Native Rust Integration**:
+  * Integrated Brave Software's official native Rust adblocking engine ([`adblocker.rs`](file:///d:/Projects/Mimir/src-rust/src/adblocker.rs)) with built-in EasyList, EasyPrivacy, and uBlock-grade rule matching.
+  * Native sub-millisecond network URL classification with DATrie and Bloom filter indexing.
+* **Dedicated YouTube Adblock Sentinel**:
+  * **Player Response Sanitization**: Intercepts `window.ytInitialPlayerResponse` and `/youtubei/v1/player` JSON payloads to strip `adPlacements` and `adSlots` before video players can instantiate.
+  * **Zero-Second Fast-Forward Watchdog**: Instantly mutes and fast-forwards (`video.currentTime = video.duration`) any stream ads that slipstream in, auto-clicking skip buttons.
+  * **Anti-Adblock Enforcement Neutralizer**: Removes YouTube's anti-adblock modals (`ytd-enforcement-message-view-model`) and backdrop overlays, restoring normal playback and scroll behavior.
+  * **Cosmetic YouTube Eradication**: Injects custom CSS hiding masthead ads, in-feed sponsored recommendations, and overlay banners.
+* **Universal Cosmetic Ad Element Hiding**: Suppresses standard banner slots, ad containers, and sponsored blocks (`.ad-banner`, `[id^="google_ads_"]`, `.trc_related_container`, etc.) across all web domains.
+* **Security Ward HUD Integration**: Updated [`SecurityWardWidget.tsx`](file:///d:/Projects/Mimir/src/components/mimisbrunnr/SecurityWardWidget.tsx) with dedicated YouTube Sentinel indicators and live blocked telemetry.
 
-#### Mythic Installer Overhaul & Visual Ascendance
-* **Total Thematic Overhaul**:
-  * Re-architect the installation experience into a stunning, fully Norse-themed setup interface matching Mímir's Obsidian Glass design language.
-* **Dynamic Component Sizing**:
-  * Real-time installation footprint calculation and UI updates based on active component selections (Core Browser ~16 MB vs. Living Realm Video Pack ~88.5 MB).
-* **Animated Runic Installation Sequence**:
-  * Repurpose Mímir's animated splash screen and ambient soundscapes/particles into an interactive, visually impressive installation workflow.
+#### Mythic Installer Overhaul (`installer.rs`, `installer_ui.html`, `release.yml`)
+* **100% Native Rust & WebView2 Architecture**: Completely replaced legacy NSIS installer with an Obsidian Glass, hardware-accelerated desktop setup application ([`installer.rs`](file:///d:/Projects/Mimir/src-rust/src/bin/installer.rs)).
+* **Real-Time Storage Telemetry**: Live volume capacity calculation via Win32 `GetDiskFreeSpaceExW` showing available drive space and dynamic capacity utilization meters.
+* **Dynamic Reactive Component Sizing**: Real-time calculation and animation of required installation footprint when selecting or deselecting Core Sanctuary vs. Living Cinematic Video Realms Pack (`16.5 MB` ➔ `105.1 MB`).
+* **Repurposed Animated Splash**: Displays a rotating Vegvísir runic compass, pulsing `ᛗ` rune, and ambient particle simulations during extraction and download phases.
+* **Automated System Registry Integration**: Automatically registers uninstall entries in Windows Add/Remove Programs and copies self as `uninstall.exe`.
 
 ---
 

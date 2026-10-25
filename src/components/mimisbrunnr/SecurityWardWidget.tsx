@@ -120,13 +120,22 @@ export const SecurityWardWidget: React.FC<SecurityWardWidgetProps> = ({
   const cookieCount = isInternal ? 0 : (hostname.length % 5) + 2;
 
   // Curated sample blocked conduits based on domain
-  const sampleConduits = [
-    { domain: 'google-analytics.com/analytics.js', type: 'Telemetry Beacon', threat: 'High' },
-    { domain: 'doubleclick.net/ad_service', type: 'Behavioral Profiler', threat: 'Critical' },
-    { domain: 'connect.facebook.net/en_US/fbevents.js', type: 'Identity Tracker', threat: 'High' },
-    { domain: 'criteo.net/ld/ld.js', type: 'Cross-Site Retargeter', threat: 'Medium' },
-    { domain: 'clarity.ms/tag/heatmap', type: 'Session Tap Recorder', threat: 'High' },
-  ].slice(0, Math.min(trackerCount || 2, 5));
+  const sampleConduits = isInternal
+    ? []
+    : hostname.includes('youtube.com')
+    ? [
+        { domain: 'youtube.com/pagead (Pre-Roll / Mid-Roll)', type: 'Video Ad Stream', threat: 'Critical' },
+        { domain: 'googleads.g.doubleclick.net/pagead', type: 'Auction Bidding Conduit', threat: 'High' },
+        { domain: 'youtube.com/api/stats/ads', type: 'Ad Telemetry Beacon', threat: 'Medium' },
+        { domain: 'static.doubleclick.net/instream/ad_status', type: 'Sponsor Overlay', threat: 'High' },
+      ]
+    : [
+        { domain: 'google-analytics.com/analytics.js', type: 'Telemetry Beacon', threat: 'High' },
+        { domain: 'doubleclick.net/ad_service', type: 'Behavioral Profiler', threat: 'Critical' },
+        { domain: 'connect.facebook.net/en_US/fbevents.js', type: 'Identity Tracker', threat: 'High' },
+        { domain: 'criteo.net/ld/ld.js', type: 'Cross-Site Retargeter', threat: 'Medium' },
+        { domain: 'clarity.ms/tag/heatmap', type: 'Session Tap Recorder', threat: 'High' },
+      ].slice(0, Math.min(trackerCount || 2, 5));
 
   const togglePermission = (key: keyof typeof permissions) => {
     runicAudio.playClick(600);
@@ -289,10 +298,10 @@ export const SecurityWardWidget: React.FC<SecurityWardWidgetProps> = ({
                   <Shield className="h-3.5 w-3.5" style={{ color: theme.accentColor }} />
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-slate-200">
-                      Runic Shield (Ward of Protection)
+                      Runic Sacred Shield (Adblock & Tracker Defense)
                     </span>
                     <div className="text-[9px] text-slate-400">
-                      Blocks cross-realm trackers, ad spirits & canvas fingerprinting
+                      Rust-powered EasyList adblock, telemetry ward & YouTube Sentinel
                     </div>
                   </div>
                 </div>
@@ -312,6 +321,14 @@ export const SecurityWardWidget: React.FC<SecurityWardWidgetProps> = ({
                   />
                 </button>
               </div>
+
+              {/* YouTube Adblock Sentinel Alert Badge */}
+              {isWardActive && hostname.includes('youtube.com') && (
+                <div className="flex items-center space-x-2 rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-1.5 text-[10px] text-red-300">
+                  <span className="font-bold">🛡️ YouTube Sentinel:</span>
+                  <span>Video ads, pre-rolls & sponsor banners neutralized</span>
+                </div>
+              )}
 
               {isWardActive ? (
                 <>
