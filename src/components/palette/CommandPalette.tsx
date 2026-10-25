@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { RealmId } from '@/types';
+import { RealmId, SanctumBackdropMode } from '@/types';
 import { REALMS } from '@/core/realms';
 import { REALM_THEMES } from '@/components/themes/realmThemes';
 import { runicAudio } from '@/core/audio/runicAudio';
@@ -37,6 +37,7 @@ import {
   PanelRight,
   Zap,
   Radio,
+  Film,
 } from 'lucide-react';
 
 export interface CommandItem {
@@ -80,6 +81,8 @@ interface CommandPaletteProps {
   onRestoreValhalla?: () => void;
   onOpenSwarm?: () => void;
   onOpenTurbo?: () => void;
+  sanctumMode?: SanctumBackdropMode;
+  onCycleSanctumMode?: () => void;
   isAnimatedBackground?: boolean;
   onToggleAnimatedRealms?: () => void;
 }
@@ -114,6 +117,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onRestoreValhalla,
   onOpenSwarm,
   onOpenTurbo,
+  sanctumMode = 'particles',
+  onCycleSanctumMode,
   isAnimatedBackground = true,
   onToggleAnimatedRealms,
 }) => {
@@ -268,15 +273,18 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         action: onToggleAmbient,
       },
       {
-        id: 'toggle-animated-realms',
+        id: 'cycle-sanctum-mode',
         category: 'Viewports & Tools',
-        title: isAnimatedBackground
-          ? 'Atmospheric Realms: Switch to Static Artwork'
-          : 'Atmospheric Realms: Awaken Animated Drift & Particles',
-        description: 'Toggle dynamic Ken Burns breathing drift and realm-specific atmospheric particle simulations (Option A)',
+        title:
+          sanctumMode === 'video'
+            ? 'Sanctum Visuals: Cinematic Video (Cycle to Living Particles)'
+            : sanctumMode === 'particles'
+            ? 'Sanctum Visuals: Living Particles (Cycle to Static Artwork)'
+            : 'Sanctum Visuals: Static Artwork (Cycle to Cinematic Video)',
+        description: 'Cycle between Hardware-Accelerated Looping Video, Canvas Particle Drift, and Pure Static Artwork',
         rune: 'ᛞ',
-        icon: Sparkles,
-        action: () => onToggleAnimatedRealms?.(),
+        icon: sanctumMode === 'video' ? Film : Sparkles,
+        action: () => (onCycleSanctumMode ? onCycleSanctumMode() : onToggleAnimatedRealms?.()),
       },
 
       // Security, Wards & Browser Operations

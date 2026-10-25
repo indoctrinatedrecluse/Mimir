@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Added
+
+#### Option B: Cinematic Living Video Realms & Sovereign Ruler Animations (`RealmVideoBackdrop.tsx`, `forge_realm_videos.py`)
+* **Animated Sovereign Realm Rulers**:
+  * Sovereign rulers now breathe, focus, and exert their cosmic domain powers in mathematically seamless looping H.264 video backdrops:
+    * **Surtr (Muspelheim)**: Volcanic glow pulses, rising twilight heat distortion waves, and leaping fire motes.
+    * **Odin (Asgard)**: Celestial auroral god-rays, golden luminescence shimmer, and Gungnir divine resonance.
+    * **Níðhöggr (Niflheim)**: Drifting toxic frost fog, icy cyan mist veils, and glacial chill breathing.
+    * **Hel (Helheim)**: Undulating spectral soul flames and eerie phosphorescent emerald green radiance.
+    * **Brokkr (Nidavellir)**: Rhythmic forge bellows breathing and molten bronze thermal warmth.
+    * **Laufey (Jotunheim)**: Frost Giantess freezing breath with swirling sub-zero blizzard drifts.
+    * **Freya (Vanaheim)**: Lush floral golden vitality and living nature energy pulses.
+    * **Freyr (Alfheim)**: Crystalline solar brilliance and light-elf starlight glimmer.
+    * **Heimdall (Midgard)**: Bifröst prism light shimmer and watchful guardian eye gleams.
+* **Tri-Mode Sanctum Engine (`'video' | 'particles' | 'static'`)**:
+  * Seamless three-way cycling between **Option B** (Cinematic Video), **Option A** (Living Particles & Ken Burns drift), and **Static Artwork** (zero-motion distraction-free mode).
+  * Direct one-click toggle in the bottom realm bar (`SANCTUM: VIDEO (ᚠ) ➔ PARTICLES (ᛋ) ➔ STATIC (ᛏ)`), inside the Realm Gateway modal (`RealmSelector.tsx`), and through the Hliðskjálf Command Palette (`Ctrl+K` ➔ `Sanctum Visuals`).
+  * State persists across sessions via `localStorage` (`'mimir_sanctum_mode'`).
+* **Hardware-Accelerated Dual-Buffered Player (`RealmVideoBackdrop.tsx`)**:
+  * Hardware-accelerated `<video>` playback with `autoPlay loop muted playsInline preload="auto"`.
+  * **Conduit & Visibility Sentinels**: Video automatically halts when windows/tabs are hidden or when browsing live web conduits, conserving battery and GPU compute.
+  * **Zero-Downtime Fallback**: Pre-renders underlying static artwork and automatically activates Option A particle simulation if video assets are missing, preventing any blank screens or visual glitches.
+* **Procedural Cinema Forge Engine (`scripts/forge_realm_videos.py`)**:
+  * Standalone Python + OpenCV script generating mathematically seamless ($t=0 \equiv t=1$) looping H.264 MP4 videos for all 9 realms using OpenH264 encoding.
+* **Model A Distribution Architecture**:
+  * Core repository and git history remain lean (~10MB) by ignoring large binary `.mp4` video files.
+  * Users and developers can forge high-definition video loops on-demand via `python scripts/forge_realm_videos.py --realm all`.
+
+---
+
 ## [0.6.0] - 2026-10-24 *(Animated Realm Sanctums & Command Palette Universal Integration)*
 
 This release elevates Mímir's sensory and mythological experience with living, animated theme backgrounds and brings universal command palette accessibility across all newly added browser systems.

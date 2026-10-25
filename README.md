@@ -203,9 +203,28 @@ graph TD
   - Quick-toggle button in the bottom realm switcher bar (`MOTION: ON / STATIC`) and `Ctrl+K` command for instant switching.
   - Zero performance footprint: 0 MB added download bloat, auto-pausing on tab/window hide, and `prefers-reduced-motion` compliance.
 - [x] **Hliðskjálf Command Palette Universal Integration**:
-  - Direct keyboard accessibility for Naglfar Swarm (`Ctrl+Shift+U`), Bifröst Turbo (`Ctrl+Shift+J`), Reader Sanctum (`Alt+R`), Runic Sidecar (`Ctrl+B`), Valhalla Revival, and Atmospheric Realms.
-- [x] **Future Visual Upgrade Roadmap (Option B)**:
-  - *Roadmap*: Future major iterations will introduce **Option B: Seamless Looping Cinematic Generative Video Backgrounds** with user-selectable Video / Particle FX / Static modes.
+  - Direct keyboard accessibility for Naglfar Swarm (`Ctrl+Shift+U`), Bifröst Turbo (`Ctrl+Shift+J`), Reader Sanctum (`Alt+R`), Runic Sidecar (`Ctrl+B`), Valhalla Revival, and Sanctum Visuals.
+
+### Phase 8: Living Cinematic Video Realms & Tri-Mode Engine *(Option B & Model A)*
+- [x] **Living Sovereign Ruler Animations (Option B)**:
+  - High-definition seamless looping H.264 video backdrops for all Nine Realms with sovereign rulers animated in their mythological domains:
+    - *Surtr*: Twilight heat distortion waves and volcanic magma pulses.
+    * *Odin*: Shimmering celestial auroras, Gungnir golden resonance, and god-rays.
+    * *Níðhöggr*: Venomous frost mists, glacial chill, and swirling cyan dragon vapors.
+    * *Hel*: Undulating spectral soul flames and ghost-green phosphorescence.
+    * *Brokkr*: Rhythmic forge bellows breathing and molten bronze warmth.
+    * *Laufey*: Sub-zero blizzard gusts and freezing frost giantess breath.
+    * *Freya*: Golden Vanir vitality, nature pulses, and lush floral luminescence.
+    * *Freyr*: Solar crystal radiance and elf starlight shimmer.
+    * *Heimdall*: Bifröst prism light waves and watchful golden eye gleams.
+- [x] **Tri-Mode Sanctum Engine**:
+  - Seamless three-way cycling: **Option B (Video ᚠ)** ➔ **Option A (Particles ᛋ)** ➔ **Static Artwork (ᛏ)**.
+  - Zero-waste preservation of both dynamic particle canvas and classic high-res static backdrops.
+  - One-click cycling in the bottom realm bar, inside Realm Gateway modal, and via `Ctrl+K`.
+  - Automatic visibility and conduit sentinels pausing video on hidden tabs or live web browsing to conserve GPU/battery.
+- [x] **Model A Distribution Architecture & Cinema Forge**:
+  - Core repository remains lean (~10MB) by omitting binary `.mp4` files from git tracking.
+  - Bundled procedural generator script (`python scripts/forge_realm_videos.py --realm all`) to forge seamless loops offline anytime.
 
 ---
 

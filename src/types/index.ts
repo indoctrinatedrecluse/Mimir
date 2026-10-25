@@ -9,6 +9,8 @@ export type RealmId =
   | 'nidavellir'  // Extensions / WebAssembly / Forges
   | 'helheim';    // Stealth / Ephemeral / Underworld
 
+export type SanctumBackdropMode = 'video' | 'particles' | 'static';
+
 export interface Realm {
   id: RealmId;
   name: string;
@@ -19,6 +21,7 @@ export interface Realm {
   description: string;
   accentColor: string;
   bgUrl: string;
+  videoUrl?: string;
   quote: string;
 }
 

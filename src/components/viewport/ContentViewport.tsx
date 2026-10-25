@@ -7,9 +7,11 @@ import { REALM_THEMES } from '@/components/themes/realmThemes';
 import { YggdrasilRootsSvg, ValknutSvg, AegishjalmrSvg } from '@/components/themes/NorsePatterns';
 import { MimirSigil } from '@/components/brand/MimirSigil';
 import { getRandomHavamal, HavamalStanza } from '@/core/havamal';
-import { Compass, Sparkles, Globe, Terminal, Shield, BookOpen, RefreshCw, Feather, Flame, Search, Columns, ArrowLeftRight, X, Plus, Layers } from 'lucide-react';
+import { Compass, Sparkles, Globe, Terminal, Shield, BookOpen, RefreshCw, Feather, Flame, Search, Columns, ArrowLeftRight, X, Plus, Layers, Film } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { RealmAtmosphereCanvas } from '@/components/themes/RealmAtmosphereCanvas';
+import { RealmVideoBackdrop } from '@/components/themes/RealmVideoBackdrop';
+import { SanctumBackdropMode } from '@/types';
 
 interface ContentViewportProps {
   activeTab?: Tab;
@@ -23,6 +25,8 @@ interface ContentViewportProps {
   onCloseSplitGaze?: () => void;
   onSwapSplitTabs?: () => void;
   onNewTabInSplit?: (realm: RealmId) => void;
+  sanctumMode?: SanctumBackdropMode;
+  onCycleSanctumMode?: () => void;
   isAnimatedBackground?: boolean;
   onToggleAnimatedBackground?: () => void;
 }
@@ -46,6 +50,8 @@ export const ContentViewport: React.FC<ContentViewportProps> = ({
   onCloseSplitGaze,
   onSwapSplitTabs,
   onNewTabInSplit,
+  sanctumMode = 'particles',
+  onCycleSanctumMode,
   isAnimatedBackground = true,
   onToggleAnimatedBackground,
 }) => {
@@ -54,6 +60,7 @@ export const ContentViewport: React.FC<ContentViewportProps> = ({
   const [havamal, setHavamal] = useState<HavamalStanza>(getRandomHavamal());
   const [searchQuery, setSearchQuery] = useState('');
 
+  const currentMode: SanctumBackdropMode = sanctumMode || (isAnimatedBackground ? 'particles' : 'static');
   const realm = REALMS[activeRealm];
   const theme = REALM_THEMES[activeRealm] || REALM_THEMES.midgard;
 
@@ -108,28 +115,39 @@ export const ContentViewport: React.FC<ContentViewportProps> = ({
 
   const renderSanctum = (tab?: Tab, r = realm, th = theme, isPrimary = true) => (
     <div className="relative flex h-full w-full flex-col items-center justify-between p-6 overflow-y-auto z-10">
-      {/* Realm Ruler Cinematic Background Image with Atmospheric Vignette (Sharp & Prominent) */}
-      <div
-        className={`absolute inset-0 z-0 bg-cover bg-center transition-all duration-1000 ${
-          isAnimatedBackground ? 'animate-realm-drift' : 'scale-100'
-        }`}
-        style={{
-          backgroundImage: `url('${r.bgUrl}')`,
-        }}
-      >
-        {/* Soft radial vignette keeping the center ruler sharp & vibrant while dimming edges */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_20%,rgba(4,7,17,0.35)_60%,rgba(3,5,10,0.85)_100%)] pointer-events-none" />
-        {/* Subtle vertical gradient for header and bottom controls */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#030611]/50 via-transparent to-[#020408]/75 pointer-events-none" />
-        {/* Subtle realm accent color glow */}
-        <div
-          className="absolute inset-0 opacity-15 mix-blend-color-dodge transition-opacity duration-700 pointer-events-none"
-          style={{ backgroundColor: th.accentColor }}
+      {/* Sanctum Backdrop Layer: Tri-State Engine (Option B: Video / Option A: Particles / Static) */}
+      {currentMode === 'video' ? (
+        <RealmVideoBackdrop
+          realmId={r.id}
+          videoUrl={r.videoUrl}
+          staticBgUrl={r.bgUrl}
+          isActive={isPrimary ? isHome : isSplitHome}
         />
-      </div>
+      ) : (
+        <>
+          <div
+            className={`absolute inset-0 z-0 bg-cover bg-center transition-all duration-1000 ${
+              currentMode === 'particles' ? 'animate-realm-drift' : 'scale-100'
+            }`}
+            style={{
+              backgroundImage: `url('${r.bgUrl}')`,
+            }}
+          >
+            {/* Soft radial vignette keeping the center ruler sharp & vibrant while dimming edges */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_20%,rgba(4,7,17,0.35)_60%,rgba(3,5,10,0.85)_100%)] pointer-events-none" />
+            {/* Subtle vertical gradient for header and bottom controls */}
+            <div className="absolute inset-0 bg-gradient-to-b from-[#030611]/50 via-transparent to-[#020408]/75 pointer-events-none" />
+            {/* Subtle realm accent color glow */}
+            <div
+              className="absolute inset-0 opacity-15 mix-blend-color-dodge transition-opacity duration-700 pointer-events-none"
+              style={{ backgroundColor: th.accentColor }}
+            />
+          </div>
 
-      {/* Atmospheric Realm Canvas Particle Simulation (Option A) */}
-      <RealmAtmosphereCanvas realmId={r.id} enabled={isAnimatedBackground} />
+          {/* Atmospheric Realm Canvas Particle Simulation (Option A) */}
+          <RealmAtmosphereCanvas realmId={r.id} enabled={currentMode === 'particles'} />
+        </>
+      )}
 
       {/* Background Decorative Layer: Yggdrasil Roots & Ambient Knotwork */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
@@ -396,20 +414,39 @@ export const ContentViewport: React.FC<ContentViewportProps> = ({
           );
         })}
 
-        {/* Animated vs Static Realm Backdrop Mode Toggle */}
-        {onToggleAnimatedBackground && (
+        {/* Tri-Mode Backdrop Selector: Video ➔ Particles ➔ Static */}
+        {(onCycleSanctumMode || onToggleAnimatedBackground) && (
           <button
-            onClick={onToggleAnimatedBackground}
+            onClick={() => {
+              if (onCycleSanctumMode) onCycleSanctumMode();
+              else onToggleAnimatedBackground?.();
+            }}
             className="ml-2 flex items-center space-x-1.5 rounded-lg border bg-black/40 px-2.5 py-1 text-[10px] font-mono transition-all hover:bg-black/60 shadow-md backdrop-blur-md"
             style={{
-              borderColor: isAnimatedBackground ? `${th.accentColor}60` : 'rgba(255,255,255,0.12)',
-              color: isAnimatedBackground ? th.accentColor : '#94a3b8',
-              boxShadow: isAnimatedBackground ? `0 0 12px ${th.glowColor}` : undefined,
+              borderColor: currentMode !== 'static' ? `${th.accentColor}60` : 'rgba(255,255,255,0.12)',
+              color: currentMode !== 'static' ? th.accentColor : '#94a3b8',
+              boxShadow: currentMode !== 'static' ? `0 0 12px ${th.glowColor}` : undefined,
             }}
-            title={isAnimatedBackground ? 'Switch to Static Realm Artwork' : 'Awaken Animated Drift & Particle Simulation (Option A)'}
+            title={
+              currentMode === 'video'
+                ? 'Active Mode: Cinematic Video (Click to cycle to Living Particles)'
+                : currentMode === 'particles'
+                ? 'Active Mode: Living Particles & Drift (Click to cycle to Static Artwork)'
+                : 'Active Mode: Static Artwork (Click to cycle to Cinematic Video)'
+            }
           >
-            <Sparkles className="h-3 w-3" />
-            <span>{isAnimatedBackground ? 'MOTION: ON' : 'MOTION: STATIC'}</span>
+            {currentMode === 'video' ? (
+              <Film className="h-3 w-3" />
+            ) : (
+              <Sparkles className="h-3 w-3" />
+            )}
+            <span>
+              {currentMode === 'video'
+                ? 'SANCTUM: VIDEO (ᚠ)'
+                : currentMode === 'particles'
+                ? 'SANCTUM: PARTICLES (ᛋ)'
+                : 'SANCTUM: STATIC (ᛏ)'}
+            </span>
           </button>
         )}
       </div>

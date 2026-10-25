@@ -31,3 +31,8 @@ Thumbs.db
 [Dd]esktop.ini
 $RECYCLE.BIN/
 .DS_Store
+
+# Model A: Modular On-Demand Cinematic Realm Videos
+public/realms/videos/*.mp4
+public/realms/videos/*.webm
+!public/realms/videos/.gitkeep

@@ -11,6 +11,7 @@ export const REALMS: Record<RealmId, Realm> = {
     description: 'The Mortal Sphere — Everyday Navigation, Public Web & Bifröst Gateway',
     accentColor: '#00f5ff', // Bifröst Cyan
     bgUrl: '/realms/midgard.jpg',
+    videoUrl: '/realms/videos/midgard.mp4',
     quote: 'He hears the grass grow in the ground and wool upon the sheep.',
   },
   asgard: {
@@ -23,6 +24,7 @@ export const REALMS: Record<RealmId, Realm> = {
     description: 'The Golden Citadel — Deep Engineering, Research, Documentation & Code',
     accentColor: '#fbbf24', // Valhalla Gold
     bgUrl: '/realms/asgard.jpg',
+    videoUrl: '/realms/videos/asgard.mp4',
     quote: 'Gaze upon the nine worlds from Hliðskjálf; eternal wisdom demands its sacrifice.',
   },
   vanaheim: {
@@ -35,6 +37,7 @@ export const REALMS: Record<RealmId, Realm> = {
     description: 'The Verdant Realm — Media, Streaming, High-Fidelity Audio & Nature',
     accentColor: '#10b981', // Vanir Emerald
     bgUrl: '/realms/vanaheim.jpg',
+    videoUrl: '/realms/videos/vanaheim.mp4',
     quote: 'The wild magic of the Vanir breathes golden warmth into song and vision.',
   },
   alfheim: {
@@ -47,6 +50,7 @@ export const REALMS: Record<RealmId, Realm> = {
     description: 'The Luminous Sanctuary — Typography, Design, Minimalist Reading & Art',
     accentColor: '#38bdf8', // Luminous Frost Blue
     bgUrl: '/realms/alfheim.jpg',
+    videoUrl: '/realms/videos/alfheim.mp4',
     quote: 'Clear crystal light banishes every shadow and sharpens the intellect.',
   },
   jotunheim: {
@@ -59,6 +63,7 @@ export const REALMS: Record<RealmId, Realm> = {
     description: 'The Glacial Peaks — Cold Storage, Archives, Data Heavyweight & Caches',
     accentColor: '#93c5fd', // Glacial Frost Ice
     bgUrl: '/realms/jotunheim.jpg',
+    videoUrl: '/realms/videos/jotunheim.mp4',
     quote: 'Ancient glaciers endure unbroken long after empires crumble into snow.',
   },
   muspelheim: {
@@ -71,6 +76,7 @@ export const REALMS: Record<RealmId, Realm> = {
     description: 'The Primordial Fire Forge — High-Performance Cloud Gaming & 3D WebGL',
     accentColor: '#f43f5e', // Primordial Ember
     bgUrl: '/realms/muspelheim.jpg',
+    videoUrl: '/realms/videos/muspelheim.mp4',
     quote: 'His flaming sword blazes brighter than the noon sun across the cosmos.',
   },
   niflheim: {
@@ -83,6 +89,7 @@ export const REALMS: Record<RealmId, Realm> = {
     description: 'The Realm of Mists — Deep Network Analysis, DevTools, Threat Probing & Proxies',
     accentColor: '#67e8f9', // Toxic Venom Mist
     bgUrl: '/realms/niflheim.jpg',
+    videoUrl: '/realms/videos/niflheim.mp4',
     quote: 'Beneath the sacred roots of Yggdrasil, the ancient dragon watches through the fog.',
   },
   nidavellir: {
@@ -95,6 +102,7 @@ export const REALMS: Record<RealmId, Realm> = {
     description: 'The Underground Forges — Extensions, Custom Scripts, WebAssembly & Compilers',
     accentColor: '#f97316', // Molten Bronze Anvil
     bgUrl: '/realms/nidavellir.jpg',
+    videoUrl: '/realms/videos/nidavellir.mp4',
     quote: 'Strike the anvil while the furnace roars; relics of legendary power take form.',
   },
   helheim: {
@@ -107,6 +115,7 @@ export const REALMS: Record<RealmId, Realm> = {
     description: 'The Shadow Realm — Zero-Trace Incognito, Ephemeral Identity & Ghost Shield',
     accentColor: '#c084fc', // Spectral Amethyst
     bgUrl: '/realms/helheim.jpg',
+    videoUrl: '/realms/videos/helheim.mp4',
     quote: 'No footprint lingers in the hall of mist; all traces perish at the iron gates.',
   },
 };

@@ -6,7 +6,7 @@ import { ContentViewport } from '@/components/viewport/ContentViewport';
 import { StatusBar } from '@/components/hud/StatusBar';
 import { RunicAtmosphere } from '@/components/hud/RunicAtmosphere';
 import { SplashScreen } from '@/components/splash/SplashScreen';
-import { Tab, RealmId, DownloadItem, TorrentItem } from '@/types';
+import { Tab, RealmId, DownloadItem, TorrentItem, SanctumBackdropMode } from '@/types';
 import { runicAudio } from '@/core/audio/runicAudio';
 import { mimirIpc, NativeContextMenuEvent } from '@/core/ipc/bridge';
 import { AnimatePresence } from 'framer-motion';
@@ -108,23 +108,32 @@ export const App: React.FC = () => {
   const [sidecarWidth, setSidecarWidth] = useState(340);
   const [isReaderSanctumOpen, setIsReaderSanctumOpen] = useState(false);
 
-  // Animated Realm Backgrounds (Option A)
-  const [isAnimatedBackground, setIsAnimatedBackground] = useState<boolean>(() => {
+  // Tri-State Sanctum Engine (Option B: Video | Option A: Particles | Static)
+  const [sanctumMode, setSanctumMode] = useState<SanctumBackdropMode>(() => {
     try {
-      const stored = localStorage.getItem('mimir_animated_realms');
-      return stored !== null ? stored === 'true' : true;
+      const stored = localStorage.getItem('mimir_sanctum_mode');
+      if (stored === 'video' || stored === 'particles' || stored === 'static') {
+        return stored;
+      }
+      const legacy = localStorage.getItem('mimir_animated_realms');
+      if (legacy === 'false') return 'static';
+      return 'video';
     } catch {
-      return true;
+      return 'video';
     }
   });
 
-  const handleToggleAnimatedRealms = () => {
-    setIsAnimatedBackground((prev) => {
-      const next = !prev;
+  const handleCycleSanctumMode = () => {
+    setSanctumMode((prev) => {
+      let next: SanctumBackdropMode;
+      if (prev === 'video') next = 'particles';
+      else if (prev === 'particles') next = 'static';
+      else next = 'video';
+
       try {
-        localStorage.setItem('mimir_animated_realms', String(next));
+        localStorage.setItem('mimir_sanctum_mode', next);
       } catch {}
-      runicAudio.playClick(next ? 880 : 540);
+      runicAudio.playClick(next === 'video' ? 920 : next === 'particles' ? 740 : 520);
       return next;
     });
   };
@@ -969,8 +978,8 @@ const formatEtaSeconds = (secs: number): string => {
             setSplitTabId(currentActive);
             runicAudio.playClick(650);
           }}
-          isAnimatedBackground={isAnimatedBackground}
-          onToggleAnimatedBackground={handleToggleAnimatedRealms}
+          sanctumMode={sanctumMode}
+          onCycleSanctumMode={handleCycleSanctumMode}
         />
 
         {/* Persistent Runic Sidecar (Scratchpad, Huginn AI, Telemetry) */}
@@ -997,6 +1006,8 @@ const formatEtaSeconds = (secs: number): string => {
           activeRealm={activeRealm}
           onSelectRealm={handleSelectRealm}
           onClose={() => setIsRealmSelectorOpen(false)}
+          sanctumMode={sanctumMode}
+          onCycleSanctumMode={handleCycleSanctumMode}
         />
 
         {/* Overlay 2: Muninn's Memory Vault (Runestones & History) */}
@@ -1074,8 +1085,8 @@ const formatEtaSeconds = (secs: number): string => {
             const auto = sessionManager.getAutoSavedSession();
             if (auto) handleRestoreSession(auto);
           }}
-          isAnimatedBackground={isAnimatedBackground}
-          onToggleAnimatedRealms={handleToggleAnimatedRealms}
+          sanctumMode={sanctumMode}
+          onCycleSanctumMode={handleCycleSanctumMode}
         />
 
         {/* Overlay 6: Rune Seeker (Find in Page) */}

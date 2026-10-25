@@ -1,15 +1,17 @@
 import React from 'react';
-import { RealmId } from '@/types';
+import { RealmId, SanctumBackdropMode } from '@/types';
 import { REALMS } from '@/core/realms';
 import { runicAudio } from '@/core/audio/runicAudio';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X, Film, Sparkles } from 'lucide-react';
 
 interface RealmSelectorProps {
   isOpen: boolean;
   activeRealm: RealmId;
   onSelectRealm: (realm: RealmId) => void;
   onClose: () => void;
+  sanctumMode?: SanctumBackdropMode;
+  onCycleSanctumMode?: () => void;
 }
 
 export const RealmSelector: React.FC<RealmSelectorProps> = ({
@@ -17,6 +19,8 @@ export const RealmSelector: React.FC<RealmSelectorProps> = ({
   activeRealm,
   onSelectRealm,
   onClose,
+  sanctumMode = 'particles',
+  onCycleSanctumMode,
 }) => {
   return (
     <AnimatePresence>
@@ -55,15 +59,32 @@ export const RealmSelector: React.FC<RealmSelectorProps> = ({
                 </p>
               </div>
 
-              <button
-                onClick={() => {
-                  runicAudio.playClick(400);
-                  onClose();
-                }}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <div className="flex items-center space-x-2">
+                {onCycleSanctumMode && (
+                  <button
+                    onClick={onCycleSanctumMode}
+                    className="flex items-center space-x-1.5 rounded-lg border bg-black/40 px-3 py-1.5 text-xs font-mono transition-all hover:bg-black/60 shadow"
+                    style={{
+                      borderColor: sanctumMode !== 'static' ? '#00f5ff50' : 'rgba(255,255,255,0.12)',
+                      color: sanctumMode !== 'static' ? '#00f5ff' : '#94a3b8',
+                    }}
+                    title="Cycle Backdrop Mode: Video ➔ Particles ➔ Static"
+                  >
+                    {sanctumMode === 'video' ? <Film className="h-3.5 w-3.5" /> : <Sparkles className="h-3.5 w-3.5" />}
+                    <span>{sanctumMode === 'video' ? 'MODE: VIDEO (ᚠ)' : sanctumMode === 'particles' ? 'MODE: PARTICLES (ᛋ)' : 'MODE: STATIC (ᛏ)'}</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={() => {
+                    runicAudio.playClick(400);
+                    onClose();
+                  }}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
             {/* Realms Grid (3 columns x 3 rows) */}
