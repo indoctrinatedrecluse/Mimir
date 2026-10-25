@@ -6,12 +6,14 @@ import { REALMS } from '@/core/realms';
 import { REALM_THEMES } from '@/components/themes/realmThemes';
 import { NorseKnotworkRibbon, ValknutSvg, AegishjalmrSvg } from '@/components/themes/NorsePatterns';
 import { MimirSigil } from '@/components/brand/MimirSigil';
-import { Minus, Square, X, Compass, Sliders } from 'lucide-react';
+import { Minus, Square, X, Compass, Sliders, Disc3 } from 'lucide-react';
 
 interface TitleBarProps {
   activeRealm: RealmId;
   onOpenRealmSelector: () => void;
   onOpenSettings?: () => void;
+  onToggleMediaHud?: () => void;
+  isMediaActive?: boolean;
   isMaximized?: boolean;
 }
 
@@ -19,6 +21,8 @@ export const TitleBar: React.FC<TitleBarProps> = ({
   activeRealm,
   onOpenRealmSelector,
   onOpenSettings,
+  onToggleMediaHud,
+  isMediaActive = false,
   isMaximized = false,
 }) => {
   const currentRealm = REALMS[activeRealm];
@@ -155,6 +159,22 @@ export const TitleBar: React.FC<TitleBarProps> = ({
 
       {/* Right: Window Controls */}
       <div className="relative z-10 flex items-center space-x-1">
+        {/* Floating Rune Media HUD Trigger */}
+        <button
+          onClick={() => {
+            runicAudio.playClick(800);
+            onToggleMediaHud?.();
+          }}
+          className={`flex h-7 w-8 items-center justify-center rounded-sm transition-all active:scale-95 ${
+            isMediaActive
+              ? 'text-cyan-300 bg-cyan-500/15 hover:bg-cyan-500/25 shadow-[0_0_10px_rgba(34,211,238,0.4)]'
+              : 'text-slate-400 hover:bg-white/10 hover:text-slate-200'
+          }`}
+          title="Floating Rune: Global Media HUD & Equalizer (Ctrl+Shift+M)"
+        >
+          <Disc3 className={`h-3.5 w-3.5 ${isMediaActive ? 'animate-spin' : ''}`} style={{ animationDuration: '4s' }} />
+        </button>
+
         <button
           onClick={() => {
             runicAudio.playClick(650);

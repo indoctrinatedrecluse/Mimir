@@ -43,6 +43,7 @@ interface SanctumSettingsModalProps {
   onClose: () => void;
   activeRealm: RealmId;
   onOpenClearData?: () => void;
+  onOpenVault?: () => void;
 }
 
 type SettingsTab = 'search' | 'shield' | 'fingerprint' | 'retention' | 'ai';
@@ -52,6 +53,7 @@ export const SanctumSettingsModal: React.FC<SanctumSettingsModalProps> = ({
   onClose,
   activeRealm,
   onOpenClearData,
+  onOpenVault,
 }) => {
   const [activeTab, setActiveTab] = useState<SettingsTab>('search');
   const [settings, setSettings] = useState<PrivacySettings>(getPrivacySettings);
@@ -221,7 +223,26 @@ export const SanctumSettingsModal: React.FC<SanctumSettingsModalProps> = ({
                 );
               })}
 
-              <div className="pt-6 px-2">
+              {onOpenVault && (
+                <div className="pt-2 px-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      runicAudio.playClick(850);
+                      onOpenVault();
+                    }}
+                    className="flex w-full items-center space-x-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-left text-xs font-bold text-amber-300 hover:bg-amber-500/20 transition-all shadow-[0_0_12px_rgba(245,158,11,0.2)]"
+                  >
+                    <Key className="h-4 w-4 text-amber-400 shrink-0" />
+                    <div className="flex flex-col">
+                      <span>Fafnir's Treasury</span>
+                      <span className="text-[9px] font-mono text-amber-400/80">ᛞ Password Vault</span>
+                    </div>
+                  </button>
+                </div>
+              )}
+
+              <div className="pt-4 px-2">
                 <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3 text-center">
                   <span className="text-[10px] font-mono uppercase text-slate-400">Active Realm</span>
                   <div className="text-xs font-black capitalize mt-0.5" style={{ color: theme.accentColor }}>

@@ -39,6 +39,11 @@ import {
   Radio,
   Film,
   HelpCircle,
+  Snowflake,
+  Camera,
+  Disc3,
+  Key,
+  Lock,
 } from 'lucide-react';
 
 export interface CommandItem {
@@ -88,6 +93,11 @@ interface CommandPaletteProps {
   isAnimatedBackground?: boolean;
   onToggleAnimatedRealms?: () => void;
   onOpenSettings?: () => void;
+  onHibernateBackgroundTabs?: () => void;
+  onOpenCanvas?: () => void;
+  onToggleMediaHud?: () => void;
+  onToggleBookmarksBar?: () => void;
+  onOpenVault?: () => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
@@ -126,6 +136,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   isAnimatedBackground = true,
   onToggleAnimatedRealms,
   onOpenSettings,
+  onHibernateBackgroundTabs,
+  onOpenCanvas,
+  onToggleMediaHud,
+  onToggleBookmarksBar,
+  onOpenVault,
 }) => {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -303,6 +318,36 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
       // Security, Wards & Browser Operations
       {
+        id: 'toggle-bookmarks-bar',
+        category: 'Viewports & Tools',
+        title: 'Havamal Staves (Toggle Bookmarks Bar)',
+        description: 'Show or hide the quick access runic bookmark ribbon beneath Omnibar',
+        shortcut: 'Ctrl+Shift+B',
+        rune: 'ᛒ',
+        icon: Bookmark,
+        action: () => onToggleBookmarksBar?.(),
+      },
+      {
+        id: 'media-hud',
+        category: 'Viewports & Tools',
+        title: 'Floating Rune: Universal Media HUD & Equalizer',
+        description: 'Command web media, Mjolnir volume boost (300%), and Picture-in-Picture across tabs',
+        shortcut: 'Ctrl+Shift+M',
+        rune: 'ᛊ',
+        icon: Disc3,
+        action: () => onToggleMediaHud?.(),
+      },
+      {
+        id: 'skuld-canvas',
+        category: 'Viewports & Tools',
+        title: "Skuld's Canvas: Capture & Annotate (Screenshot)",
+        description: 'Capture active viewport, crop, inscribe runic arrows, and export artifact',
+        shortcut: 'Ctrl+Shift+S',
+        rune: 'ᛋ',
+        icon: Camera,
+        action: () => onOpenCanvas?.(),
+      },
+      {
         id: 'find-in-page',
         category: 'Viewports & Tools',
         title: 'Rune Seeker (Find in Page)',
@@ -409,6 +454,35 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         rune: 'ᛋ',
         icon: Sliders,
         action: () => onOpenSettings?.(),
+      },
+      {
+        id: 'hibernate-background-tabs',
+        category: 'System & Wards',
+        title: 'Einherjar Slumber: Freeze Background Tabs',
+        description: 'Instantly hibernate all inactive background tabs to reclaim memory',
+        shortcut: 'Alt+Z',
+        rune: 'ᛖ',
+        icon: Snowflake,
+        action: () => onHibernateBackgroundTabs?.(),
+      },
+      {
+        id: 'fafnir-vault',
+        category: 'System & Wards',
+        title: "Fafnir's Treasury (Password Vault & Key Forge)",
+        description: 'Zero-knowledge AES-256-GCM encrypted credential vault & password manager',
+        shortcut: 'Ctrl+Shift+L',
+        rune: 'ᛞ',
+        icon: Key,
+        action: () => onOpenVault?.(),
+      },
+      {
+        id: 'gungnir-generator',
+        category: 'System & Wards',
+        title: 'Gungnir Key Generator (High-Entropy Passphrases)',
+        description: 'Forge cryptographically secure passwords and runic passphrases with entropy analysis',
+        rune: 'ᛏ',
+        icon: Zap,
+        action: () => onOpenVault?.(),
       },
       {
         id: 'purge-data',

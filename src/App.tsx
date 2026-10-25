@@ -30,7 +30,16 @@ const FateThreadPurge = lazy(() => import('@/components/hud/FateThreadPurge').th
 const RunicSidecar = lazy(() => import('@/components/sidecar/RunicSidecar').then((m) => ({ default: m.RunicSidecar })));
 const ReaderSanctum = lazy(() => import('@/components/reader/ReaderSanctum').then((m) => ({ default: m.ReaderSanctum })));
 const SanctumSettingsModal = lazy(() => import('@/components/settings/SanctumSettingsModal').then((m) => ({ default: m.SanctumSettingsModal })));
+const SkuldsCanvasModal = lazy(() => import('@/components/canvas/SkuldsCanvasModal').then((m) => ({ default: m.SkuldsCanvasModal })));
+const FloatingRuneMediaHud = lazy(() => import('@/components/media/FloatingRuneMediaHud').then((m) => ({ default: m.FloatingRuneMediaHud })));
+const FloatingPipMiniPlayer = lazy(() => import('@/components/media/FloatingPipMiniPlayer').then((m) => ({ default: m.FloatingPipMiniPlayer })));
+const FafnirsTreasuryModal = lazy(() => import('@/components/vault/FafnirsTreasuryModal').then((m) => ({ default: m.FafnirsTreasuryModal })));
 import { buildSearchUrl } from '@/core/privacy/privacySettings';
+import { slumberEngine } from '@/core/tabs/slumberEngine';
+import { mediaController } from '@/core/media/mediaController';
+import { bookmarkManager } from '@/core/bookmarks/bookmarkManager';
+import { RunicBookmarksBar } from '@/components/bookmarks/RunicBookmarksBar';
+import { ActiveMediaSession } from '@/types';
 
 const getInitialRealm = (): RealmId => {
   try {
@@ -90,6 +99,10 @@ export const App: React.FC = () => {
   const [hoardInitialTab, setHoardInitialTab] = useState<'artifacts' | 'swarm'>('artifacts');
   const [isClearDataOpen, setIsClearDataOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isCanvasOpen, setIsCanvasOpen] = useState(false);
+  const [isMediaHudOpen, setIsMediaHudOpen] = useState(false);
+  const [isVaultOpen, setIsVaultOpen] = useState(false);
+  const [activeMediaSession, setActiveMediaSession] = useState<ActiveMediaSession | null>(mediaController.getSession());
   const [isSplitGaze, setIsSplitGaze] = useState(false);
   const [splitTabId, setSplitTabId] = useState<string | undefined>('tab-2');
   const [isAmbientPlaying, setIsAmbientPlaying] = useState(runicAudio.isAmbientEnabled());
@@ -180,15 +193,22 @@ export const App: React.FC = () => {
     } catch {}
   }, [torrents]);
 
-  // Persistent bookmarks storage
-  const [bookmarks, setBookmarks] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem('mimir_bookmarked_urls');
-      return saved ? JSON.parse(saved) : ['https://github.com'];
-    } catch {
-      return ['https://github.com'];
-    }
-  });
+  // Persistent Havamal Staves (Bookmarks) synchronized with bookmarkManager
+  const [bookmarks, setBookmarks] = useState<string[]>(() =>
+    bookmarkManager.getBookmarks().map((b) => b.url)
+  );
+
+  useEffect(() => {
+    return bookmarkManager.subscribe((items) => {
+      setBookmarks(items.map((b) => b.url));
+    });
+  }, []);
+
+  const handleToggleBookmark = (url: string) => {
+    if (!url) return;
+    bookmarkManager.toggleBookmark(url, activeTab?.title, activeRealm);
+    runicAudio.playClick(bookmarkManager.isBookmarked(url) ? 900 : 400);
+  };
 
   const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0];
   const splitTab = tabs.find((t) => t.id === splitTabId);
@@ -556,8 +576,14 @@ const formatEtaSeconds = (secs: number): string => {
         runicAudio.playClick(750);
         setIsClearDataOpen((prev) => !prev);
       }
+      // Ctrl+Shift+B: Toggle Havamal Staves (Bookmarks Bar)
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        runicAudio.playClick(600);
+        bookmarkManager.toggleBarVisible();
+      }
       // Ctrl+B: Toggle Runic Sidecar (Persistent Dock)
-      if (e.ctrlKey && e.key.toLowerCase() === 'b') {
+      else if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === 'b') {
         e.preventDefault();
         runicAudio.playClick(600);
         setIsSidecarOpen((prev) => !prev);
@@ -567,6 +593,11 @@ const formatEtaSeconds = (secs: number): string => {
         e.preventDefault();
         runicAudio.playChime();
         setIsReaderSanctumOpen((prev) => !prev);
+      }
+      // Alt+Z: Einherjar Slumber (Hibernate Background Tabs)
+      if (e.altKey && !e.ctrlKey && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        handleHibernateAllBackgroundTabs();
       }
       // Alt+1 to Alt+9: Realm Jump Hotkeys
       if (e.altKey && !e.ctrlKey && !e.shiftKey) {
@@ -596,6 +627,24 @@ const formatEtaSeconds = (secs: number): string => {
         runicAudio.playClick(650);
         setIsSettingsOpen((prev) => !prev);
       }
+      // Ctrl+Shift+S: Skuld's Canvas (Screenshot & Annotate)
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        runicAudio.playChime();
+        setIsCanvasOpen((prev) => !prev);
+      }
+      // Ctrl+Shift+M: Floating Rune (Global Media HUD & Equalizer)
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'm') {
+        e.preventDefault();
+        runicAudio.playClick(800);
+        setIsMediaHudOpen((prev) => !prev);
+      }
+      // Ctrl+Shift+L: Fafnir's Treasury (Password Vault & Key Forge)
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'l') {
+        e.preventDefault();
+        runicAudio.playClick(850);
+        setIsVaultOpen((prev) => !prev);
+      }
       // Esc: Close modals & drawers
       if (e.key === 'Escape') {
         setIsRealmSelectorOpen(false);
@@ -608,6 +657,9 @@ const formatEtaSeconds = (secs: number): string => {
         setIsDownloadsOpen(false);
         setIsClearDataOpen(false);
         setIsSettingsOpen(false);
+        setIsCanvasOpen(false);
+        setIsMediaHudOpen(false);
+        setIsVaultOpen(false);
       }
     };
 
@@ -628,18 +680,99 @@ const formatEtaSeconds = (secs: number): string => {
 
   const handleSelectTab = (id: string) => {
     setTabs((prev) =>
-      prev.map((t) => ({
-        ...t,
-        isActive: t.id === id,
-      }))
+      prev.map((t) => {
+        if (t.id === id) {
+          if (t.isSleeping) {
+            slumberEngine.awakenTab(t);
+            runicAudio.playChime();
+          }
+          return { ...t, isActive: true, isSleeping: false, lastActiveTime: Date.now() };
+        }
+        return { ...t, isActive: false };
+      })
     );
     setActiveTabId(id);
+    slumberEngine.recordTabActivity(id);
     const target = tabs.find((t) => t.id === id);
     if (target?.realm) {
       setActiveRealm(target.realm);
     }
     mimirIpc.send({ type: 'SWITCH_TAB', payload: { tabId: id } });
   };
+
+  const handleToggleSlumberTab = (id: string) => {
+    const target = tabs.find((t) => t.id === id);
+    if (!target) return;
+    if (target.isSleeping) {
+      slumberEngine.awakenTab(target);
+      runicAudio.playChime();
+      setTabs((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, isSleeping: false, lastActiveTime: Date.now() } : t))
+      );
+    } else {
+      slumberEngine.hibernateTab(target);
+      const savedMb = slumberEngine.estimateTabMemoryMb(target);
+      runicAudio.playClick(400);
+      setTabs((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, isSleeping: true, memorySavedBytes: savedMb } : t))
+      );
+    }
+  };
+
+  const handleHibernateAllBackgroundTabs = () => {
+    runicAudio.playClick(450);
+    tabs.forEach((t) => {
+      if (t.id !== activeTabId && !t.isPinned && !t.isSleeping && !t.url.startsWith('mimir://')) {
+        slumberEngine.hibernateTab(t);
+      }
+    });
+    setTabs((prev) =>
+      prev.map((t) => {
+        if (t.id !== activeTabId && !t.isPinned && !t.url.startsWith('mimir://')) {
+          return {
+            ...t,
+            isSleeping: true,
+            memorySavedBytes: slumberEngine.estimateTabMemoryMb(t),
+          };
+        }
+        return t;
+      })
+    );
+  };
+
+  // Einherjar Slumber periodic inactivity check
+  useEffect(() => {
+    const timer = setInterval(() => {
+      slumberEngine.checkEligibleTabs(tabs, activeTabId, (sleepingId, savedMb) => {
+        setTabs((prev) =>
+          prev.map((t) => (t.id === sleepingId ? { ...t, isSleeping: true, memorySavedBytes: savedMb } : t))
+        );
+      });
+    }, 60000);
+    return () => clearInterval(timer);
+  }, [tabs, activeTabId]);
+
+  // Floating Rune Media HUD Subscription & Active Tab Media Detection
+  useEffect(() => {
+    return mediaController.subscribe((s) => setActiveMediaSession(s));
+  }, []);
+
+  useEffect(() => {
+    if (activeTab) {
+      const url = activeTab.url.toLowerCase();
+      if (
+        url.includes('youtube.com') ||
+        url.includes('youtu.be') ||
+        url.includes('spotify.com') ||
+        url.includes('soundcloud.com') ||
+        url.includes('twitch.tv') ||
+        url.includes('vimeo.com') ||
+        url.includes('bandcamp.com')
+      ) {
+        mediaController.registerMedia(activeTab.id, activeTab.title, activeTab.realm, activeTab.url);
+      }
+    }
+  }, [activeTab?.id, activeTab?.url, activeTab?.title]);
 
   const handleCloseTab = (id: string) => {
     mimirIpc.send({ type: 'CLOSE_TAB', payload: { tabId: id } });
@@ -793,17 +926,6 @@ const formatEtaSeconds = (secs: number): string => {
     });
   };
 
-  const handleToggleBookmark = (url: string) => {
-    if (!url || url === 'mimir://newtab') return;
-    setBookmarks((prev) => {
-      const next = prev.includes(url) ? prev.filter((u) => u !== url) : [...prev, url];
-      try {
-        localStorage.setItem('mimir_bookmarked_urls', JSON.stringify(next));
-      } catch {}
-      return next;
-    });
-  };
-
   const handleAcquireUrl = (url: string) => {
     if (!url.trim()) return;
     mimirIpc.send({ type: 'DOWNLOAD_URL', payload: { url: url.trim() } });
@@ -902,6 +1024,8 @@ const formatEtaSeconds = (secs: number): string => {
         activeRealm={activeRealm}
         onOpenRealmSelector={() => setIsRealmSelectorOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onToggleMediaHud={() => setIsMediaHudOpen((prev) => !prev)}
+        isMediaActive={Boolean(activeMediaSession?.isPlaying)}
       />
 
       {/* Layer 2: Mímisbrunnr Omnibar */}
@@ -942,6 +1066,34 @@ const formatEtaSeconds = (secs: number): string => {
         onToggleSidecar={() => setIsSidecarOpen((prev) => !prev)}
         isSidecarOpen={isSidecarOpen}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenCanvas={() => setIsCanvasOpen(true)}
+      />
+
+      {/* Runic Bookmarks Bar (Havamal Staves Ribbon) */}
+      <RunicBookmarksBar
+        activeRealm={activeRealm}
+        currentUrl={activeTab?.url}
+        currentTitle={activeTab?.title}
+        onNavigate={handleNavigate}
+        onOpenNewTab={(url) => handleNewTab(url)}
+        onOpenSplitGaze={(url) => {
+          const newId = `tab-${Date.now()}`;
+          const newTab: Tab = {
+            id: newId,
+            title: url.replace(/^https?:\/\//, ''),
+            url,
+            isActive: false,
+            isLoading: false,
+            isMuted: false,
+            isPinned: false,
+            realm: activeRealm,
+            rune: 'ᛗ',
+            zoomLevel: 100,
+          };
+          setTabs((prev) => [...prev, newTab]);
+          setSplitTabId(newId);
+          setIsSplitGaze(true);
+        }}
       />
 
       {/* Valhalla Revival Crash Sentinel Banner */}
@@ -971,6 +1123,7 @@ const formatEtaSeconds = (secs: number): string => {
           onDuplicateTab={handleDuplicateTab}
           onReorderTabs={(newTabs) => setTabs(newTabs)}
           onToggleMuteTab={handleToggleMuteTab}
+          onToggleSlumberTab={handleToggleSlumberTab}
         />
 
         <ContentViewport
@@ -1102,6 +1255,11 @@ const formatEtaSeconds = (secs: number): string => {
           onCycleSanctumMode={handleCycleSanctumMode}
           onOpenRealmSelector={() => setIsRealmSelectorOpen(true)}
           onOpenSettings={() => setIsSettingsOpen(true)}
+          onHibernateBackgroundTabs={handleHibernateAllBackgroundTabs}
+          onOpenCanvas={() => setIsCanvasOpen(true)}
+          onToggleMediaHud={() => setIsMediaHudOpen((prev) => !prev)}
+          onToggleBookmarksBar={() => bookmarkManager.toggleBarVisible()}
+          onOpenVault={() => setIsVaultOpen(true)}
         />
 
         {/* Overlay 6: Rune Seeker (Find in Page) */}
@@ -1163,6 +1321,41 @@ const formatEtaSeconds = (secs: number): string => {
             setIsSettingsOpen(false);
             setIsClearDataOpen(true);
           }}
+          onOpenVault={() => {
+            setIsSettingsOpen(false);
+            setIsVaultOpen(true);
+          }}
+        />
+
+        {/* Overlay 11: Skuld's Canvas (Screenshot & Annotation Studio) */}
+        <SkuldsCanvasModal
+          isOpen={isCanvasOpen}
+          onClose={() => setIsCanvasOpen(false)}
+          activeRealm={activeRealm}
+          pageTitle={activeTab?.title}
+        />
+
+        {/* Overlay 12: Floating Rune Media HUD & Universal Equalizer */}
+        <FloatingRuneMediaHud
+          isOpen={isMediaHudOpen}
+          onClose={() => setIsMediaHudOpen(false)}
+          activeRealm={activeRealm}
+          onNavigateToTab={handleSelectTab}
+        />
+
+        {/* Floating PiP Mini Player Screen */}
+        <FloatingPipMiniPlayer
+          activeRealm={activeRealm}
+          onNavigateToTab={handleSelectTab}
+        />
+
+        {/* Overlay 13: Fafnir's Treasury (Password Vault & Key Forge) */}
+        <FafnirsTreasuryModal
+          isOpen={isVaultOpen}
+          onClose={() => setIsVaultOpen(false)}
+          activeRealm={activeRealm}
+          currentUrl={activeTab?.url}
+          onNavigate={handleNavigate}
         />
       </Suspense>
 

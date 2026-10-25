@@ -366,7 +366,51 @@ impl TabManager {
         self.open_or_navigate_tab(window, active_id, url.to_string(), realm);
     }
 
-    pub fn switch_tab(&mut self, id: &str) {
+    pub fn suspend_tab(&mut self, id: &str) {
+        if self.active_tab_id.as_deref() == Some(id) {
+            logger::info(&format!("Cannot cast active tab ({}) into Einherjar Slumber.", id));
+            return;
+        }
+        if let Some(tab) = self.tabs.get_mut(id) {
+            if let Some(wv) = tab.webview.take() {
+                let _ = wv.set_visible(false);
+                drop(wv);
+                logger::info(&format!("Einherjar Slumber: Reclaimed memory for inactive tab ({})", id));
+            }
+        }
+    }
+
+    pub fn resume_tab(&mut self, window: &Arc<Window>, id: &str) {
+        let is_internal = if let Some(tab) = self.tabs.get(id) {
+            tab.url.is_empty() || tab.url == "mimir://newtab" || tab.url == "about:blank"
+        } else {
+            return;
+        };
+
+        if is_internal {
+            return;
+        }
+
+        let needs_spawn = self.tabs.get(id).map(|t| t.webview.is_none()).unwrap_or(false);
+        if needs_spawn {
+            let (url, realm) = {
+                let tab = self.tabs.get(id).unwrap();
+                (tab.url.clone(), tab.realm.clone())
+            };
+            let bounds = self.get_effective_bounds();
+            let rect = Self::to_wry_rect(&bounds);
+            let mut wv = self.build_child_webview(window, rect, &url, &realm);
+            if let Some(w) = &mut wv {
+                let _ = w.set_visible(false);
+            }
+            if let Some(tab) = self.tabs.get_mut(id) {
+                tab.webview = wv;
+            }
+            logger::info(&format!("Einherjar Awakening: Resurrected tab ({})", id));
+        }
+    }
+
+    pub fn switch_tab(&mut self, window: &Arc<Window>, id: &str) {
         if self.active_tab_id.as_deref() == Some(id) {
             return;
         }
@@ -378,6 +422,12 @@ impl TabManager {
                     let _ = wv.set_visible(false);
                 }
             }
+        }
+
+        // Check if target tab is slumbering and needs resurrection
+        let is_sleeping = self.tabs.get(id).map(|t| t.webview.is_none()).unwrap_or(false);
+        if is_sleeping {
+            self.resume_tab(window, id);
         }
 
         let bounds = self.get_effective_bounds();
@@ -398,7 +448,7 @@ impl TabManager {
         }
     }
 
-    pub fn remove_tab(&mut self, id: &str) {
+    pub fn remove_tab(&mut self, window: &Arc<Window>, id: &str) {
         if let Some(mut tab) = self.tabs.remove(id) {
             if let Some(wv) = tab.webview.take() {
                 let _ = wv.set_visible(false);
@@ -409,7 +459,7 @@ impl TabManager {
         if self.active_tab_id.as_deref() == Some(id) {
             let next_id = self.tabs.keys().next().cloned();
             if let Some(next) = next_id {
-                self.switch_tab(&next);
+                self.switch_tab(window, &next);
             } else {
                 self.active_tab_id = None;
             }

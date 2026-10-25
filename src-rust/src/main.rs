@@ -475,11 +475,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 IpcCommand::CloseTab { payload } => {
                     logger::info(&format!("Severing Yggdrasil thread: {}", payload.tab_id));
-                    tab_manager.remove_tab(&payload.tab_id);
+                    tab_manager.remove_tab(&window_clone, &payload.tab_id);
                 }
                 IpcCommand::SwitchTab { payload } => {
                     logger::info(&format!("Switching active thread to: {}", payload.tab_id));
-                    tab_manager.switch_tab(&payload.tab_id);
+                    tab_manager.switch_tab(&window_clone, &payload.tab_id);
+                }
+                IpcCommand::SuspendTab { payload } => {
+                    logger::info(&format!("Einherjar Slumber requested for tab: {}", payload.tab_id));
+                    tab_manager.suspend_tab(&payload.tab_id);
+                }
+                IpcCommand::ResumeTab { payload } => {
+                    logger::info(&format!("Einherjar Awakening requested for tab: {}", payload.tab_id));
+                    tab_manager.resume_tab(&window_clone, &payload.tab_id);
                 }
                 IpcCommand::GoBack => {
                     logger::info("Rewinding memory (Back)");

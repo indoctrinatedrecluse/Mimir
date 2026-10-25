@@ -95,6 +95,12 @@ pub enum IpcCommand {
     #[serde(rename = "CONFIGURE_PROXY")]
     ConfigureProxy { payload: ConfigureProxyPayload },
 
+    #[serde(rename = "SUSPEND_TAB")]
+    SuspendTab { payload: SwitchTabPayload },
+
+    #[serde(rename = "RESUME_TAB")]
+    ResumeTab { payload: SwitchTabPayload },
+
     // Internal and child webview relayed events
     #[serde(rename = "DOWNLOAD_STARTED")]
     DownloadStarted { payload: DownloadStartedPayload },

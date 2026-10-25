@@ -140,7 +140,9 @@ export type IpcCommand =
   | { type: 'RESUME_TORRENT'; payload: { id: string } }
   | { type: 'DELETE_TORRENT'; payload: { id: string; deleteFiles?: boolean } }
   | { type: 'CLEAR_BROWSING_DATA'; payload: ClearBrowsingDataPayload }
-  | { type: 'EXTRACT_PAGE_CONTENT' };
+  | { type: 'EXTRACT_PAGE_CONTENT' }
+  | { type: 'SUSPEND_TAB'; payload: { tabId: string } }
+  | { type: 'RESUME_TAB'; payload: { tabId: string } };
 
 type DownloadStartedListener = (event: NativeDownloadStartedEvent) => void;
 type DownloadProgressListener = (event: NativeDownloadProgressEvent) => void;
@@ -395,6 +397,20 @@ class MimirIpcBridge {
   public onProxyConfigured(listener: ProxyConfiguredListener): () => void {
     this.proxyConfiguredListeners.add(listener);
     return () => this.proxyConfiguredListeners.delete(listener);
+  }
+
+  public suspendTab(tabId: string) {
+    this.send({
+      type: 'SUSPEND_TAB',
+      payload: { tabId },
+    });
+  }
+
+  public resumeTab(tabId: string) {
+    this.send({
+      type: 'RESUME_TAB',
+      payload: { tabId },
+    });
   }
 }
 

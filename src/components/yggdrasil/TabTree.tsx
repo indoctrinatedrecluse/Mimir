@@ -5,7 +5,7 @@ import { mimirIpc } from '@/core/ipc/bridge';
 import { REALM_THEMES } from '@/components/themes/realmThemes';
 import { NorseKnotworkRibbon } from '@/components/themes/NorsePatterns';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
-import { Plus, X, Volume2, VolumeX, ChevronLeft, ChevronRight, History, Terminal, Pin, PinOff, Copy, Search, GitBranch } from 'lucide-react';
+import { Plus, X, Volume2, VolumeX, ChevronLeft, ChevronRight, History, Terminal, Pin, PinOff, Copy, Search, GitBranch, Moon, Snowflake } from 'lucide-react';
 
 interface TabTreeProps {
   tabs: Tab[];
@@ -21,6 +21,7 @@ interface TabTreeProps {
   onDuplicateTab?: (id: string) => void;
   onReorderTabs?: (newTabs: Tab[]) => void;
   onToggleMuteTab?: (id: string) => void;
+  onToggleSlumberTab?: (id: string) => void;
 }
 
 export const TabTree: React.FC<TabTreeProps> = ({
@@ -37,6 +38,7 @@ export const TabTree: React.FC<TabTreeProps> = ({
   onDuplicateTab,
   onReorderTabs,
   onToggleMuteTab,
+  onToggleSlumberTab,
 }) => {
   const theme = REALM_THEMES[activeRealm] || REALM_THEMES.midgard;
   const [searchQuery, setSearchQuery] = useState('');
@@ -190,65 +192,81 @@ export const TabTree: React.FC<TabTreeProps> = ({
                   />
                 )}
 
-                <div
-                  onClick={() => {
-                    if (!isActive) {
-                      runicAudio.playClick(700);
-                      onSelectTab(tab.id);
-                      mimirIpc.send({ type: 'SWITCH_TAB', payload: { tabId: tab.id } });
-                    }
-                  }}
-                  className={`group relative flex h-10 cursor-pointer items-center rounded-lg px-2 text-xs transition-colors ${
-                    isActive
-                      ? 'text-white font-medium'
-                      : 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-200'
-                  }`}
-                  title={`${tab.title} (${tab.url})`}
-                >
-                  {/* Branch hierarchy marker for nested children */}
-                  {isChildBranch && !isCollapsed && (
-                    <GitBranch className="h-2.5 w-2.5 mr-1 text-slate-500 shrink-0 opacity-60" />
-                  )}
-
-                  {/* Left Runic Sigil Frame */}
                   <div
-                    className={`relative flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-xs font-bold transition-all border ${
-                      isActive
-                        ? 'shadow-md font-black'
-                        : 'border-white/5 bg-white/[0.03] text-slate-500 group-hover:text-slate-300'
-                    }`}
-                    style={{
-                      backgroundColor: isActive ? `${theme.accentColor}20` : undefined,
-                      borderColor: isActive ? `${theme.accentColor}60` : undefined,
-                      color: isActive ? theme.accentColor : undefined,
+                    onClick={() => {
+                      if (!isActive) {
+                        runicAudio.playClick(700);
+                        onSelectTab(tab.id);
+                        mimirIpc.send({ type: 'SWITCH_TAB', payload: { tabId: tab.id } });
+                      }
                     }}
+                    className={`group relative flex h-10 cursor-pointer items-center rounded-lg px-2 text-xs transition-colors ${
+                      isActive
+                        ? 'text-white font-medium'
+                        : tab.isSleeping
+                        ? 'text-slate-400/80 bg-cyan-950/15 hover:bg-cyan-900/25 hover:text-slate-200'
+                        : 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-200'
+                    }`}
+                    title={`${tab.title} (${tab.url})${tab.isSleeping ? ` — Einherjar Slumber (~${tab.memorySavedBytes || 180} MB saved)` : ''}`}
                   >
-                    {tab.rune}
-                    {tab.isPinned && (
-                      <span
-                        className="absolute -top-1 -right-1 flex h-2.5 w-2.5 items-center justify-center rounded-full"
-                        style={{ backgroundColor: theme.accentColor }}
-                        title="Pinned Branch"
-                      />
+                    {/* Branch hierarchy marker for nested children */}
+                    {isChildBranch && !isCollapsed && (
+                      <GitBranch className="h-2.5 w-2.5 mr-1 text-slate-500 shrink-0 opacity-60" />
                     )}
-                  </div>
 
-                  {/* Expanded Content: Title & Audio indicator */}
-                  {!isCollapsed && (
-                    <div className="ml-2.5 flex flex-1 items-center justify-between overflow-hidden">
-                      <div className="flex flex-col truncate pr-1">
-                        <div className="flex items-center space-x-1">
-                          {tab.isPinned && (
-                            <Pin className="h-2.5 w-2.5 shrink-0 opacity-70" style={{ color: theme.accentColor }} />
-                          )}
-                          <span className="truncate text-[11px] font-semibold tracking-wide">
-                            {tab.title}
+                    {/* Left Runic Sigil Frame */}
+                    <div
+                      className={`relative flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-xs font-bold transition-all border ${
+                        isActive
+                          ? 'shadow-md font-black'
+                          : tab.isSleeping
+                          ? 'border-cyan-400/30 bg-cyan-950/40 text-cyan-300'
+                          : 'border-white/5 bg-white/[0.03] text-slate-500 group-hover:text-slate-300'
+                      }`}
+                      style={{
+                        backgroundColor: isActive ? `${theme.accentColor}20` : undefined,
+                        borderColor: isActive ? `${theme.accentColor}60` : undefined,
+                        color: isActive ? theme.accentColor : undefined,
+                      }}
+                    >
+                      {tab.isSleeping ? (
+                        <Snowflake className="h-3 w-3 text-cyan-300 animate-pulse" />
+                      ) : (
+                        tab.rune
+                      )}
+                      {tab.isPinned && (
+                        <span
+                          className="absolute -top-1 -right-1 flex h-2.5 w-2.5 items-center justify-center rounded-full"
+                          style={{ backgroundColor: theme.accentColor }}
+                          title="Pinned Branch"
+                        />
+                      )}
+                    </div>
+
+                    {/* Expanded Content: Title & Audio indicator */}
+                    {!isCollapsed && (
+                      <div className="ml-2.5 flex flex-1 items-center justify-between overflow-hidden">
+                        <div className="flex flex-col truncate pr-1">
+                          <div className="flex items-center space-x-1">
+                            {tab.isPinned && (
+                              <Pin className="h-2.5 w-2.5 shrink-0 opacity-70" style={{ color: theme.accentColor }} />
+                            )}
+                            <span className={`truncate text-[11px] font-semibold tracking-wide ${tab.isSleeping ? 'text-slate-300/80 italic' : ''}`}>
+                              {tab.title}
+                            </span>
+                            {tab.isSleeping && (
+                              <span
+                                className="flex items-center space-x-0.5 rounded bg-cyan-400/15 px-1 py-0.2 text-[8px] font-mono font-bold text-cyan-300 border border-cyan-400/30"
+                                title={`Einherjar Slumber (RAM Reclaimed: ~${tab.memorySavedBytes || 180} MB)`}
+                              >
+                                <span>SLUMBER</span>
+                              </span>
+                            )}
+                          </div>
+                          <span className="truncate text-[9px] font-mono text-slate-500">
+                            {tab.url.replace(/^https?:\/\//, '') || 'Sacred Spring'}
                           </span>
                         </div>
-                        <span className="truncate text-[9px] font-mono text-slate-500">
-                          {tab.url.replace(/^https?:\/\//, '') || 'Sacred Spring'}
-                        </span>
-                      </div>
 
                       {/* Right icons: Audio Wave Equalizer, Pin, Duplicate, Close */}
                       <div className="flex items-center space-x-1 pl-1">
@@ -308,6 +326,33 @@ export const TabTree: React.FC<TabTreeProps> = ({
                         >
                           <Copy className="h-2.5 w-2.5" />
                         </button>
+
+                        {/* Einherjar Slumber (Hibernate to free RAM) */}
+                        {!tab.isPinned && !isActive && !tab.url.startsWith('mimir://') && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              runicAudio.playClick(tab.isSleeping ? 800 : 450);
+                              onToggleSlumberTab?.(tab.id);
+                            }}
+                            className={`flex h-5 w-5 items-center justify-center rounded transition-all ${
+                              tab.isSleeping
+                                ? 'text-cyan-300 opacity-90 hover:text-cyan-200'
+                                : 'text-slate-500 opacity-0 hover:bg-white/10 hover:text-cyan-300 group-hover:opacity-100'
+                            }`}
+                            title={
+                              tab.isSleeping
+                                ? 'Awaken from Einherjar Slumber'
+                                : 'Cast into Einherjar Slumber (Hibernate to save RAM)'
+                            }
+                          >
+                            {tab.isSleeping ? (
+                              <Snowflake className="h-2.5 w-2.5 animate-pulse text-cyan-300" />
+                            ) : (
+                              <Moon className="h-2.5 w-2.5" />
+                            )}
+                          </button>
+                        )}
 
                         {/* Close Tab Button */}
                         {!tab.isPinned && (

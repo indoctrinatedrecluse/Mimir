@@ -39,6 +39,9 @@ export interface Tab {
   zoomLevel: number;
   parentId?: string;
   isBranchCollapsed?: boolean;
+  isSleeping?: boolean;
+  lastActiveTime?: number;
+  memorySavedBytes?: number;
 }
 
 export interface RunicWardStats {
@@ -91,5 +94,23 @@ export interface TorrentItem {
   eta: string;
   path?: string;
   timestamp: string;
+}
+
+export interface ActiveMediaSession {
+  tabId: string;
+  tabTitle: string;
+  tabRealm: RealmId;
+  url: string;
+  title: string;
+  artist?: string;
+  isPlaying: boolean;
+  currentTime: number; // in seconds
+  duration: number; // in seconds
+  volume: number; // 0 to 1
+  volumeBoost: number; // 1.0 to 3.0 (Mjolnir Thunder Boost)
+  playbackRate: number; // 0.5 to 2.0
+  isMuted: boolean;
+  isPipActive: boolean;
+  mediaType: 'video' | 'audio' | 'ambient';
 }
 

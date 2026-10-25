@@ -35,6 +35,7 @@ import {
   ShieldOff,
   PanelRight,
   PanelRightClose,
+  Camera,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getRankedSuggestions, SuggestionItem, cleanDisplayUrl, parseBangQuery, purifyUrl } from '@/core/navigation/autosuggest';
@@ -76,6 +77,7 @@ interface OmnibarProps {
   onToggleSidecar?: () => void;
   isSidecarOpen?: boolean;
   onOpenSettings?: () => void;
+  onOpenCanvas?: () => void;
 }
 
 export const Omnibar: React.FC<OmnibarProps> = ({
@@ -112,6 +114,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
   onToggleSidecar,
   isSidecarOpen = false,
   onOpenSettings,
+  onOpenCanvas,
 }) => {
   const [inputVal, setInputVal] = useState(currentUrl);
   const [isFocused, setIsFocused] = useState(false);
@@ -402,6 +405,19 @@ export const Omnibar: React.FC<OmnibarProps> = ({
               title="Runic Lens: Offline QR code sharing"
             >
               <QrCode className="h-3.5 w-3.5" />
+            </button>
+
+            {/* Skuld's Canvas Screenshot Button */}
+            <button
+              type="button"
+              onClick={() => {
+                runicAudio.playChime();
+                onOpenCanvas?.();
+              }}
+              className="p-1 transition-colors text-slate-400 hover:text-cyan-300"
+              title="Skuld's Canvas: Capture & Annotate Viewport (Ctrl+Shift+S)"
+            >
+              <Camera className="h-3.5 w-3.5" />
             </button>
 
             {/* Bookmark / Runestone */}

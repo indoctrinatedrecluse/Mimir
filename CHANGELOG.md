@@ -11,6 +11,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Einherjar Slumber: Sleeping Tabs & Native RAM Freezer (`slumberEngine.ts`, `tab_manager.rs`, `ipc.rs`, `TabTree.tsx`, `App.tsx`)
+* **Zero-Mock WebView2 Memory Deallocation**:
+  * Dropping `tab.webview.take()` genuinely destroys inactive background child webview render processes, releasing **180 MB – 320 MB of RAM per tab**.
+  * Instant Einherjar Awakening: Automatically resurrects sleeping tabs via `build_child_webview` the moment they are clicked or focused without page loss.
+* **Configurable Auto-Slumber Engine**:
+  * Automatically scans background tabs every 60 seconds with configurable inactivity timeout thresholds (15m, 30m, 60m, or Never).
+  * Excludes pinned tabs, active playing media, and internal sanctuary portals.
+* **Frost Rune Visuals & Manual Controls**:
+  * Sleeping tabs display frosty cyan mist (`bg-cyan-950/15`), an animated `Snowflake` icon, and a `SLUMBER` badge with exact memory reclaimed.
+  * Instant manual hibernation button per tab or global background hibernation shortcut (`Alt+Z`).
+
+#### Skuld's Canvas: Viewport Capture & Runic Annotation Studio (`SkuldsCanvasModal.tsx`, `Omnibar.tsx`, `App.tsx`, `CommandPalette.tsx`)
+* **HTML5 Canvas Viewport Capture & Crop**:
+  * Capture viewport contents (`Ctrl+Shift+S` or Omnibar Camera button) with instant interactive cropping and full-screen annotation canvas.
+* **Norse Drawing Instruments & Inscriptions**:
+  * **Freehand Runic Pen & Highlighter**: Smooth Bézier curves with adjustable line widths.
+  * **Runic Rectangles & Directional Arrow Pointers**: Clean bounding frames and vector arrows for bug reporting and sharing.
+  * **Elder Futhark Rune Stamps**: 1-click glyph stamping (`ᛗ`, `ᚨ`, `ᚱ`, `ᚲ`, `ᚷ`, `ᛋ`, `ᛏ`, `ᛞ`).
+  * **Runic Text Inscription Tool**: Inscribe comments and notes with customizable fonts.
+  * **6 Realm Neon Color Palettes**: Bifröst Cyan, Valhalla Amber, Surtr Rose, Yggdrasil Emerald, Odin Purple, and Pure White.
+* **Instant Export & Clipboard Conduits**:
+  * Copy annotated canvas directly to system clipboard as image blob (`navigator.clipboard.write([ClipboardItem])`).
+  * 1-click download as PNG artifact (`mimir_skuld_<timestamp>.png`).
+
+#### Floating Rune: Universal Media HUD, Equalizer & Draggable Picture-in-Picture (`mediaController.ts`, `FloatingRuneMediaHud.tsx`, `FloatingPipMiniPlayer.tsx`, `TitleBar.tsx`, `App.tsx`)
+* **Global Webview Media Conduit**:
+  * Injects JavaScript controls directly into active or background HTML5 `<video>` and `<audio>` elements across YouTube, Spotify, Soundcloud, Twitch, and web streams.
+  * Play/pause toggle, ±10s seeking, timeline scrubber, and playback speed pills (`0.75x`, `1x`, `1.25x`, `1.5x`, `2x`).
+* **Mjolnir Thunder Boost (100% to 300% Volume Amplification)**:
+  * Overcomes quiet video recordings by chaining Web Audio API `GainNode` amplifiers directly into media element sources, boosting audio volume up to 300%.
+* **Dynamic Runic Frequency Equalizer**:
+  * Obsidian Glass popover featuring an 8-band reactive runic equalizer with pulsing accent halos.
+* **Floating Draggable Picture-in-Picture (PiP) Mini-Player**:
+  * Universal draggable mini-player floating in bottom-right corner with mini-screen visualizer, transport controls, and "Return to Tab" navigation.
+  * Accessible via `Ctrl+Shift+M`, TitleBar `Disc3` spinning icon, or Command Palette.
+
+#### Runic Bookmarks Bar: Havamal Staves Ribbon (`bookmarkManager.ts`, `RunicBookmarksBar.tsx`, `App.tsx`, `CommandPalette.tsx`)
+* **Obsidian Glass Bookmarks Ribbon**:
+  * Pinned quick-access ribbon situated directly below the Omnibar (`Ctrl+Shift+B` toggle).
+  * Synchronized seamlessly with `mimir_runestones` and Muninn's Vault.
+* **Runic Badges & Multi-Conduit Navigation**:
+  * Each bookmark features an Elder Futhark rune initial badge, realm affinity styling, and quick truncation.
+  * Left-click to navigate in active tab, middle-click to spawn new tab.
+  * Custom right-click stave context menu: "Channel in Current Tab", "Open in New Fate Thread", "Split-Gaze Channel", and "Sever Runestone".
+* **1-Click Stave Carving**:
+  * Inline "+ CARVE" button and Omnibar bookmark icon to instantly store active web destinations.
+
+#### Fafnir's Treasury: Zero-Knowledge AES-256-GCM Vault & Gungnir Key Forge (`fafnirVault.ts`, `FafnirsTreasuryModal.tsx`, `SanctumSettingsModal.tsx`, `App.tsx`)
+* **Cryptographically Secure Zero-Knowledge Vault**:
+  * Full Web Crypto API architecture: PBKDF2 key derivation using SHA-256 with **100,000 iterations** and a 16-byte cryptographically secure random salt.
+  * AES-256-GCM authenticated encryption with a unique 12-byte initialization vector (IV) per secret.
+  * Zero plaintext on disk: Master keys exist exclusively in volatile memory and are purged on lock.
+* **Auto-Lock Defense & Auto-Clearing Clipboard**:
+  * Configurable auto-lock timer automatically seals treasury after inactivity.
+  * 30-second clipboard self-destruction: Copied passwords automatically wipe from the clipboard after 30 seconds.
+* **Gungnir Key Generator**:
+  * Generates high-entropy passphrases (12 to 48 characters) with entropy bit calculations and strength ratings (from "Brittle Branch" to "Mjolnir Core").
+  * Optional Norse Elder Futhark rune injections for mystical high-entropy passwords.
+* **Seamless Access**:
+  * Accessible via `Ctrl+Shift+L`, Command Palette, and Sanctum Settings.
+
 #### Sovereign Privacy Architecture & Sanctum Settings Engine (`privacySettings.ts`, `SanctumSettingsModal.tsx`, `adblocker.rs`, `Omnibar.tsx`, `TitleBar.tsx`)
 * **DuckDuckGo by Default Across All Conduits**:
   * Established DuckDuckGo as Mímir's primary, untracked search oracle across Omnibar, New Tab Sanctum, Autosuggest, and context menu lookups.
