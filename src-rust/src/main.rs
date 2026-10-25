@@ -314,6 +314,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         "woff2" => "font/woff2",
                         "ttf" => "font/ttf",
                         "wasm" => "application/wasm",
+                        "mp4" => "video/mp4",
+                        "webm" => "video/webm",
                         _ => "application/octet-stream",
                     };
 
