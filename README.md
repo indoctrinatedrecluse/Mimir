@@ -226,6 +226,11 @@ graph TD
   - Core repository remains lean (~10MB) by omitting binary `.mp4` files from git tracking.
   - Bundled procedural generator script (`python scripts/forge_realm_videos.py --realm all`) to forge seamless loops offline anytime.
 
+### Upcoming Enhancements (Roadmap)
+- [ ] **Automated Installer Component Downloader (NSIS Setup)**:
+  - Add an optional component selection checkbox in `mimir-setup.exe` (*"Living Cinematic Video Realms Pack (~38 MB)"*).
+  - When selected during installation, the installer will automatically download `mimir-cinematic-realm-pack.zip` from the latest GitHub Release assets and unpack it directly into `<install_dir>\dist\realms\videos\`, delivering automated 1-click installation without manual extraction.
+
 ---
 
 ## ⌨️ Essential Keyboard Shortcuts

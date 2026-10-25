@@ -87,10 +87,30 @@ Section "Create Desktop Shortcut" SecDesktop
   CreateShortcut "$DESKTOP\Mimir Browser.lnk" "$INSTDIR\mimir.exe" "" "$INSTDIR\mimir.ico" 0
 SectionEnd
 
+; ==============================================================================
+; TODO (Roadmap): On-Demand Living Video Pack Component Downloader
+; When selected by user during setup, downloads mimir-cinematic-realm-pack.zip 
+; from GitHub Releases and extracts it into $INSTDIR\dist\realms\videos\
+; ==============================================================================
+; Section /o "Living Cinematic Video Realms (~38 MB)" SecVideoPack
+;   DetailPrint "Connecting to GitHub Releases for Living Realm Pack..."
+;   CreateDirectory "$INSTDIR\dist\realms\videos"
+;   nsisdl::download /TIMEOUT=30000 "https://github.com/indoctrinatedrecluse/Mimir/releases/latest/download/mimir-cinematic-realm-pack.zip" "$TEMP\mimir-cinematic-realm-pack.zip"
+;   Pop $0
+;   ${If} $0 == "success"
+;     DetailPrint "Extracting cinematic realm videos..."
+;     nsisunz::UnzipToLog "$TEMP\mimir-cinematic-realm-pack.zip" "$INSTDIR\dist\realms\videos"
+;     Delete "$TEMP\mimir-cinematic-realm-pack.zip"
+;   ${Else}
+;     DetailPrint "Download skipped or offline ($0). Option A particles remain active."
+;   ${EndIf}
+; SectionEnd
+
 ; Component Descriptions
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
   !insertmacro MUI_DESCRIPTION_TEXT ${SecMimir} "Core Mimir Browser binaries, UI sanctuary, and Start Menu entries."
   !insertmacro MUI_DESCRIPTION_TEXT ${SecDesktop} "Create a shortcut icon for Mimir Browser on your Desktop."
+  ; !insertmacro MUI_DESCRIPTION_TEXT ${SecVideoPack} "Download and install the optional high-definition Living Video Realms pack (~38 MB) with animated sovereign rulers."
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
 Section "Uninstall"
