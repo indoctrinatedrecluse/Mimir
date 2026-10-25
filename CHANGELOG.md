@@ -7,13 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [0.7.0] - 2026-10-25 *(Living Cinematic Video Realms & Tri-Mode Sanctum Engine)*
+
+This milestone release brings the Nine Realms alive with living cinematic video backdrops, animated sovereign rulers, a unified Tri-Mode Sanctum Engine, in-browser visual documentation guides, and a lean Model A modular on-demand distribution architecture.
 
 ### Added
 
-#### Option B: Cinematic Living Video Realms & Sovereign Ruler Animations (`RealmVideoBackdrop.tsx`, `forge_realm_videos.py`)
-* **Animated Sovereign Realm Rulers**:
-  * Sovereign rulers now breathe, focus, and exert their cosmic domain powers in mathematically seamless looping H.264 video backdrops:
+#### Living Cinematic Video Realms & Animated Sovereign Rulers (`RealmVideoBackdrop.tsx`, `forge_realm_videos.py`)
+* **Animated Sovereign Realm Rulers (Option B)**:
+  * Sovereign rulers breathe, focus, and command their cosmic domains in mathematically seamless ($t=0 \equiv t=1$), hardware-accelerated looping H.264 video backdrops:
     * **Surtr (Muspelheim)**: Volcanic glow pulses, rising twilight heat distortion waves, and leaping fire motes.
     * **Odin (Asgard)**: Celestial auroral god-rays, golden luminescence shimmer, and Gungnir divine resonance.
     * **Níðhöggr (Niflheim)**: Drifting toxic frost fog, icy cyan mist veils, and glacial chill breathing.
@@ -23,19 +25,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     * **Freya (Vanaheim)**: Lush floral golden vitality and living nature energy pulses.
     * **Freyr (Alfheim)**: Crystalline solar brilliance and light-elf starlight glimmer.
     * **Heimdall (Midgard)**: Bifröst prism light shimmer and watchful guardian eye gleams.
-* **Tri-Mode Sanctum Engine (`'video' | 'particles' | 'static'`)**:
-  * Seamless three-way cycling between **Option B** (Cinematic Video), **Option A** (Living Particles & Ken Burns drift), and **Static Artwork** (zero-motion distraction-free mode).
-  * Direct one-click toggle in the bottom realm bar (`SANCTUM: VIDEO (ᚠ) ➔ PARTICLES (ᛋ) ➔ STATIC (ᛏ)`), inside the Realm Gateway modal (`RealmSelector.tsx`), and through the Hliðskjálf Command Palette (`Ctrl+K` ➔ `Sanctum Visuals`).
-  * State persists across sessions via `localStorage` (`'mimir_sanctum_mode'`).
-* **Hardware-Accelerated Dual-Buffered Player (`RealmVideoBackdrop.tsx`)**:
-  * Hardware-accelerated `<video>` playback with `autoPlay loop muted playsInline preload="auto"`.
-  * **Conduit & Visibility Sentinels**: Video automatically halts when windows/tabs are hidden or when browsing live web conduits, conserving battery and GPU compute.
-  * **Zero-Downtime Fallback**: Pre-renders underlying static artwork and automatically activates Option A particle simulation if video assets are missing, preventing any blank screens or visual glitches.
-* **Procedural Cinema Forge Engine (`scripts/forge_realm_videos.py`)**:
-  * Standalone Python + OpenCV script generating mathematically seamless ($t=0 \equiv t=1$) looping H.264 MP4 videos for all 9 realms using OpenH264 encoding.
-* **Model A Distribution Architecture**:
-  * Core repository and git history remain lean (~10MB) by ignoring large binary `.mp4` video files.
-  * Users and developers can forge high-definition video loops on-demand via `python scripts/forge_realm_videos.py --realm all`.
+
+#### Tri-Mode Sanctum Engine (`'video' | 'particles' | 'static'`)
+* **Three-Way Visual Cycling**:
+  * Unifies **Option B** (Hardware-accelerated looping video), **Option A** (Procedural HTML5 Canvas particle physics with 42-second Ken Burns GPU drift), and **Static Artwork** (zero-motion distraction-free mode).
+  * Seamless one-click cycling button on the bottom realm bar of `mimir://newtab` (`SANCTUM: VIDEO (ᚠ) ➔ PARTICLES (ᛋ) ➔ STATIC (ᛏ)`).
+  * Mode indicator button integrated into the Realm Gateway modal ([`RealmSelector.tsx`](file:///d:/Projects/Mimir/src/components/realms/RealmSelector.tsx)).
+  * Direct Hliðskjálf Command Palette item (`Ctrl+K` ➔ `Sanctum Visuals: Cycle Mode`).
+  * Mode preferences persist across launches in `localStorage` (`'mimir_sanctum_mode'`).
+
+#### In-Browser Visuals & Model A Expansion Pack Guide
+* **Integrated In-Browser Documentation**:
+  * Added a collapsible in-browser documentation guide inside the Realm Gateway modal (`RealmSelector.tsx`).
+  * Dedicated `GUIDE` button added on the Sanctum bottom HUD bar.
+  * Dedicated Hliðskjálf Command Palette entry (`Ctrl+K` ➔ `Sanctum Visuals & Expansion Pack Guide`).
+  * Provides end-users and developers with visual mode explanations, video installation target paths, and command syntax.
+
+#### Hardware-Accelerated Dual-Buffered Video Player (`RealmVideoBackdrop.tsx`)
+* **Conduit & Battery Sentinels**: Automatically halts video playback when the window is hidden, minimized (`document.hidden`), or when browsing active web pages to conserve battery life and GPU resources.
+* **Zero-Downtime Fallback**: Pre-renders underlying high-resolution static artwork and automatically awakens Option A canvas particle simulations if video assets are missing, guaranteeing zero blank screens.
+
+#### Cinema Forge Engine & Packaging Tooling (`scripts/`)
+* **`scripts/forge_realm_videos.py`**: Standalone procedural Python + OpenCV generator creating mathematically seamless ($t=0 \equiv t=1$) H.264 video backdrops for all Nine Realms.
+* **`scripts/package_realm_pack.py`**: Automated packager creating the official `mimir-cinematic-realm-pack.zip` archive (~37.8 MB) and providing one-line extraction (`--install dist/realms/videos`).
+* **Custom Protocol MIME Support**: Registered native `video/mp4` and `video/webm` MIME types in [`src-rust/src/main.rs`](file:///d:/Projects/Mimir/src-rust/src/main.rs) for smooth local streaming across custom `mimir://` protocol.
+
+#### Model A Distribution Architecture
+* **Lean Core Installer**: The primary browser repository and release archive remain lean (~12 MB) by omitting large binary video assets from git.
+* **Modular High-Def Pack**: Users can optionally download `mimir-cinematic-realm-pack.zip` (~37.8 MB) and drop it into `dist/realms/videos/` anytime to unlock living video backgrounds.
 
 ---
 

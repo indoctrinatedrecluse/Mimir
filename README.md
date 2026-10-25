@@ -285,6 +285,53 @@ cargo build --release --manifest-path src-rust/Cargo.toml
 
 ---
 
+## 🎬 Living Cinematic Realms (Model A Expansion Guide)
+
+Mímir ships with the **Tri-Mode Sanctum Engine**, unifying live hardware-accelerated video loops, particle simulations, and high-definition static artwork:
+
+* **Mode 1: VIDEO (ᚠ)**: Hardware-accelerated looping H.264 video backdrops with animated sovereign rulers (heat waves, soul fire, auroral god-rays).
+* **Mode 2: PARTICLES (ᛋ)**: HTML5 Canvas procedural physics engine with 42-second Ken Burns GPU breathing drift.
+* **Mode 3: STATIC (ᛏ)**: Minimalist, zero-motion high-resolution sovereign artwork for distraction-free reading or maximum battery conservation.
+
+### 👤 End-User Installation Guide
+1. Download the **Core Browser** release archive: `mimir-v0.7.0-windows-x64.zip` (~12 MB).
+2. *(Optional)* Download the **Living Realm Video Pack**: `mimir-cinematic-realm-pack.zip` (~37.8 MB) from the release assets.
+3. Extract the 9 `.mp4` video files into your Mímir directory:
+   ```text
+   <mimir_directory>\dist\realms\videos\
+   ├── midgard.mp4
+   ├── asgard.mp4
+   ├── vanaheim.mp4
+   ├── alfheim.mp4
+   ├── jotunheim.mp4
+   ├── muspelheim.mp4
+   ├── niflheim.mp4
+   ├── nidavellir.mp4
+   └── helheim.mp4
+   ```
+4. Launch Mímir! Click the **SANCTUM** mode button on the bottom bar of `mimir://newtab` or press `Ctrl+K` ➔ select `Sanctum Visuals`.
+> [!NOTE]
+> **Zero-Downtime Resilience**: If the video files are not installed, Mímir automatically falls back to **Option A** (`'particles'`) with zero interruptions or black screens.
+
+---
+
+### 🛠️ Developer Guide: Cinema Forge & Packaging
+To forge videos from source or package distribution packs:
+```bash
+# 1. Forge all 9 living realm videos offline (requires Python + opencv-python-headless + openh264)
+python scripts/forge_realm_videos.py --realm all --duration 6 --fps 24
+
+# 2. Package into mimir-cinematic-realm-pack.zip (~37.8 MB)
+python scripts/package_realm_pack.py
+
+# 3. Automatically extract / install zip into target folder
+python scripts/package_realm_pack.py --install dist/realms/videos
+# or for source workspace:
+python scripts/package_realm_pack.py --install public/realms/videos
+```
+
+---
+
 <div align="center">
   <sub>Forged in the roots of Yggdrasil. Protected by the wisdom of Mímir.</sub>
 </div>

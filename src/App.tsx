@@ -980,6 +980,7 @@ const formatEtaSeconds = (secs: number): string => {
           }}
           sanctumMode={sanctumMode}
           onCycleSanctumMode={handleCycleSanctumMode}
+          onOpenRealmSelector={() => setIsRealmSelectorOpen(true)}
         />
 
         {/* Persistent Runic Sidecar (Scratchpad, Huginn AI, Telemetry) */}
@@ -1087,6 +1088,7 @@ const formatEtaSeconds = (secs: number): string => {
           }}
           sanctumMode={sanctumMode}
           onCycleSanctumMode={handleCycleSanctumMode}
+          onOpenRealmSelector={() => setIsRealmSelectorOpen(true)}
         />
 
         {/* Overlay 6: Rune Seeker (Find in Page) */}

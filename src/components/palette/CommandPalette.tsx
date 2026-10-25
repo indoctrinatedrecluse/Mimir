@@ -38,6 +38,7 @@ import {
   Zap,
   Radio,
   Film,
+  HelpCircle,
 } from 'lucide-react';
 
 export interface CommandItem {
@@ -81,6 +82,7 @@ interface CommandPaletteProps {
   onRestoreValhalla?: () => void;
   onOpenSwarm?: () => void;
   onOpenTurbo?: () => void;
+  onOpenRealmSelector?: () => void;
   sanctumMode?: SanctumBackdropMode;
   onCycleSanctumMode?: () => void;
   isAnimatedBackground?: boolean;
@@ -117,6 +119,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onRestoreValhalla,
   onOpenSwarm,
   onOpenTurbo,
+  onOpenRealmSelector,
   sanctumMode = 'particles',
   onCycleSanctumMode,
   isAnimatedBackground = true,
@@ -285,6 +288,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         rune: 'ᛞ',
         icon: sanctumMode === 'video' ? Film : Sparkles,
         action: () => (onCycleSanctumMode ? onCycleSanctumMode() : onToggleAnimatedRealms?.()),
+      },
+      {
+        id: 'sanctum-visuals-guide',
+        category: 'Viewports & Tools',
+        title: 'Sanctum Visuals & Expansion Pack Guide',
+        description: 'Learn how Tri-Mode visual switching, Model A modular video packs, and video installation paths work',
+        rune: 'ᚠ',
+        icon: HelpCircle,
+        action: () => onOpenRealmSelector?.(),
       },
 
       // Security, Wards & Browser Operations

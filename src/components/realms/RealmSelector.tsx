@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { RealmId, SanctumBackdropMode } from '@/types';
 import { REALMS } from '@/core/realms';
 import { runicAudio } from '@/core/audio/runicAudio';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Film, Sparkles } from 'lucide-react';
+import { X, Film, Sparkles, HelpCircle, ChevronDown, ChevronUp, FolderArchive, Terminal, ShieldCheck } from 'lucide-react';
 
 interface RealmSelectorProps {
   isOpen: boolean;
@@ -12,6 +12,7 @@ interface RealmSelectorProps {
   onClose: () => void;
   sanctumMode?: SanctumBackdropMode;
   onCycleSanctumMode?: () => void;
+  initialShowGuide?: boolean;
 }
 
 export const RealmSelector: React.FC<RealmSelectorProps> = ({
@@ -21,7 +22,10 @@ export const RealmSelector: React.FC<RealmSelectorProps> = ({
   onClose,
   sanctumMode = 'particles',
   onCycleSanctumMode,
+  initialShowGuide = false,
 }) => {
+  const [showPackGuide, setShowPackGuide] = useState(initialShowGuide);
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -60,6 +64,23 @@ export const RealmSelector: React.FC<RealmSelectorProps> = ({
               </div>
 
               <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => {
+                    runicAudio.playClick(600);
+                    setShowPackGuide(!showPackGuide);
+                  }}
+                  className={`flex items-center space-x-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-mono transition-all shadow ${
+                    showPackGuide
+                      ? 'border-cyan-400/60 bg-cyan-500/20 text-cyan-300'
+                      : 'border-white/10 bg-black/40 text-slate-400 hover:text-slate-200 hover:bg-black/60'
+                  }`}
+                  title="Toggle Visual Modes & Model A Video Pack Guide"
+                >
+                  <HelpCircle className="h-3.5 w-3.5" />
+                  <span>PACK GUIDE</span>
+                  {showPackGuide ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                </button>
+
                 {onCycleSanctumMode && (
                   <button
                     onClick={onCycleSanctumMode}
@@ -86,6 +107,74 @@ export const RealmSelector: React.FC<RealmSelectorProps> = ({
                 </button>
               </div>
             </div>
+
+            {/* In-Browser Documentation: Visual Modes & Model A Pack Guide */}
+            <AnimatePresence>
+              {showPackGuide && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden border-b border-white/10"
+                >
+                  <div className="py-4 space-y-3">
+                    <div className="rounded-xl border border-cyan-500/25 bg-cyan-950/20 p-3.5 text-xs">
+                      <div className="flex items-center space-x-2 text-cyan-300 font-bold mb-2">
+                        <FolderArchive className="h-4 w-4" />
+                        <span className="font-mono tracking-wide uppercase">SANCTUM VISUAL MODES & MODEL A PACK GUIDE</span>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 my-2.5">
+                        <div className="rounded-lg border border-white/10 bg-black/40 p-2.5">
+                          <div className="flex items-center space-x-1.5 font-bold text-amber-300 mb-1">
+                            <Film className="h-3.5 w-3.5" />
+                            <span>1. Video Mode (ᚠ)</span>
+                          </div>
+                          <p className="text-[11px] text-slate-300 leading-relaxed">
+                            Hardware-accelerated looping H.264 video backdrops with sovereign realm rulers animated in their mythological domains (heat waves, soul fire, auroral god-rays).
+                          </p>
+                        </div>
+
+                        <div className="rounded-lg border border-white/10 bg-black/40 p-2.5">
+                          <div className="flex items-center space-x-1.5 font-bold text-cyan-300 mb-1">
+                            <Sparkles className="h-3.5 w-3.5" />
+                            <span>2. Particles Mode (ᛋ)</span>
+                          </div>
+                          <p className="text-[11px] text-slate-300 leading-relaxed">
+                            HTML5 Canvas procedural physics engine with 42s Ken Burns GPU breathing drift. Renders realm-specific embers, frost mists, spores, and stardust motes.
+                          </p>
+                        </div>
+
+                        <div className="rounded-lg border border-white/10 bg-black/40 p-2.5">
+                          <div className="flex items-center space-x-1.5 font-bold text-slate-300 mb-1">
+                            <ShieldCheck className="h-3.5 w-3.5" />
+                            <span>3. Static Mode (ᛏ)</span>
+                          </div>
+                          <p className="text-[11px] text-slate-300 leading-relaxed">
+                            Pure, motionless high-resolution sovereign artwork. Ideal for reading sanctuary sessions and zero-GPU battery preservation.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 pt-2.5 border-t border-cyan-500/20 flex flex-col md:flex-row md:items-center justify-between gap-2 text-[11px] text-slate-300 font-mono">
+                        <div>
+                          <span className="text-amber-400 font-bold">End-User Pack Installation:</span> Extract <code className="bg-black/60 px-1.5 py-0.5 rounded text-amber-300">mimir-cinematic-realm-pack.zip</code> into <code className="bg-black/60 px-1.5 py-0.5 rounded text-cyan-300">dist/realms/videos/</code>
+                        </div>
+                        <div className="flex items-center space-x-1 text-emerald-400">
+                          <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
+                          <span>Zero-Downtime Fallback: Auto-falls back to Particles if videos are absent</span>
+                        </div>
+                      </div>
+
+                      <div className="mt-2 text-[10px] text-slate-400 font-mono">
+                        <Terminal className="inline h-3 w-3 mr-1 text-cyan-400" />
+                        <span className="text-slate-500">Dev / Local Forge:</span> <code className="text-slate-300">python scripts/forge_realm_videos.py --realm all</code> or <code className="text-slate-300">python scripts/package_realm_pack.py --install dist/realms/videos</code>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Realms Grid (3 columns x 3 rows) */}
             <div className="mt-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">

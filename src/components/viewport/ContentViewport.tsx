@@ -7,7 +7,7 @@ import { REALM_THEMES } from '@/components/themes/realmThemes';
 import { YggdrasilRootsSvg, ValknutSvg, AegishjalmrSvg } from '@/components/themes/NorsePatterns';
 import { MimirSigil } from '@/components/brand/MimirSigil';
 import { getRandomHavamal, HavamalStanza } from '@/core/havamal';
-import { Compass, Sparkles, Globe, Terminal, Shield, BookOpen, RefreshCw, Feather, Flame, Search, Columns, ArrowLeftRight, X, Plus, Layers, Film } from 'lucide-react';
+import { Compass, Sparkles, Globe, Terminal, Shield, BookOpen, RefreshCw, Feather, Flame, Search, Columns, ArrowLeftRight, X, Plus, Layers, Film, HelpCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { RealmAtmosphereCanvas } from '@/components/themes/RealmAtmosphereCanvas';
 import { RealmVideoBackdrop } from '@/components/themes/RealmVideoBackdrop';
@@ -25,6 +25,7 @@ interface ContentViewportProps {
   onCloseSplitGaze?: () => void;
   onSwapSplitTabs?: () => void;
   onNewTabInSplit?: (realm: RealmId) => void;
+  onOpenRealmSelector?: () => void;
   sanctumMode?: SanctumBackdropMode;
   onCycleSanctumMode?: () => void;
   isAnimatedBackground?: boolean;
@@ -50,6 +51,7 @@ export const ContentViewport: React.FC<ContentViewportProps> = ({
   onCloseSplitGaze,
   onSwapSplitTabs,
   onNewTabInSplit,
+  onOpenRealmSelector,
   sanctumMode = 'particles',
   onCycleSanctumMode,
   isAnimatedBackground = true,
@@ -447,6 +449,21 @@ export const ContentViewport: React.FC<ContentViewportProps> = ({
                 ? 'SANCTUM: PARTICLES (ᛋ)'
                 : 'SANCTUM: STATIC (ᛏ)'}
             </span>
+          </button>
+        )}
+
+        {/* In-Browser Visuals & Model A Pack Guide Button */}
+        {onOpenRealmSelector && (
+          <button
+            onClick={() => {
+              runicAudio.playClick(500);
+              onOpenRealmSelector();
+            }}
+            className="flex items-center space-x-1 rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-[10px] font-mono text-slate-400 hover:text-cyan-300 hover:border-cyan-500/40 transition-all shadow-md backdrop-blur-md"
+            title="Open Sanctum Visual Modes & Model A Pack Guide"
+          >
+            <HelpCircle className="h-3 w-3 text-cyan-400" />
+            <span className="hidden sm:inline">GUIDE</span>
           </button>
         )}
       </div>
