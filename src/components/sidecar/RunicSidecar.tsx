@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { RealmId, Tab } from '@/types';
 import { REALM_THEMES } from '@/components/themes/realmThemes';
+import { REALMS } from '@/core/realms';
 import { runicAudio } from '@/core/audio/runicAudio';
+import { scoutActivePage } from '@/core/ai/huginnScout';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FileText,
@@ -139,15 +141,9 @@ export const RunicSidecar: React.FC<RunicSidecarProps> = ({
     setIsAiLoading(true);
     runicAudio.playClick(600);
 
-    // Contextual simulated response grounded in current realm and tab
-    setTimeout(() => {
-      let reply = `Observing through the eye of ${theme.title} (${theme.norseTitle}).`;
-      if (activeTab?.title) {
-        reply += ` Current scroll: "${activeTab.title}". The winds of Yggdrasil whisper that wisdom comes from deep scrutiny of this vessel.`;
-      } else {
-        reply += ` The conduit is clear. How may the thought-scout guide your traversal?`;
-      }
-
+    try {
+      const realm = REALMS[activeRealm] || REALMS.midgard;
+      const reply = await scoutActivePage('chat', prompt, realm, activeTab);
       setMessages((prev) => [
         ...prev,
         {
@@ -159,7 +155,18 @@ export const RunicSidecar: React.FC<RunicSidecarProps> = ({
       ]);
       setIsAiLoading(false);
       runicAudio.playChime();
-    }, 900);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `h-${Date.now()}`,
+          sender: 'huginn',
+          text: `Observing through the eye of ${theme.title}. The winds of Yggdrasil whisper wisdom upon your query.`,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        },
+      ]);
+      setIsAiLoading(false);
+    }
   };
 
   if (!isOpen) return null;

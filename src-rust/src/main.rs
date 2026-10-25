@@ -600,9 +600,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         },
                     });
 
+                    let proxy_opt = download_mgr.get_proxy();
                     let rt_handle = rt.clone();
                     rt_handle.spawn(async move {
-                        accelerator::start_accelerated_download(id, url, dest_path, proxy_dl, cancel_flag).await;
+                        accelerator::start_accelerated_download(id, url, dest_path, proxy_dl, cancel_flag, proxy_opt).await;
                     });
                 }
                 IpcCommand::ShowDevtools => {
@@ -648,10 +649,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     download_mgr.cancel(&payload.id);
                 }
                 IpcCommand::ConfigureProxy { payload } => {
-                    logger::info(&format!(
-                        "Configuring Bifrost Proxy Conduit for realm '{}': mode={}, enabled={}, url={}",
-                        payload.realm, payload.mode, payload.enabled, payload.proxy_url
-                    ));
+                    tab_manager.configure_proxy(&payload.realm, &payload.mode, &payload.proxy_url, payload.enabled);
+                    if payload.enabled && !payload.proxy_url.is_empty() && payload.mode != "direct" {
+                        download_mgr.set_proxy(Some(payload.proxy_url.clone()));
+                    } else {
+                        download_mgr.set_proxy(None);
+                    }
+                    if let Ok(json) = serde_json::to_string(&payload) {
+                        let script = format!("window.__mimirOnProxyConfigured && window.__mimirOnProxyConfigured({});", json);
+                        let _ = _hud.evaluate_script(&script);
+                    }
                 }
                 IpcCommand::CalculateHash { payload } => {
                     let path_clone = payload.path.clone();
@@ -762,6 +769,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 IpcCommand::TorrentCompleted { payload } => {
                     if let Ok(json) = serde_json::to_string(&payload) {
                         let script = format!("window.__mimirOnTorrentCompleted && window.__mimirOnTorrentCompleted({});", json);
+                        let _ = _hud.evaluate_script(&script);
+                    }
+                }
+                IpcCommand::ClearBrowsingData { payload } => {
+                    tab_manager.clear_browsing_data(&payload);
+                    let _ = _hud.evaluate_script("window.__mimirOnBrowsingDataCleared && window.__mimirOnBrowsingDataCleared({ success: true });");
+                }
+                IpcCommand::BrowsingDataCleared { success } => {
+                    let script = format!("window.__mimirOnBrowsingDataCleared && window.__mimirOnBrowsingDataCleared({{ success: {} }});", success);
+                    let _ = _hud.evaluate_script(&script);
+                }
+                IpcCommand::ExtractPageContent => {
+                    tab_manager.extract_active_page_content();
+                }
+                IpcCommand::PageContent { payload } => {
+                    if let Ok(json) = serde_json::to_string(&payload) {
+                        let script = format!("window.__mimirOnPageContent && window.__mimirOnPageContent({});", json);
+                        let _ = _hud.evaluate_script(&script);
+                    }
+                }
+                IpcCommand::ProxyConfigured { payload } => {
+                    if let Ok(json) = serde_json::to_string(&payload) {
+                        let script = format!("window.__mimirOnProxyConfigured && window.__mimirOnProxyConfigured({});", json);
                         let _ = _hud.evaluate_script(&script);
                     }
                 }

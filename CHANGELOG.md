@@ -30,6 +30,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **Repurposed Animated Splash**: Displays a rotating Vegvísir runic compass, pulsing `ᛗ` rune, and ambient particle simulations during extraction and download phases.
 * **Automated System Registry Integration**: Automatically registers uninstall entries in Windows Add/Remove Programs and copies self as `uninstall.exe`.
 
+#### Zero-Mock Feature Verification & Production Hardening
+* **Genuine Fate Thread Browsing Data Purge (`FateThreadPurge.tsx`, `tab_manager.rs`, `ipc.rs`)**:
+  * Eliminated simulated purge timeouts and mock cookie resets.
+  * Implemented native `CLEAR_BROWSING_DATA` IPC protocol severing cookies across child webviews (`document.cookie`, `localStorage`, `sessionStorage`, `indexedDB.databases()`).
+  * Real disk cache purging for temporary and isolated Helheim directories (`mimir_helheim_isolated` and `EBWebView` profile caches).
+* **Live Bifröst Proxy Conduit Routing (`accelerator.rs`, `tab_manager.rs`, `main.rs`)**:
+  * Connected `IpcCommand::ConfigureProxy` to multi-strand turbo download accelerator (`reqwest::Proxy::all`) and child webview process environments (`WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--proxy-server=...`).
+  * Real-time confirmation broadcast back to HUD with active conduit indicators.
+* **Huginn AI Scout & Runic Sidecar Live DOM Extraction (`huginnScout.ts`, `HuginnPanel.tsx`, `RunicSidecar.tsx`)**:
+  * Eliminated hardcoded procedural templates in favor of live webpage inspection via `EXTRACT_PAGE_CONTENT` IPC.
+  * Real DOM extraction of active page title, canonical URL, meta description, top headings, inner text excerpt, code blocks, script count, and detected frontend libraries (React, Next.js, Vue, Angular, WordPress, Tailwind CSS).
+  * High-fidelity deterministic offline semantic summarizer calculating word count, reading times, section outlines, and ward audits.
+  * Optional Google Gemini 1.5 Flash API key integration with discreet key modal and persistent configuration.
+
 ---
 
 ## [0.7.0] - 2026-10-25 *(Living Cinematic Video Realms & Tri-Mode Sanctum Engine)*

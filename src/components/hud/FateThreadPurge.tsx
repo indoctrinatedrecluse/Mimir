@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { RealmId } from '@/types';
 import { REALM_THEMES } from '@/components/themes/realmThemes';
 import { runicAudio } from '@/core/audio/runicAudio';
+import { mimirIpc } from '@/core/ipc/bridge';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trash2, X, Clock, Cookie, Database, FileText, AlertTriangle } from 'lucide-react';
 
@@ -88,13 +89,26 @@ export const FateThreadPurge: React.FC<FateThreadPurgeProps> = ({
     setIsPurging(true);
     runicAudio.playRunicHum();
 
-    // Clear selected data
-    if (selectedOptions.has('history')) {
+    const hasHistory = selectedOptions.has('history');
+    const hasCookies = selectedOptions.has('cookies');
+    const hasCache = selectedOptions.has('cache');
+    const hasLocalStorage = selectedOptions.has('localStorage');
+
+    // 1. Dispatch real native clearing signal to Rust backend (WebView2 & disk caches)
+    mimirIpc.clearBrowsingData({
+      history: hasHistory,
+      cookies: hasCookies,
+      cache: hasCache,
+      localStorage: hasLocalStorage,
+      timeRange,
+    });
+
+    // 2. Clear UI-side state and localStorage
+    if (hasHistory) {
       localStorage.removeItem('mimir_fate_threads');
     }
-    if (selectedOptions.has('localStorage')) {
-      // Clear non-essential localStorage (preserve settings and runestones)
-      const keysToKeep = ['mimir_runestones'];
+    if (hasLocalStorage) {
+      const keysToKeep = ['mimir_runestones', 'mimir_active_realm', 'mimir_sanctum_mode'];
       const allKeys = Object.keys(localStorage);
       for (const key of allKeys) {
         if (!keysToKeep.includes(key)) {
@@ -102,8 +116,7 @@ export const FateThreadPurge: React.FC<FateThreadPurgeProps> = ({
         }
       }
     }
-    if (selectedOptions.has('cookies')) {
-      // Signal cookie clear intent (WebView2 handles actual cookies)
+    if (hasCookies) {
       document.cookie.split(';').forEach((c) => {
         const eqPos = c.indexOf('=');
         const name = eqPos > -1 ? c.substring(0, eqPos) : c;
@@ -111,8 +124,25 @@ export const FateThreadPurge: React.FC<FateThreadPurgeProps> = ({
       });
     }
 
-    // Simulate purge delay for UX
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    // 3. Await genuine IPC confirmation from backend
+    await new Promise<void>((resolve) => {
+      let resolved = false;
+      const unsub = mimirIpc.onBrowsingDataCleared(() => {
+        if (!resolved) {
+          resolved = true;
+          unsub();
+          resolve();
+        }
+      });
+      setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          unsub();
+          resolve();
+        }
+      }, 600);
+    });
+
     setIsPurging(false);
     setShowConfirm(false);
     runicAudio.playChime();

@@ -541,6 +541,151 @@ impl TabManager {
         self.execute_on_active(script);
     }
 
+    pub fn clear_browsing_data(&self, payload: &crate::ipc::ClearBrowsingDataPayload) {
+        logger::info(&format!(
+            "ᛗ Severing browsing data threads: cookies={}, cache={}, localStorage={}, range={}",
+            payload.cookies, payload.cache, payload.local_storage, payload.time_range
+        ));
+
+        // 1. Clear cookies and/or localStorage across all open child webviews
+        if payload.cookies || payload.local_storage {
+            let clear_script = r#"
+            (function() {
+                try {
+                    var cookies = document.cookie.split(";");
+                    for (var i = 0; i < cookies.length; i++) {
+                        var cookie = cookies[i];
+                        var eqPos = cookie.indexOf("=");
+                        var name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+                        document.cookie = name.trim() + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;";
+                    }
+                } catch(e) {}
+                try {
+                    localStorage.clear();
+                } catch(e) {}
+                try {
+                    sessionStorage.clear();
+                } catch(e) {}
+                try {
+                    if (window.indexedDB && window.indexedDB.databases) {
+                        window.indexedDB.databases().then(function(dbs) {
+                            for (var j = 0; j < dbs.length; j++) {
+                                if (dbs[j].name) {
+                                    window.indexedDB.deleteDatabase(dbs[j].name);
+                                }
+                            }
+                        });
+                    }
+                } catch(e) {}
+            })();
+            "#;
+
+            for tab in self.tabs.values() {
+                if let Some(wv) = &tab.webview {
+                    let _ = wv.evaluate_script(clear_script);
+                }
+            }
+        }
+
+        // 2. Clear disk caches
+        if payload.cache {
+            let helheim_dir = std::env::temp_dir().join("mimir_helheim_isolated");
+            if helheim_dir.exists() {
+                let _ = std::fs::remove_dir_all(&helheim_dir);
+                let _ = std::fs::create_dir_all(&helheim_dir);
+            }
+
+            if let Ok(local_app_data) = std::env::var("LOCALAPPDATA") {
+                let possible_cache_paths = [
+                    std::path::PathBuf::from(&local_app_data).join("Mimir").join("EBWebView").join("Default").join("Cache"),
+                    std::path::PathBuf::from(&local_app_data).join("Mimir").join("EBWebView").join("Default").join("Code Cache"),
+                    std::path::PathBuf::from(&local_app_data).join("mimir").join("EBWebView").join("Default").join("Cache"),
+                ];
+                for p in possible_cache_paths {
+                    if p.exists() {
+                        let _ = std::fs::remove_dir_all(&p);
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn extract_active_page_content(&self) {
+        let extract_script = r#"
+        (function() {
+            try {
+                var title = document.title || '';
+                var url = window.location.href || '';
+                var meta = document.querySelector('meta[name="description"]');
+                var metaDesc = meta ? meta.getAttribute('content') || '' : '';
+                
+                var hNodes = document.querySelectorAll('h1, h2, h3');
+                var headings = [];
+                for (var i = 0; i < Math.min(hNodes.length, 10); i++) {
+                    var txt = hNodes[i].innerText ? hNodes[i].innerText.trim() : '';
+                    if (txt) headings.push(txt);
+                }
+                
+                var article = document.querySelector('article') || document.querySelector('main') || document.body;
+                var fullText = article && article.innerText ? article.innerText.trim() : '';
+                var words = fullText ? fullText.split(/\s+/).filter(Boolean).length : 0;
+                var textExcerpt = fullText.slice(0, 3500);
+                
+                var codeCount = document.querySelectorAll('pre, code').length;
+                var scriptCount = document.querySelectorAll('script').length;
+                
+                var frameworks = [];
+                if (window.React || document.querySelector('[data-reactroot], [data-react-helmet]')) frameworks.push('React');
+                if (window.next || document.querySelector('#__next')) frameworks.push('Next.js');
+                if (window.Vue || document.querySelector('[data-v-app]')) frameworks.push('Vue');
+                if (window.angular || document.querySelector('[ng-app], [ng-version]')) frameworks.push('Angular');
+                if (document.querySelector('meta[name="generator"][content*="WordPress"]')) frameworks.push('WordPress');
+                if (document.querySelector('link[href*="tailwind"], style:not([id*="mimir"])')) frameworks.push('Tailwind CSS');
+                
+                var payload = {
+                    type: 'PAGE_CONTENT',
+                    payload: {
+                        title: title,
+                        url: url,
+                        metaDescription: metaDesc,
+                        headings: headings,
+                        textExcerpt: textExcerpt,
+                        codeSnippetsCount: codeCount,
+                        scriptsCount: scriptCount,
+                        frameworks: frameworks,
+                        wordCount: words
+                    }
+                };
+                
+                if (window.ipc && typeof window.ipc.postMessage === 'function') {
+                    window.ipc.postMessage(JSON.stringify(payload));
+                } else if (window.chrome && window.chrome.webview && typeof window.chrome.webview.postMessage === 'function') {
+                    window.chrome.webview.postMessage(JSON.stringify(payload));
+                }
+            } catch(e) {}
+        })();
+        "#;
+        self.execute_on_active(extract_script);
+    }
+
+    pub fn configure_proxy(&mut self, realm: &str, mode: &str, proxy_url: &str, enabled: bool) {
+        logger::info(&format!(
+            "ᛗ Calibrating Bifröst Matrix Proxy for realm '{}': mode={}, enabled={}, url={}",
+            realm, mode, enabled, proxy_url
+        ));
+
+        #[cfg(target_os = "windows")]
+        {
+            if enabled && !proxy_url.is_empty() && mode != "direct" {
+                std::env::set_var("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", format!("--proxy-server={}", proxy_url));
+                logger::info(&format!("ᛗ Inscribed WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--proxy-server={}", proxy_url));
+            } else {
+                std::env::remove_var("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS");
+                logger::info("ᛗ Restored direct Bifröst conduits (cleared proxy argument)");
+            }
+        }
+    }
+
     fn execute_on_active(&self, script: &str) {
         if let Some(active_id) = &self.active_tab_id {
             if let Some(tab) = self.tabs.get(active_id) {

@@ -16,7 +16,9 @@ import {
   Check,
   RotateCcw,
   Compass,
+  Key,
 } from 'lucide-react';
+import { scoutActivePage, getGeminiApiKey, setGeminiApiKey } from '@/core/ai/huginnScout';
 
 interface HuginnMessage {
   id: string;
@@ -34,13 +36,6 @@ interface HuginnPanelProps {
   initialPrompt?: string;
 }
 
-const HUGINN_INTROS = [
-  'By the sacred roots of Yggdrasil, I bring tidings from the nine winds...',
-  'My obsidian wings have soared across the realms; here is the lore you seek...',
-  'The Allfather watches from Hliðskjálf. Hear what the ravens perceive...',
-  'Dipping my beak into the waters of Mímisbrunnr, wisdom crystallizes...',
-];
-
 export const HuginnPanel: React.FC<HuginnPanelProps> = ({
   isOpen,
   onClose,
@@ -54,6 +49,8 @@ export const HuginnPanel: React.FC<HuginnPanelProps> = ({
   const [inputVal, setInputVal] = useState(initialPrompt || '');
   const [isTyping, setIsTyping] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [geminiKey, setGeminiKey] = useState(getGeminiApiKey() || '');
+  const [showKeyConfig, setShowKeyConfig] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -88,28 +85,7 @@ export const HuginnPanel: React.FC<HuginnPanelProps> = ({
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  const generateProceduralResponse = (prompt: string, actionType?: string): string => {
-    const intro = HUGINN_INTROS[Math.floor(Math.random() * HUGINN_INTROS.length)];
-    const currentUrl = currentTab?.url || 'mimir://newtab';
-    const currentTitle = currentTab?.title || 'Sanctum of Wisdom';
-
-    if (actionType === 'summarize') {
-      return `${intro}\n\n**Runic Synthesis of [${currentTitle}](${currentUrl})**:\n\n• **Sacred Essence**: This gateway channels knowledge through the realm of ${realm.name}. Primary network protocol is verified and secure.\n• **Host Domain**: The conduit connects to \`${currentUrl.replace(/^https?:\/\//, '').split('/')[0]}\`.\n• **Runic Ward Assessment**: No malignant Helheim trackers detected infiltrating the DOM boundary.\n• **Allfather's Verdict**: Sound knowledge for development and contemplation. Keep the flame of inquiry burning.`;
-    }
-
-    if (actionType === 'code') {
-      return `${intro}\n\n**Code Lore Examination**:\n\n• **Architecture**: Client environment rendered via Rust host with native WebView2 runtime encapsulation.\n• **Styling**: Hardware-accelerated obsidian glass with ${theme.accentColor} dynamic runic highlights.\n• **Security Matrix**: Sandboxed process boundary isolation prevents memory contamination across realm workspaces.`;
-    }
-
-    if (actionType === 'ward') {
-      return `${intro}\n\n**Helheim Privacy & Ward Audit**:\n\n• **Shield Status**: Aegishjalmr ward active (100% telemetry deflection).\n• **Zero-Trace Protocol**: Ephemeral cookies isolated within the ${realm.name} memory vault.\n• **Fingerprint Armor**: Canvas and WebGL parameters normalized to prevent cross-realm tracking.`;
-    }
-
-    // Default conversational response
-    return `${intro}\n\nRegarding **"${prompt}"**:\n\nIn the ancient texts of the Eddas, knowledge is not merely possessed—it is conquered. In ${realm.name}, ${realm.rulerTitle} teaches us that every inquiry opens a pathway along Yggdrasil. The runes declare favor upon your pursuit. Inquire further, and I shall fly to the ends of the cosmic web.`;
-  };
-
-  const handleSend = (textToSend?: string, actionType?: string) => {
+  const handleSend = async (textToSend?: string, actionType?: 'summarize' | 'code' | 'ward' | 'chat') => {
     const content = (textToSend || inputVal).trim();
     if (!content) return;
 
@@ -125,11 +101,10 @@ export const HuginnPanel: React.FC<HuginnPanelProps> = ({
     if (!textToSend) setInputVal('');
     setIsTyping(true);
 
-    // Simulate AI thinking and streaming
-    setTimeout(() => {
+    try {
+      const botReply = await scoutActivePage(actionType || 'chat', content, realm, currentTab);
       setIsTyping(false);
       runicAudio.playChime();
-      const botReply = generateProceduralResponse(content, actionType);
       const aiMsg: HuginnMessage = {
         id: `huginn-${Date.now()}`,
         sender: 'huginn',
@@ -138,7 +113,18 @@ export const HuginnPanel: React.FC<HuginnPanelProps> = ({
         runeTag: realm.rune,
       };
       setMessages((prev) => [...prev, aiMsg]);
-    }, 850);
+    } catch {
+      setIsTyping(false);
+      runicAudio.playClick(300);
+      const errMsg: HuginnMessage = {
+        id: `huginn-${Date.now()}`,
+        sender: 'huginn',
+        text: 'The winds of Yggdrasil are turbulent. The raven could not traverse the gateway.',
+        timestamp: 'Just now',
+        runeTag: '⚠️',
+      };
+      setMessages((prev) => [...prev, errMsg]);
+    }
   };
 
   const copyToClipboard = (text: string, id: string) => {
@@ -221,6 +207,18 @@ export const HuginnPanel: React.FC<HuginnPanelProps> = ({
 
               <div className="flex items-center space-x-1">
                 <button
+                  onClick={() => {
+                    setShowKeyConfig(!showKeyConfig);
+                    runicAudio.playClick(650);
+                  }}
+                  className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${
+                    geminiKey ? 'text-amber-400 bg-amber-500/10 hover:bg-amber-500/20' : 'text-slate-400 hover:bg-white/10 hover:text-white'
+                  }`}
+                  title={geminiKey ? 'Gemini AI Key Connected' : 'Connect Gemini AI Key (Optional)'}
+                >
+                  <Key className="h-3.5 w-3.5" />
+                </button>
+                <button
                   onClick={clearChat}
                   className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
                   title="Purge Raven Memory"
@@ -236,6 +234,65 @@ export const HuginnPanel: React.FC<HuginnPanelProps> = ({
                 </button>
               </div>
             </div>
+
+            {/* Gemini API Key Configuration Accordion */}
+            <AnimatePresence>
+              {showKeyConfig && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="relative z-20 border-b border-amber-500/20 bg-amber-500/[0.04] p-3.5 overflow-hidden"
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] font-bold text-amber-300 font-mono flex items-center gap-1.5">
+                      <Key className="h-3 w-3" />
+                      GEMINI GENERATIVE CONDUIT (OPTIONAL)
+                    </span>
+                    {geminiKey && (
+                      <span className="text-[9px] font-mono text-emerald-400 bg-emerald-500/15 px-1.5 py-0.5 rounded border border-emerald-500/30">
+                        ⚡ Active
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-slate-400 mb-2">
+                    Enter a Google Gemini API key to unlock full live multimodal generative intelligence. If left blank, Huginn operates via offline deterministic DOM semantic analysis.
+                  </p>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="password"
+                      value={geminiKey}
+                      onChange={(e) => setGeminiKey(e.target.value)}
+                      placeholder="AIzaSy..."
+                      className="flex-1 rounded-lg bg-black/50 border border-white/15 px-2.5 py-1.5 text-xs text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-amber-400 font-mono"
+                    />
+                    <button
+                      onClick={() => {
+                        setGeminiApiKey(geminiKey);
+                        runicAudio.playChime();
+                        setShowKeyConfig(false);
+                      }}
+                      className="rounded-lg bg-amber-500/20 border border-amber-500/40 px-3 py-1.5 text-xs font-bold text-amber-200 hover:bg-amber-500/30 transition-all"
+                    >
+                      Save
+                    </button>
+                    {geminiKey && (
+                      <button
+                        onClick={() => {
+                          setGeminiKey('');
+                          setGeminiApiKey('');
+                          runicAudio.playClick(400);
+                        }}
+                        className="rounded-lg bg-white/5 border border-white/10 px-2.5 py-1.5 text-xs font-bold text-slate-400 hover:text-red-400 transition-all"
+                        title="Disconnect Key"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Quick Runic Invocations */}
             <div className="relative z-10 border-b border-white/5 bg-white/[0.02] p-3">

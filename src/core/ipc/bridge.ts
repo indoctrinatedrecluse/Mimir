@@ -86,6 +86,26 @@ export interface NativeTorrentCompletedEvent {
   path: string;
 }
 
+export interface ClearBrowsingDataPayload {
+  history: boolean;
+  cookies: boolean;
+  cache: boolean;
+  localStorage: boolean;
+  timeRange: string;
+}
+
+export interface PageContentPayload {
+  title: string;
+  url: string;
+  metaDescription: string;
+  headings: string[];
+  textExcerpt: string;
+  codeSnippetsCount: number;
+  scriptsCount: number;
+  frameworks: string[];
+  wordCount: number;
+}
+
 export type IpcCommand =
   | { type: 'NAVIGATE'; payload: { url: string; tabId?: string } }
   | { type: 'GO_BACK' }
@@ -118,7 +138,9 @@ export type IpcCommand =
   | { type: 'ADD_TORRENT'; payload: { urlOrMagnet: string; downloadDir?: string } }
   | { type: 'PAUSE_TORRENT'; payload: { id: string } }
   | { type: 'RESUME_TORRENT'; payload: { id: string } }
-  | { type: 'DELETE_TORRENT'; payload: { id: string; deleteFiles?: boolean } };
+  | { type: 'DELETE_TORRENT'; payload: { id: string; deleteFiles?: boolean } }
+  | { type: 'CLEAR_BROWSING_DATA'; payload: ClearBrowsingDataPayload }
+  | { type: 'EXTRACT_PAGE_CONTENT' };
 
 type DownloadStartedListener = (event: NativeDownloadStartedEvent) => void;
 type DownloadProgressListener = (event: NativeDownloadProgressEvent) => void;
@@ -130,6 +152,9 @@ type HashResultListener = (event: NativeHashResultEvent) => void;
 type TorrentAddedListener = (event: NativeTorrentAddedEvent) => void;
 type TorrentProgressListener = (event: NativeTorrentProgressEvent) => void;
 type TorrentCompletedListener = (event: NativeTorrentCompletedEvent) => void;
+type BrowsingDataClearedListener = () => void;
+type PageContentListener = (event: PageContentPayload) => void;
+type ProxyConfiguredListener = (event: any) => void;
 
 class MimirIpcBridge {
   private downloadStartedListeners: Set<DownloadStartedListener> = new Set();
@@ -142,6 +167,9 @@ class MimirIpcBridge {
   private torrentAddedListeners: Set<TorrentAddedListener> = new Set();
   private torrentProgressListeners: Set<TorrentProgressListener> = new Set();
   private torrentCompletedListeners: Set<TorrentCompletedListener> = new Set();
+  private browsingDataClearedListeners: Set<BrowsingDataClearedListener> = new Set();
+  private pageContentListeners: Set<PageContentListener> = new Set();
+  private proxyConfiguredListeners: Set<ProxyConfiguredListener> = new Set();
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -185,6 +213,18 @@ class MimirIpcBridge {
 
       win.__mimirOnTorrentCompleted = (payload: NativeTorrentCompletedEvent) => {
         this.torrentCompletedListeners.forEach((l) => l(payload));
+      };
+
+      win.__mimirOnBrowsingDataCleared = () => {
+        this.browsingDataClearedListeners.forEach((l) => l());
+      };
+
+      win.__mimirOnPageContent = (payload: PageContentPayload) => {
+        this.pageContentListeners.forEach((l) => l(payload));
+      };
+
+      win.__mimirOnProxyConfigured = (payload: any) => {
+        this.proxyConfiguredListeners.forEach((l) => l(payload));
       };
     }
   }
@@ -327,6 +367,34 @@ class MimirIpcBridge {
       type: 'DELETE_TORRENT',
       payload: { id, deleteFiles },
     });
+  }
+
+  public clearBrowsingData(payload: ClearBrowsingDataPayload) {
+    this.send({
+      type: 'CLEAR_BROWSING_DATA',
+      payload,
+    });
+  }
+
+  public onBrowsingDataCleared(listener: BrowsingDataClearedListener): () => void {
+    this.browsingDataClearedListeners.add(listener);
+    return () => this.browsingDataClearedListeners.delete(listener);
+  }
+
+  public extractPageContent() {
+    this.send({
+      type: 'EXTRACT_PAGE_CONTENT',
+    });
+  }
+
+  public onPageContent(listener: PageContentListener): () => void {
+    this.pageContentListeners.add(listener);
+    return () => this.pageContentListeners.delete(listener);
+  }
+
+  public onProxyConfigured(listener: ProxyConfiguredListener): () => void {
+    this.proxyConfiguredListeners.add(listener);
+    return () => this.proxyConfiguredListeners.delete(listener);
   }
 }
 

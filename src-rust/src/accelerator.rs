@@ -13,12 +13,28 @@ use tokio::io::AsyncWriteExt;
 
 pub struct DownloadManager {
     cancels: std::sync::RwLock<std::collections::HashMap<String, Arc<AtomicBool>>>,
+    proxy_url: std::sync::RwLock<Option<String>>,
 }
 
 impl DownloadManager {
     pub fn new() -> Self {
         Self {
             cancels: std::sync::RwLock::new(std::collections::HashMap::new()),
+            proxy_url: std::sync::RwLock::new(None),
+        }
+    }
+
+    pub fn set_proxy(&self, proxy: Option<String>) {
+        if let Ok(mut map) = self.proxy_url.write() {
+            *map = proxy;
+        }
+    }
+
+    pub fn get_proxy(&self) -> Option<String> {
+        if let Ok(map) = self.proxy_url.read() {
+            map.clone()
+        } else {
+            None
         }
     }
 
@@ -77,6 +93,7 @@ pub async fn start_accelerated_download(
     dest_path: PathBuf,
     proxy: EventLoopProxy<IpcCommand>,
     cancel_flag: Arc<AtomicBool>,
+    proxy_url: Option<String>,
 ) {
     logger::info(&format!(
         "ᛗ Bifröst Accelerator initiating acquisition for {} -> {}",
@@ -84,11 +101,22 @@ pub async fn start_accelerated_download(
         dest_path.display()
     ));
 
-    let client = match reqwest::Client::builder()
+    let mut client_builder = reqwest::Client::builder()
         .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 Mimir/0.5.0")
-        .timeout(Duration::from_secs(45))
-        .build()
-    {
+        .timeout(Duration::from_secs(45));
+
+    if let Some(ref p_url) = proxy_url {
+        if !p_url.is_empty() {
+            if let Ok(p) = reqwest::Proxy::all(p_url) {
+                logger::info(&format!("ᛗ Bifröst Accelerator channeling traffic via proxy: {}", p_url));
+                client_builder = client_builder.proxy(p);
+            } else {
+                logger::warn(&format!("ᛗ Bifröst Proxy URL malformed or unsupported: {}", p_url));
+            }
+        }
+    }
+
+    let client = match client_builder.build() {
         Ok(c) => c,
         Err(e) => {
             logger::error(&format!("Failed to build HTTP client: {}", e));

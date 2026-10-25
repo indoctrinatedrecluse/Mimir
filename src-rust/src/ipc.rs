@@ -137,6 +137,21 @@ pub enum IpcCommand {
 
     #[serde(rename = "TORRENT_COMPLETED")]
     TorrentCompleted { payload: TorrentCompletedPayload },
+
+    #[serde(rename = "CLEAR_BROWSING_DATA")]
+    ClearBrowsingData { payload: ClearBrowsingDataPayload },
+
+    #[serde(rename = "BROWSING_DATA_CLEARED")]
+    BrowsingDataCleared { success: bool },
+
+    #[serde(rename = "EXTRACT_PAGE_CONTENT")]
+    ExtractPageContent,
+
+    #[serde(rename = "PAGE_CONTENT")]
+    PageContent { payload: PageContentPayload },
+
+    #[serde(rename = "PROXY_CONFIGURED")]
+    ProxyConfigured { payload: ConfigureProxyPayload },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -353,6 +368,41 @@ pub struct TorrentCompletedPayload {
     pub total_bytes: u64,
     pub path: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ClearBrowsingDataPayload {
+    #[serde(default)]
+    pub history: bool,
+    #[serde(default)]
+    pub cookies: bool,
+    #[serde(default)]
+    pub cache: bool,
+    #[serde(default, rename = "localStorage")]
+    pub local_storage: bool,
+    #[serde(default, rename = "timeRange")]
+    pub time_range: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PageContentPayload {
+    pub title: String,
+    pub url: String,
+    #[serde(default, rename = "metaDescription")]
+    pub meta_description: String,
+    #[serde(default)]
+    pub headings: Vec<String>,
+    #[serde(default, rename = "textExcerpt")]
+    pub text_excerpt: String,
+    #[serde(default, rename = "codeSnippetsCount")]
+    pub code_snippets_count: usize,
+    #[serde(default, rename = "scriptsCount")]
+    pub scripts_count: usize,
+    #[serde(default)]
+    pub frameworks: Vec<String>,
+    #[serde(default, rename = "wordCount")]
+    pub word_count: usize,
+}
+
 
 
 
