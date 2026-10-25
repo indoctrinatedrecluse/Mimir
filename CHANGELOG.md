@@ -9,15 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Planned & In-Flight Roadmap (Next Release)
-* **Streaming Media Codecs & DRM Protocols**:
-  * Investigate and implement Widevine Content Decryption Modules (CDM) and specialized media codecs to enable streaming platforms (Netflix, Amazon Prime Video, Disney+, Spotify Web, and protected media channels).
-* **Floating Rune PiP Overhaul (Enhanced Always-On-Top Mini Player)**:
-  * Resizable popped-out mini-player window with interactive corner drag handles and aspect ratio constraints.
-  * Native OS-level Always-On-Top floating window overlay, ensuring the mini-player stays permanently visible in the foreground even when other non-browser desktop applications are active and focused.
-  * Multi-monitor positioning memory and native video stream projection.
+### Added
+
+#### Streaming Media Codecs & DRM Protocols (`media_drm.rs`, `tab_manager.rs`, `MediaSentinelModal.tsx`, `SanctumSettingsModal.tsx`, `App.tsx`, `CommandPalette.tsx`)
+* **Widevine CDM & PlayReady DRM Architecture**:
+  * Configured `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS` flags (`--enable-features=HardwareSecureDecryption,msPlayReady,PlatformEncryptedDolbyVision,EncryptedMediaExtensions,AudioServiceOutOfProcess`, `--enable-widevine-cdm`, `--enable-accelerated-video-decode`, `--enable-gpu-rasterization`, `--ignore-gpu-blocklist`, `--autoplay-policy=no-user-gesture-required`).
+  * Automated Widevine CDM host discovery and auto-seeding: Automatically locates host Edge, Chrome, or Windows Component-Based Servicing (CBS) `widevinecdm.dll` and seeds into Mímir's `%TEMP%\mimir_webview2_data\EBWebView\WidevineCdm` on clean machines without requiring manual component downloads.
+  * Native Edge User-Agent emulation (`Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0`) in child tab webviews, stripping `WebView2/` wrapper tokens to ensure DRM-protected streaming platforms (Netflix, Prime Video, Disney+, Spotify Web) handshake properly without embedded browser blocks.
+* **Heimdall Media Sentinel Diagnostic Studio (`Ctrl+Shift+D`)**:
+  * Live Web API media capabilities probe testing Widevine L3 (`com.widevine.alpha`), Microsoft PlayReady (`com.microsoft.playready`), H.264/AVC1, VP9, AV1, HEVC, AAC, AC-3, E-AC-3, and GPU hardware acceleration.
+  * Direct launch conduits for Netflix, Prime Video, Disney+, Spotify Web, YouTube 4K, and Twitch.
+  * Integrated dedicated "Streaming Protocols & DRM Sanctuary" tab into Sanctum Settings.
+
+#### Floating Rune PiP Mini-Player Overhaul (`main.rs`, `ipc.rs`, `mediaController.ts`, `FloatingPipMiniPlayer.tsx`, `bridge.ts`)
+* **Interactive Resizing & Aspect Ratio Constraints**:
+  * Interactive corner resize handles for smooth dragging and resizing of the popped-out mini-player.
+  * Aspect ratio modes: `16:9` (Cinematic Widescreen), `4:3` (Classic TV), `1:1` (Square Media), and `free` (Custom Unconstrained).
+  * Live resolution badges (`384x216`, `480x270`, `640x360`, `720x405`, `854x480`, `1280x720`) with persistent dimension storage in `localStorage`.
+* **Native OS-Level Always-On-Top Floating Window**:
+  * Native Tao frameless window creation with `.with_always_on_top(true)` and `.with_resizable(true)` that stays permanently floating in the foreground even when other non-browser desktop applications (IDE, Office, games) are focused.
+  * Bidirectional IPC bridge (`SPAWN_PIP_WINDOW`, `CLOSE_PIP_WINDOW`, `DRAG_PIP_WINDOW`, `SYNC_PIP_STATE`) synchronizing title, playback state, transport controls, and volume between the host tab and native OS PiP window.
+
+### Deferred (Future Roadmap)
 * **Custom Theme Generator (Milestone 6)**:
-  * Interactive theme designer for user-defined cosmic realms, customizable HSL color palettes, runic staves, and personal shader backdrop generators.
+  * Interactive theme designer for user-defined cosmic realms, customizable HSL color palettes, runic staves, and personal shader backdrop generators deferred to a subsequent release cycle.
 
 ---
 

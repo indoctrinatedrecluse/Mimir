@@ -11,6 +11,20 @@ class MediaController {
 
   constructor() {
     this.startProgressTicker();
+    if (typeof window !== 'undefined') {
+      (window as any).__mimirOnPipWindowSpawned = () => {
+        if (this.activeSession) {
+          this.activeSession.isNativePipActive = true;
+          this.notify();
+        }
+      };
+      (window as any).__mimirOnPipWindowClosed = () => {
+        if (this.activeSession) {
+          this.activeSession.isNativePipActive = false;
+          this.notify();
+        }
+      };
+    }
   }
 
   public subscribe(listener: MediaListener): () => void {
@@ -117,6 +131,7 @@ class MediaController {
       `;
       mimirIpc.send({ type: 'EXECUTE_SCRIPT', payload: { script } });
     }
+    this.syncNativePipState();
     this.notify();
   }
 
@@ -241,6 +256,40 @@ class MediaController {
       mimirIpc.send({ type: 'EXECUTE_SCRIPT', payload: { script } });
     }
     this.notify();
+  }
+
+  public spawnNativePipWindow(width = 480, height = 270) {
+    if (!this.activeSession) return;
+    this.activeSession.isNativePipActive = true;
+    mimirIpc.send({
+      type: 'SPAWN_PIP_WINDOW',
+      payload: {
+        title: this.activeSession.title,
+        is_playing: this.activeSession.isPlaying,
+        width,
+        height,
+      },
+    });
+    this.notify();
+  }
+
+  public closeNativePipWindow() {
+    if (!this.activeSession) return;
+    this.activeSession.isNativePipActive = false;
+    mimirIpc.send({ type: 'CLOSE_PIP_WINDOW' });
+    this.notify();
+  }
+
+  public syncNativePipState() {
+    if (!this.activeSession || !this.activeSession.isNativePipActive) return;
+    mimirIpc.send({
+      type: 'SYNC_PIP_STATE',
+      payload: {
+        is_playing: this.activeSession.isPlaying,
+        volume: this.activeSession.volume,
+        title: this.activeSession.title,
+      },
+    });
   }
 
   private applyVolumeToWebview() {

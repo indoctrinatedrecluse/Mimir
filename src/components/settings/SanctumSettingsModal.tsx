@@ -23,6 +23,8 @@ import {
   EyeOff,
   Video,
   Key,
+  Film,
+  Tv,
 } from 'lucide-react';
 import {
   getPrivacySettings,
@@ -44,9 +46,10 @@ interface SanctumSettingsModalProps {
   activeRealm: RealmId;
   onOpenClearData?: () => void;
   onOpenVault?: () => void;
+  onOpenMediaSentinel?: () => void;
 }
 
-type SettingsTab = 'search' | 'shield' | 'fingerprint' | 'retention' | 'ai';
+type SettingsTab = 'search' | 'shield' | 'fingerprint' | 'retention' | 'ai' | 'streaming';
 
 export const SanctumSettingsModal: React.FC<SanctumSettingsModalProps> = ({
   isOpen,
@@ -54,6 +57,7 @@ export const SanctumSettingsModal: React.FC<SanctumSettingsModalProps> = ({
   activeRealm,
   onOpenClearData,
   onOpenVault,
+  onOpenMediaSentinel,
 }) => {
   const [activeTab, setActiveTab] = useState<SettingsTab>('search');
   const [settings, setSettings] = useState<PrivacySettings>(getPrivacySettings);
@@ -115,6 +119,7 @@ export const SanctumSettingsModal: React.FC<SanctumSettingsModalProps> = ({
     { id: 'fingerprint', label: 'Anti-Fingerprint', norse: 'Veil of Shadows', icon: Fingerprint },
     { id: 'retention', label: 'Fate Threads', norse: 'Urðr Memory', icon: Trash2 },
     { id: 'ai', label: 'AI Scout Key', norse: 'Huginn Intel', icon: Sparkles },
+    { id: 'streaming', label: 'Streaming & DRM', norse: 'Heimdall Signal', icon: Film },
   ];
 
   return (
@@ -803,6 +808,106 @@ export const SanctumSettingsModal: React.FC<SanctumSettingsModalProps> = ({
                       Stored exclusively inside your local browser vault. Calls are issued directly from your machine to Google Generative AI endpoints.
                     </p>
                   </div>
+                </div>
+              )}
+
+              {/* TAB 6: STREAMING & DRM */}
+              {activeTab === 'streaming' && (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-200 flex items-center space-x-2">
+                      <Film className="h-4 w-4 text-cyan-400" />
+                      <span>Streaming Protocols & DRM Sanctuary</span>
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Configure Content Decryption Modules (CDM), hardware acceleration, and streaming service compatibility for Netflix, Amazon Prime Video, Disney+, Spotify Web, and protected media.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 flex items-start space-x-3">
+                      <ShieldCheck className="h-5 w-5 text-emerald-400 mt-0.5 shrink-0" />
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs font-bold text-white">Google Widevine CDM (L3)</span>
+                          <span className="rounded bg-emerald-500/20 px-1.5 py-0.2 text-[8px] font-mono font-bold text-emerald-300 border border-emerald-500/30">
+                            ACTIVE
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                          Hardware and software Common Encryption (CENC) decryption module provisioned in local EBWebView directory.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 flex items-start space-x-3">
+                      <Tv className="h-5 w-5 text-cyan-400 mt-0.5 shrink-0" />
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs font-bold text-white">Microsoft PlayReady DRM</span>
+                          <span className="rounded bg-cyan-500/20 px-1.5 py-0.2 text-[8px] font-mono font-bold text-cyan-300 border border-cyan-500/30">
+                            ENABLED
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                          Hardware-secure decryption pipeline active via Windows Media Foundation and Chromium feature flags.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 flex items-start space-x-3">
+                      <Cpu className="h-5 w-5 text-amber-400 mt-0.5 shrink-0" />
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs font-bold text-white">GPU Video Decode</span>
+                          <span className="rounded bg-amber-500/20 px-1.5 py-0.2 text-[8px] font-mono font-bold text-amber-300 border border-amber-500/30">
+                            ENGAGED
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                          Accelerated hardware decode for H.264/AVC1, VP9, and AV1 video streams with zero GPU blacklisting.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 flex items-start space-x-3">
+                      <Lock className="h-5 w-5 text-purple-400 mt-0.5 shrink-0" />
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs font-bold text-white">Edge 131 Clean User-Agent</span>
+                          <span className="rounded bg-purple-500/20 px-1.5 py-0.2 text-[8px] font-mono font-bold text-purple-300 border border-purple-500/30">
+                            SPOOF ACTIVE
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                          Emulates standard desktop Microsoft Edge, preventing streaming platforms from blocking embedded wrappers.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {onOpenMediaSentinel && (
+                    <div className="rounded-xl border border-cyan-500/30 bg-gradient-to-r from-cyan-950/30 to-black/40 p-4 flex items-center justify-between">
+                      <div>
+                        <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                          Launch Full Media & DRM Sentinel
+                        </span>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          Interrogate active EME key systems, test individual codecs, and access 1-click verified streaming conduits.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          runicAudio.playChime();
+                          onOpenMediaSentinel();
+                        }}
+                        className="px-3.5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs shadow-lg shadow-cyan-500/20 transition-all hover:scale-105 active:scale-95 shrink-0 ml-4"
+                      >
+                        Scan Codecs
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

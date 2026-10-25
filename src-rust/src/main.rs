@@ -7,6 +7,7 @@ mod tab_manager;
 mod accelerator;
 mod torrent;
 mod adblocker;
+pub mod media_drm;
 
 use std::borrow::Cow;
 use std::path::PathBuf;
@@ -234,11 +235,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Direct WebView2 data and cache away from the project workspace to prevent file lock
     // collisions with Vite's watcher
-    if std::env::var("WEBVIEW2_USER_DATA_FOLDER").is_err() {
-        let data_dir = std::env::temp_dir().join("mimir_webview2_data");
-        logger::info(&format!("Setting WebView2 user data directory: {}", data_dir.display()));
-        std::env::set_var("WEBVIEW2_USER_DATA_FOLDER", data_dir);
-    }
+    let data_dir = match std::env::var("WEBVIEW2_USER_DATA_FOLDER") {
+        Ok(dir_str) => PathBuf::from(dir_str),
+        Err(_) => {
+            let dir = std::env::temp_dir().join("mimir_webview2_data");
+            logger::info(&format!("Setting WebView2 user data directory: {}", dir.display()));
+            std::env::set_var("WEBVIEW2_USER_DATA_FOLDER", &dir);
+            dir
+        }
+    };
+
+    // Configure streaming DRM protocols, Widevine seeding, and media hardware acceleration
+    media_drm::configure_media_environment(&data_dir);
 
     let event_loop = EventLoopBuilder::<IpcCommand>::with_user_event().build();
     let event_loop_proxy = event_loop.create_proxy();
@@ -423,8 +431,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     logger::info("ᛗ Mímir Runic Conduit event loop running.");
 
+    let mut pip_window: Option<Arc<tao::window::Window>> = None;
+    let mut pip_webview: Option<wry::WebView> = None;
+
     // Run Tao event loop
-    event_loop.run(move |event, _, control_flow| {
+    event_loop.run(move |event, event_loop_target, control_flow| {
         *control_flow = ControlFlow::Wait;
         let _keep_hud = &_hud;
 
@@ -801,6 +812,155 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     if let Ok(json) = serde_json::to_string(&payload) {
                         let script = format!("window.__mimirOnProxyConfigured && window.__mimirOnProxyConfigured({});", json);
                         let _ = _hud.evaluate_script(&script);
+                    }
+                }
+                IpcCommand::SpawnPipWindow { payload } => {
+                    logger::info(&format!("Spawning Sovereign OS-Level Always-On-Top PiP Window: {}", payload.title));
+                    if let Some(win) = &pip_window {
+                        win.set_focus();
+                    } else {
+                        let w = payload.width.unwrap_or(480.0);
+                        let h = payload.height.unwrap_or(270.0);
+                        let title = format!("ᛊ Mímir Floating Rune — {}", payload.title);
+                        let icon_bytes = include_bytes!("../icon_64.rgba");
+                        let win_icon = Icon::from_rgba(icon_bytes.to_vec(), 64, 64).ok();
+
+                        let mut b = WindowBuilder::new()
+                            .with_title(&title)
+                            .with_window_icon(win_icon)
+                            .with_inner_size(LogicalSize::new(w, h))
+                            .with_min_inner_size(LogicalSize::new(280.0, 158.0))
+                            .with_always_on_top(true)
+                            .with_decorations(false)
+                            .with_resizable(true);
+
+                        if let (Some(x), Some(y)) = (payload.x, payload.y) {
+                            b = b.with_position(tao::dpi::LogicalPosition::new(x, y));
+                        }
+
+                        if let Ok(new_win) = b.build(event_loop_target) {
+                            let new_win_arc = Arc::new(new_win);
+                            let proxy_for_pip = event_loop_proxy.clone();
+                            let title_clone = payload.title.clone();
+
+                            let pip_html = format!(r#"<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Floating Rune PiP</title>
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; user-select: none; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }}
+        body {{ background: #05070a; color: #fff; width: 100vw; height: 100vh; overflow: hidden; display: flex; flex-direction: column; border: 1px solid rgba(0, 245, 255, 0.4); border-radius: 12px; }}
+        .header {{ height: 32px; background: rgba(10, 15, 26, 0.95); display: flex; align-items: center; justify-content: space-between; padding: 0 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); cursor: grab; }}
+        .header:active {{ cursor: grabbing; }}
+        .title-badge {{ font-size: 10px; font-weight: bold; color: #00f5ff; letter-spacing: 1px; display: flex; align-items: center; gap: 6px; }}
+        .badge-aot {{ background: rgba(0, 245, 255, 0.2); border: 1px solid rgba(0, 245, 255, 0.4); padding: 1px 5px; border-radius: 4px; font-size: 8px; }}
+        .btn-group {{ display: flex; align-items: center; gap: 6px; }}
+        .btn {{ background: transparent; border: none; color: #94a3b8; cursor: pointer; padding: 4px; border-radius: 4px; display: flex; align-items: center; justify-content: center; }}
+        .btn:hover {{ color: #fff; background: rgba(255, 255, 255, 0.1); }}
+        .btn.close:hover {{ color: #fb7185; background: rgba(244, 63, 94, 0.2); }}
+        .screen {{ flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at center, #0f172a 0%, #020617 100%); position: relative; }}
+        .rune-disc {{ width: 56px; height: 56px; border-radius: 50%; border: 1px solid rgba(0, 245, 255, 0.4); background: rgba(0, 245, 255, 0.05); display: flex; align-items: center; justify-content: center; font-size: 24px; color: #00f5ff; box-shadow: 0 0 20px rgba(0, 245, 255, 0.2); animation: spin 8s linear infinite; }}
+        @keyframes spin {{ 100% {{ transform: rotate(360deg); }} }}
+        .track-title {{ margin-top: 10px; font-size: 11px; font-weight: 600; color: #e2e8f0; max-width: 80%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
+        .controls {{ height: 42px; background: rgba(5, 7, 10, 0.9); border-top: 1px solid rgba(255, 255, 255, 0.06); display: flex; align-items: center; justify-content: center; gap: 16px; }}
+        .ctrl-btn {{ background: none; border: none; color: #cbd5e1; cursor: pointer; font-size: 14px; padding: 6px; border-radius: 6px; }}
+        .ctrl-btn:hover {{ color: #00f5ff; background: rgba(0, 245, 255, 0.1); }}
+        .ctrl-btn.play {{ width: 32px; height: 32px; border-radius: 50%; background: #00f5ff; color: #05070a; font-weight: bold; display: flex; align-items: center; justify-content: center; }}
+        .ctrl-btn.play:hover {{ background: #38bdf8; }}
+    </style>
+</head>
+<body>
+    <div class="header" id="drag-bar">
+        <div class="title-badge">
+            <span>ᛊ FLOATING RUNE</span>
+            <span class="badge-aot">ALWAYS ON TOP</span>
+        </div>
+        <div class="btn-group">
+            <button class="btn" id="dock-btn" title="Dock into Browser">⚓</button>
+            <button class="btn close" id="close-btn" title="Close PiP">✕</button>
+        </div>
+    </div>
+    <div class="screen">
+        <div class="rune-disc">ᛊ</div>
+        <div class="track-title" id="track-name">{}</div>
+    </div>
+    <div class="controls">
+        <button class="ctrl-btn" id="seek-back" title="Rewind 10s">⏪</button>
+        <button class="ctrl-btn play" id="play-btn" title="Play/Pause">▶</button>
+        <button class="ctrl-btn" id="seek-fwd" title="Forward 10s">⏩</button>
+    </div>
+    <script>
+        const post = (msg) => {{
+            if (window.ipc && window.ipc.postMessage) window.ipc.postMessage(JSON.stringify(msg));
+            else if (window.chrome && window.chrome.webview && window.chrome.webview.postMessage) window.chrome.webview.postMessage(JSON.stringify(msg));
+        }};
+        document.getElementById('drag-bar').addEventListener('mousedown', (e) => {{
+            if (e.target.closest('button')) return;
+            post({{ type: 'DRAG_PIP_WINDOW' }});
+        }});
+        document.getElementById('dock-btn').addEventListener('click', () => {{
+            post({{ type: 'CLOSE_PIP_WINDOW' }});
+        }});
+        document.getElementById('close-btn').addEventListener('click', () => {{
+            post({{ type: 'CLOSE_PIP_WINDOW' }});
+        }});
+        let isPlaying = {};
+        const playBtn = document.getElementById('play-btn');
+        playBtn.innerText = isPlaying ? '⏸' : '▶';
+        playBtn.addEventListener('click', () => {{
+            isPlaying = !isPlaying;
+            playBtn.innerText = isPlaying ? '⏸' : '▶';
+            post({{ type: 'EXECUTE_SCRIPT', payload: {{ tab_id: null, script: "var v = document.querySelector('video, audio'); if(v) {{ if(v.paused) v.play(); else v.pause(); }}" }} }});
+        }});
+        document.getElementById('seek-back').addEventListener('click', () => {{
+            post({{ type: 'EXECUTE_SCRIPT', payload: {{ tab_id: null, script: "var v = document.querySelector('video, audio'); if(v) v.currentTime = Math.max(0, v.currentTime - 10);" }} }});
+        }});
+        document.getElementById('seek-fwd').addEventListener('click', () => {{
+            post({{ type: 'EXECUTE_SCRIPT', payload: {{ tab_id: null, script: "var v = document.querySelector('video, audio'); if(v) v.currentTime = Math.min(v.duration || 999999, v.currentTime + 10);" }} }});
+        }});
+    </script>
+</body>
+</html>"#, title_clone, payload.is_playing);
+
+                            let pip_wv_builder = WebViewBuilder::new()
+                                .with_html(&pip_html)
+                                .with_background_color((5, 7, 10, 255))
+                                .with_ipc_handler(move |req: wry::http::Request<String>| {
+                                    let msg = req.body();
+                                    if let Ok(cmd) = serde_json::from_str::<IpcCommand>(msg) {
+                                        let _ = proxy_for_pip.send_event(cmd);
+                                    }
+                                });
+
+                            if let Ok(wv) = pip_wv_builder.build(&new_win_arc) {
+                                pip_webview = Some(wv);
+                                pip_window = Some(new_win_arc);
+                                let _ = _hud.evaluate_script("window.__mimirOnPipWindowSpawned && window.__mimirOnPipWindowSpawned({ active: true });");
+                            }
+                        }
+                    }
+                }
+                IpcCommand::ClosePipWindow => {
+                    logger::info("Closing Sovereign Always-On-Top PiP Window");
+                    pip_webview = None;
+                    pip_window = None;
+                    let _ = _hud.evaluate_script("window.__mimirOnPipWindowClosed && window.__mimirOnPipWindowClosed({ active: false });");
+                }
+                IpcCommand::DragPipWindow => {
+                    if let Some(win) = &pip_window {
+                        let _ = win.drag_window();
+                    }
+                }
+                IpcCommand::SyncPipState { payload } => {
+                    if let Some(wv) = &pip_webview {
+                        let script = format!(
+                            "if (document.getElementById('track-name') && '{}' !== '') document.getElementById('track-name').innerText = '{}'; if (document.getElementById('play-btn')) document.getElementById('play-btn').innerText = {} ? '⏸' : '▶';",
+                            payload.title.as_deref().unwrap_or(""),
+                            payload.title.as_deref().unwrap_or(""),
+                            payload.is_playing
+                        );
+                        let _ = wv.evaluate_script(&script);
                     }
                 }
             },

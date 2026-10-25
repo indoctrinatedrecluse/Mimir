@@ -111,6 +111,8 @@ export interface ActiveMediaSession {
   playbackRate: number; // 0.5 to 2.0
   isMuted: boolean;
   isPipActive: boolean;
+  isNativePipActive?: boolean;
+  pipAspectRatio?: '16:9' | '4:3' | '1:1' | 'free';
   mediaType: 'video' | 'audio' | 'ambient';
 }
 

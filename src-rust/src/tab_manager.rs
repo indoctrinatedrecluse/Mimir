@@ -111,6 +111,7 @@ impl TabManager {
             .with_bounds(rect)
             .with_url(url)
             .with_background_color((5, 7, 10, 255))
+            .with_user_agent(crate::media_drm::DEFAULT_EDGE_USER_AGENT)
             .with_devtools(true);
 
         // 1. Download started handler

@@ -98,6 +98,7 @@ interface CommandPaletteProps {
   onToggleMediaHud?: () => void;
   onToggleBookmarksBar?: () => void;
   onOpenVault?: () => void;
+  onOpenMediaSentinel?: () => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
@@ -141,6 +142,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onToggleMediaHud,
   onToggleBookmarksBar,
   onOpenVault,
+  onOpenMediaSentinel,
 }) => {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -336,6 +338,16 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         rune: 'ᛊ',
         icon: Disc3,
         action: () => onToggleMediaHud?.(),
+      },
+      {
+        id: 'media-sentinel',
+        category: 'Viewports & Tools',
+        title: 'Media Sentinel: Streaming DRM & Codecs Diagnostic',
+        description: 'Probe Widevine L3, PlayReady, H.264/AV1 hardware codecs, and streaming portals',
+        shortcut: 'Ctrl+Shift+D',
+        rune: 'ᛗ',
+        icon: Film,
+        action: () => onOpenMediaSentinel?.(),
       },
       {
         id: 'skuld-canvas',

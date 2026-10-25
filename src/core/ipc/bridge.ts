@@ -142,7 +142,11 @@ export type IpcCommand =
   | { type: 'CLEAR_BROWSING_DATA'; payload: ClearBrowsingDataPayload }
   | { type: 'EXTRACT_PAGE_CONTENT' }
   | { type: 'SUSPEND_TAB'; payload: { tabId: string } }
-  | { type: 'RESUME_TAB'; payload: { tabId: string } };
+  | { type: 'RESUME_TAB'; payload: { tabId: string } }
+  | { type: 'SPAWN_PIP_WINDOW'; payload: { title: string; is_playing?: boolean; width?: number; height?: number; x?: number; y?: number } }
+  | { type: 'CLOSE_PIP_WINDOW' }
+  | { type: 'DRAG_PIP_WINDOW' }
+  | { type: 'SYNC_PIP_STATE'; payload: { is_playing: boolean; volume?: number; title?: string } };
 
 type DownloadStartedListener = (event: NativeDownloadStartedEvent) => void;
 type DownloadProgressListener = (event: NativeDownloadProgressEvent) => void;

@@ -34,6 +34,7 @@ const SkuldsCanvasModal = lazy(() => import('@/components/canvas/SkuldsCanvasMod
 const FloatingRuneMediaHud = lazy(() => import('@/components/media/FloatingRuneMediaHud').then((m) => ({ default: m.FloatingRuneMediaHud })));
 const FloatingPipMiniPlayer = lazy(() => import('@/components/media/FloatingPipMiniPlayer').then((m) => ({ default: m.FloatingPipMiniPlayer })));
 const FafnirsTreasuryModal = lazy(() => import('@/components/vault/FafnirsTreasuryModal').then((m) => ({ default: m.FafnirsTreasuryModal })));
+const MediaSentinelModal = lazy(() => import('@/components/mimisbrunnr/MediaSentinelModal').then((m) => ({ default: m.MediaSentinelModal })));
 import { buildSearchUrl } from '@/core/privacy/privacySettings';
 import { slumberEngine } from '@/core/tabs/slumberEngine';
 import { mediaController } from '@/core/media/mediaController';
@@ -102,6 +103,7 @@ export const App: React.FC = () => {
   const [isCanvasOpen, setIsCanvasOpen] = useState(false);
   const [isMediaHudOpen, setIsMediaHudOpen] = useState(false);
   const [isVaultOpen, setIsVaultOpen] = useState(false);
+  const [isMediaSentinelOpen, setIsMediaSentinelOpen] = useState(false);
   const [activeMediaSession, setActiveMediaSession] = useState<ActiveMediaSession | null>(mediaController.getSession());
   const [isSplitGaze, setIsSplitGaze] = useState(false);
   const [splitTabId, setSplitTabId] = useState<string | undefined>('tab-2');
@@ -645,6 +647,12 @@ const formatEtaSeconds = (secs: number): string => {
         runicAudio.playClick(850);
         setIsVaultOpen((prev) => !prev);
       }
+      // Ctrl+Shift+D: Media Sentinel (Streaming DRM & Codec Diagnostic)
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        runicAudio.playChime();
+        setIsMediaSentinelOpen((prev) => !prev);
+      }
       // Esc: Close modals & drawers
       if (e.key === 'Escape') {
         setIsRealmSelectorOpen(false);
@@ -660,6 +668,7 @@ const formatEtaSeconds = (secs: number): string => {
         setIsCanvasOpen(false);
         setIsMediaHudOpen(false);
         setIsVaultOpen(false);
+        setIsMediaSentinelOpen(false);
       }
     };
 
@@ -1260,6 +1269,7 @@ const formatEtaSeconds = (secs: number): string => {
           onToggleMediaHud={() => setIsMediaHudOpen((prev) => !prev)}
           onToggleBookmarksBar={() => bookmarkManager.toggleBarVisible()}
           onOpenVault={() => setIsVaultOpen(true)}
+          onOpenMediaSentinel={() => setIsMediaSentinelOpen(true)}
         />
 
         {/* Overlay 6: Rune Seeker (Find in Page) */}
@@ -1325,6 +1335,10 @@ const formatEtaSeconds = (secs: number): string => {
             setIsSettingsOpen(false);
             setIsVaultOpen(true);
           }}
+          onOpenMediaSentinel={() => {
+            setIsSettingsOpen(false);
+            setIsMediaSentinelOpen(true);
+          }}
         />
 
         {/* Overlay 11: Skuld's Canvas (Screenshot & Annotation Studio) */}
@@ -1355,6 +1369,13 @@ const formatEtaSeconds = (secs: number): string => {
           onClose={() => setIsVaultOpen(false)}
           activeRealm={activeRealm}
           currentUrl={activeTab?.url}
+          onNavigate={handleNavigate}
+        />
+
+        {/* Overlay 14: Media Sentinel (Streaming DRM & Codecs Diagnostic) */}
+        <MediaSentinelModal
+          isOpen={isMediaSentinelOpen}
+          onClose={() => setIsMediaSentinelOpen(false)}
           onNavigate={handleNavigate}
         />
       </Suspense>

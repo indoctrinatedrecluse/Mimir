@@ -101,6 +101,18 @@ pub enum IpcCommand {
     #[serde(rename = "RESUME_TAB")]
     ResumeTab { payload: SwitchTabPayload },
 
+    #[serde(rename = "SPAWN_PIP_WINDOW")]
+    SpawnPipWindow { payload: PipWindowPayload },
+
+    #[serde(rename = "CLOSE_PIP_WINDOW")]
+    ClosePipWindow,
+
+    #[serde(rename = "DRAG_PIP_WINDOW")]
+    DragPipWindow,
+
+    #[serde(rename = "SYNC_PIP_STATE")]
+    SyncPipState { payload: PipStatePayload },
+
     // Internal and child webview relayed events
     #[serde(rename = "DOWNLOAD_STARTED")]
     DownloadStarted { payload: DownloadStartedPayload },
@@ -407,6 +419,24 @@ pub struct PageContentPayload {
     pub frameworks: Vec<String>,
     #[serde(default, rename = "wordCount")]
     pub word_count: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PipWindowPayload {
+    pub title: String,
+    #[serde(default)]
+    pub is_playing: bool,
+    pub width: Option<f64>,
+    pub height: Option<f64>,
+    pub x: Option<f64>,
+    pub y: Option<f64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PipStatePayload {
+    pub is_playing: bool,
+    pub volume: Option<f64>,
+    pub title: Option<String>,
 }
 
 
