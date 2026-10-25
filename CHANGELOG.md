@@ -124,6 +124,7 @@ This milestone release brings sovereign performance, media mastery, viewport ann
 * **100% Native Rust & WebView2 Architecture**: Completely replaced legacy NSIS installer with an Obsidian Glass, hardware-accelerated desktop setup application ([`installer.rs`](file:///d:/Projects/Mimir/src-rust/src/bin/installer.rs)).
 * **Real-Time Storage Telemetry**: Live volume capacity calculation via Win32 `GetDiskFreeSpaceExW` showing available drive space and dynamic capacity utilization meters.
 * **Dynamic Reactive Component Sizing**: Real-time calculation and animation of required installation footprint when selecting or deselecting Core Sanctuary vs. Living Cinematic Video Realms Pack (`16.5 MB` ➔ `105.1 MB`).
+* **Automated Video Pack Acquisition**: When the optional video pack component is selected, the installer checks for a local `mimir-cinematic-realm-pack.zip` archive or automatically streams it over TLS directly from GitHub Release assets into `<install_dir>\dist\realms\videos\` without requiring manual extraction.
 * **Repurposed Animated Splash**: Displays a rotating Vegvísir runic compass, pulsing `ᛗ` rune, and ambient particle simulations during extraction and download phases.
 * **Automated System Registry Integration**: Automatically registers uninstall entries in Windows Add/Remove Programs and copies self as `uninstall.exe`.
 
