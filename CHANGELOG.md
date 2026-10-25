@@ -45,14 +45,14 @@ This milestone release brings the Nine Realms alive with living cinematic video 
 * **Conduit & Battery Sentinels**: Automatically halts video playback when the window is hidden, minimized (`document.hidden`), or when browsing active web pages to conserve battery life and GPU resources.
 * **Zero-Downtime Fallback**: Pre-renders underlying high-resolution static artwork and automatically awakens Option A canvas particle simulations if video assets are missing, guaranteeing zero blank screens.
 
-#### Cinema Forge Engine & Packaging Tooling (`scripts/`)
-* **`scripts/forge_realm_videos.py`**: Standalone procedural Python + OpenCV generator creating mathematically seamless ($t=0 \equiv t=1$) H.264 video backdrops for all Nine Realms.
-* **`scripts/package_realm_pack.py`**: Automated packager creating the official `mimir-cinematic-realm-pack.zip` archive (~37.8 MB) and providing one-line extraction (`--install dist/realms/videos`).
+#### Cinema Forge Engine & Packaging Tooling (`scripts/`, `installer.nsi`)
+* **`scripts/package_realm_pack.py`**: Automated packager creating the official `mimir-cinematic-realm-pack.zip` archive (~88.5 MB) containing all 9 genuine high-definition AI-generated living realm videos.
+* **Automated Installer Component Downloader (`installer.nsi`)**: Added the optional `Living Cinematic Video Realms Pack` component to `mimir-setup.exe`. When selected during installation, the installer automatically downloads the video pack from GitHub Releases and unpacks it directly into `<install_dir>\dist\realms\videos\`.
 * **Custom Protocol MIME Support**: Registered native `video/mp4` and `video/webm` MIME types in [`src-rust/src/main.rs`](file:///d:/Projects/Mimir/src-rust/src/main.rs) for smooth local streaming across custom `mimir://` protocol.
 
 #### Model A Distribution Architecture
 * **Lean Core Installer**: The primary browser repository and release archive remain lean (~12 MB) by omitting large binary video assets from git.
-* **Modular High-Def Pack**: Users can optionally download `mimir-cinematic-realm-pack.zip` (~37.8 MB) and drop it into `dist/realms/videos/` anytime to unlock living video backgrounds.
+* **Modular High-Def Pack**: Users can either check the box during installation or download `mimir-cinematic-realm-pack.zip` (~88.5 MB) and drop it into `dist/realms/videos/` anytime to unlock living video backgrounds.
 
 ---
 

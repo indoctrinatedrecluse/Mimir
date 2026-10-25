@@ -226,10 +226,9 @@ graph TD
   - Core repository remains lean (~10MB) by omitting binary `.mp4` files from git tracking.
   - Bundled procedural generator script (`python scripts/forge_realm_videos.py --realm all`) to forge seamless loops offline anytime.
 
-### Upcoming Enhancements (Roadmap)
-- [ ] **Automated Installer Component Downloader (NSIS Setup)**:
-  - Add an optional component selection checkbox in `mimir-setup.exe` (*"Living Cinematic Video Realms Pack (~38 MB)"*).
-  - When selected during installation, the installer will automatically download `mimir-cinematic-realm-pack.zip` from the latest GitHub Release assets and unpack it directly into `<install_dir>\dist\realms\videos\`, delivering automated 1-click installation without manual extraction.
+- [x] **Automated Installer Component Downloader (NSIS Setup)**:
+  - Added optional component selection checkbox in `mimir-setup.exe` (*"Living Cinematic Video Realms Pack"*).
+  - When selected during setup, the installer automatically downloads `mimir-cinematic-realm-pack.zip` from GitHub Releases and unpacks it directly into `<install_dir>\dist\realms\videos\`, delivering automated 1-click installation without manual extraction.
 
 ---
 
@@ -299,8 +298,16 @@ Mímir ships with the **Tri-Mode Sanctum Engine**, unifying live hardware-accele
 * **Mode 3: STATIC (ᛏ)**: Minimalist, zero-motion high-resolution sovereign artwork for distraction-free reading or maximum battery conservation.
 
 ### 👤 End-User Installation Guide
-1. Download the **Core Browser** release archive: `mimir-v0.7.0-windows-x64.zip` (~12 MB).
-2. *(Optional)* Download the **Living Realm Video Pack**: `mimir-cinematic-realm-pack.zip` (~37.8 MB) from the release assets.
+
+#### Option 1: 1-Click Installer (Recommended)
+1. Download **`mimir-v0.7.0-windows-x64-setup.exe`**.
+2. Run the installer and check the optional component:
+   - `[x] Living Cinematic Video Realms Pack`
+3. The installer will automatically download `mimir-cinematic-realm-pack.zip` (~88 MB) and install it directly into your Mímir sanctuary!
+
+#### Option 2: Portable / Manual Installation
+1. Download `mimir-v0.7.0-windows-x64-portable.zip` (~12 MB).
+2. Download `mimir-cinematic-realm-pack.zip` (~88 MB).
 3. Extract the 9 `.mp4` video files into your Mímir directory:
    ```text
    <mimir_directory>\dist\realms\videos\

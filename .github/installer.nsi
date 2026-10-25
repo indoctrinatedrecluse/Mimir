@@ -87,30 +87,34 @@ Section "Create Desktop Shortcut" SecDesktop
   CreateShortcut "$DESKTOP\Mimir Browser.lnk" "$INSTDIR\mimir.exe" "" "$INSTDIR\mimir.ico" 0
 SectionEnd
 
-; ==============================================================================
-; TODO (Roadmap): On-Demand Living Video Pack Component Downloader
-; When selected by user during setup, downloads mimir-cinematic-realm-pack.zip 
-; from GitHub Releases and extracts it into $INSTDIR\dist\realms\videos\
-; ==============================================================================
-; Section /o "Living Cinematic Video Realms (~38 MB)" SecVideoPack
-;   DetailPrint "Connecting to GitHub Releases for Living Realm Pack..."
-;   CreateDirectory "$INSTDIR\dist\realms\videos"
-;   nsisdl::download /TIMEOUT=30000 "https://github.com/indoctrinatedrecluse/Mimir/releases/latest/download/mimir-cinematic-realm-pack.zip" "$TEMP\mimir-cinematic-realm-pack.zip"
-;   Pop $0
-;   ${If} $0 == "success"
-;     DetailPrint "Extracting cinematic realm videos..."
-;     nsisunz::UnzipToLog "$TEMP\mimir-cinematic-realm-pack.zip" "$INSTDIR\dist\realms\videos"
-;     Delete "$TEMP\mimir-cinematic-realm-pack.zip"
-;   ${Else}
-;     DetailPrint "Download skipped or offline ($0). Option A particles remain active."
-;   ${EndIf}
-; SectionEnd
+; Optional Component: Living Cinematic Video Realms Pack
+Section /o "Living Cinematic Video Realms Pack" SecVideoPack
+  DetailPrint "Installing Living Cinematic Video Realms Pack..."
+  CreateDirectory "$INSTDIR\dist\realms\videos"
+  
+  ; Check if the pack zip is present beside installer, otherwise download from GitHub Releases
+  ${If} ${FileExists} "$EXEDIR\mimir-cinematic-realm-pack.zip"
+    DetailPrint "Found local mimir-cinematic-realm-pack.zip beside installer."
+    nsExec::ExecToLog 'powershell -NoProfile -ExecutionPolicy Bypass -Command "Expand-Archive -Path \"$EXEDIR\mimir-cinematic-realm-pack.zip\" -DestinationPath \"$INSTDIR\dist\realms\videos\" -Force"'
+    Pop $0
+  ${Else}
+    DetailPrint "Downloading Living Realm Pack from GitHub Releases..."
+    nsExec::ExecToLog 'powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13; Invoke-WebRequest -Uri \"https://github.com/indoctrinatedrecluse/Mimir/releases/latest/download/mimir-cinematic-realm-pack.zip\" -OutFile \"$TEMP\mimir-cinematic-realm-pack.zip\"; Expand-Archive -Path \"$TEMP\mimir-cinematic-realm-pack.zip\" -DestinationPath \"$INSTDIR\dist\realms\videos\" -Force; Remove-Item \"$TEMP\mimir-cinematic-realm-pack.zip\" -Force"'
+    Pop $0
+  ${EndIf}
+
+  ${If} $0 == 0
+    DetailPrint "Living Cinematic Video Realms successfully installed!"
+  ${Else}
+    DetailPrint "Video pack download skipped or encountered an issue ($0). Option A particles remain active."
+  ${EndIf}
+SectionEnd
 
 ; Component Descriptions
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
   !insertmacro MUI_DESCRIPTION_TEXT ${SecMimir} "Core Mimir Browser binaries, UI sanctuary, and Start Menu entries."
   !insertmacro MUI_DESCRIPTION_TEXT ${SecDesktop} "Create a shortcut icon for Mimir Browser on your Desktop."
-  ; !insertmacro MUI_DESCRIPTION_TEXT ${SecVideoPack} "Download and install the optional high-definition Living Video Realms pack (~38 MB) with animated sovereign rulers."
+  !insertmacro MUI_DESCRIPTION_TEXT ${SecVideoPack} "Download and install the optional high-definition Living Video Realms pack with animated sovereign rulers directly into your browser sanctuary."
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
 Section "Uninstall"
