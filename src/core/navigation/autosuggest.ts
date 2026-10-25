@@ -54,6 +54,8 @@ export const POPULAR_GATEWAYS = [
   { title: 'ChatGPT — OpenAI Oracle', url: 'https://chatgpt.com', domain: 'chatgpt.com', rune: 'ᚺ' },
 ];
 
+import { SEARCH_ENGINES, getPrivacySettings } from '@/core/privacy/privacySettings';
+
 export interface BangDefinition {
   bang: string;
   name: string;
@@ -63,8 +65,12 @@ export interface BangDefinition {
 }
 
 export const SEARCH_BANGS: BangDefinition[] = [
-  { bang: '!g', name: 'Google Search', rune: 'ᚷ', hint: '!g <query>', buildUrl: (q) => `https://www.google.com/search?q=${encodeURIComponent(q)}` },
   { bang: '!ddg', name: 'DuckDuckGo Untracked', rune: 'ᛗ', hint: '!ddg <query>', buildUrl: (q) => `https://duckduckgo.com/?q=${encodeURIComponent(q)}` },
+  { bang: '!b', name: 'Brave Search', rune: 'ᛒ', hint: '!b <query>', buildUrl: (q) => `https://search.brave.com/search?q=${encodeURIComponent(q)}` },
+  { bang: '!sp', name: 'Startpage Proxy', rune: 'ᛋ', hint: '!sp <query>', buildUrl: (q) => `https://www.startpage.com/sp/search?query=${encodeURIComponent(q)}` },
+  { bang: '!sx', name: 'SearXNG Swarm', rune: 'ᚹ', hint: '!sx <query>', buildUrl: (q) => `https://searx.be/search?q=${encodeURIComponent(q)}` },
+  { bang: '!e', name: 'Ecosia Reforest', rune: 'ᛖ', hint: '!e <query>', buildUrl: (q) => `https://www.ecosia.org/search?q=${encodeURIComponent(q)}` },
+  { bang: '!g', name: 'Google Search', rune: 'ᚷ', hint: '!g <query>', buildUrl: (q) => `https://www.google.com/search?q=${encodeURIComponent(q)}` },
   { bang: '!gh', name: 'GitHub Forge', rune: 'ᚨ', hint: '!gh <repo or user>', buildUrl: (q) => `https://github.com/search?q=${encodeURIComponent(q)}` },
   { bang: '!yt', name: 'YouTube Streams', rune: 'ᛃ', hint: '!yt <video>', buildUrl: (q) => `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}` },
   { bang: '!w', name: 'Wikipedia Lore', rune: 'ᚹ', hint: '!w <lore topic>', buildUrl: (q) => `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(q)}` },
@@ -368,14 +374,19 @@ export function getRankedSuggestions(query: string, maxResults = 7): SuggestionI
   const isDirectWebUrl = (q.includes('.') && !q.includes(' ')) || q.startsWith('http://') || q.startsWith('https://');
   const searchScore = isDirectWebUrl ? 40 : 105; // prioritize search if user typed search query words
 
+  const settings = getPrivacySettings();
+  const activeEngine = SEARCH_ENGINES[settings.searchEngine] || SEARCH_ENGINES.duckduckgo;
+  const searchUrl = activeEngine.buildUrl(query);
+  const searchCleanUrl = `${activeEngine.name.toLowerCase().replace(/\s+/g, '')}.com/?q=${encodeURIComponent(query)}`;
+
   const searchItem: SuggestionItem = {
     id: 'search-query',
     type: 'search',
-    title: `Search the Nine Realms for "${query}"`,
-    url: `https://duckduckgo.com/?q=${encodeURIComponent(query)}`,
-    cleanUrl: `duckduckgo.com/?q=${encodeURIComponent(query)}`,
-    rune: 'ᛋ',
-    badge: 'ᛋ SEARCH',
+    title: `Search via ${activeEngine.name} for "${query}"`,
+    url: searchUrl,
+    cleanUrl: searchCleanUrl,
+    rune: activeEngine.iconRune || 'ᛋ',
+    badge: `ᛋ ${activeEngine.name.toUpperCase()}`,
     score: searchScore,
   };
 

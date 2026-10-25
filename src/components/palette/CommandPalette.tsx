@@ -87,6 +87,7 @@ interface CommandPaletteProps {
   onCycleSanctumMode?: () => void;
   isAnimatedBackground?: boolean;
   onToggleAnimatedRealms?: () => void;
+  onOpenSettings?: () => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
@@ -124,6 +125,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onCycleSanctumMode,
   isAnimatedBackground = true,
   onToggleAnimatedRealms,
+  onOpenSettings,
 }) => {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -397,6 +399,16 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         rune: 'ᛞ',
         icon: Copy,
         action: () => onDuplicateActiveTab?.(),
+      },
+      {
+        id: 'sanctum-settings',
+        category: 'System & Wards',
+        title: 'Sanctum Privacy & Settings',
+        description: 'Configure default search oracles, Svalinn adblock shields, anti-fingerprinting & data retention',
+        shortcut: 'Ctrl+,',
+        rune: 'ᛋ',
+        icon: Sliders,
+        action: () => onOpenSettings?.(),
       },
       {
         id: 'purge-data',

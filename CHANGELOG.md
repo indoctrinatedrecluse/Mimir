@@ -11,6 +11,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Sovereign Privacy Architecture & Sanctum Settings Engine (`privacySettings.ts`, `SanctumSettingsModal.tsx`, `adblocker.rs`, `Omnibar.tsx`, `TitleBar.tsx`)
+* **DuckDuckGo by Default Across All Conduits**:
+  * Established DuckDuckGo as Mímir's primary, untracked search oracle across Omnibar, New Tab Sanctum, Autosuggest, and context menu lookups.
+  * Dynamically responsive `buildSearchUrl` conduit router honoring user engine choice with zero telemetry.
+  * Full search engine ecosystem with privacy grading: DuckDuckGo (`A+`), Brave Search (`A+`), Startpage (`A`), SearXNG (`A+`), Ecosia (`A-`), Google (`C`), and Bing (`C`).
+  * Privacy search bangs integrated into autosuggest (`!ddg`, `!b`, `!sp`, `!sx`, `!e`).
+* **Active-by-Default Adblock & YouTube Sentinel**:
+  * Svalinn Ward network filtering and YouTube ad interception enabled out of the box with zero setup required.
+  * Procedural cosmetic banner hiding active by default.
+* **Anti-Fingerprinting Armor & Veil of Shadows**:
+  * Automated Global Privacy Control (`navigator.globalPrivacyControl = true`, `Sec-GPC: 1`) injected into all webviews.
+  * Do Not Track (`navigator.doNotTrack = '1'`, `DNT: 1`) broadcast on all HTTP/HTTPS conduits.
+  * Canvas & audio hardware perturbation scrambling `getImageData` readbacks against cryptographic GPU canvas fingerprinting.
+  * Outbound Referrer Sanctum Policy control (`strict-origin`, `no-referrer`, `standard`).
+* **Obsidian Glass Sanctum Privacy & Settings Modal (`SanctumSettingsModal.tsx`)**:
+  * Tabbed modal with Search Conduits, Shield & Wards, Anti-Fingerprinting Armor, Fate Threads (Retention & Cookies), and AI Scout Key.
+  * Live domain whitelist manager to lower or raise Svalinn Wards per site.
+  * Auto-purge on Sanctum exit and third-party cookie isolation modes.
+  * Seamlessly triggered via TitleBar Sliders icon, Omnibar Security Ward widget, `Ctrl+,` global hotkey, or Command Palette.
+
 #### Sacred Shield Mastery & YouTube Adblocking Engine (`adblocker.rs`, `tab_manager.rs`, `SecurityWardWidget.tsx`)
 * **Brave `adblock` (v0.13.3) Native Rust Integration**:
   * Integrated Brave Software's official native Rust adblocking engine ([`adblocker.rs`](file:///d:/Projects/Mimir/src-rust/src/adblocker.rs)) with built-in EasyList, EasyPrivacy, and uBlock-grade rule matching.

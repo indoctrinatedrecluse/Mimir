@@ -29,6 +29,8 @@ const MimirsHoard = lazy(() => import('@/components/hud/MimirsHoard').then((m) =
 const FateThreadPurge = lazy(() => import('@/components/hud/FateThreadPurge').then((m) => ({ default: m.FateThreadPurge })));
 const RunicSidecar = lazy(() => import('@/components/sidecar/RunicSidecar').then((m) => ({ default: m.RunicSidecar })));
 const ReaderSanctum = lazy(() => import('@/components/reader/ReaderSanctum').then((m) => ({ default: m.ReaderSanctum })));
+const SanctumSettingsModal = lazy(() => import('@/components/settings/SanctumSettingsModal').then((m) => ({ default: m.SanctumSettingsModal })));
+import { buildSearchUrl } from '@/core/privacy/privacySettings';
 
 const getInitialRealm = (): RealmId => {
   try {
@@ -87,6 +89,7 @@ export const App: React.FC = () => {
   const [isDownloadsOpen, setIsDownloadsOpen] = useState(false);
   const [hoardInitialTab, setHoardInitialTab] = useState<'artifacts' | 'swarm'>('artifacts');
   const [isClearDataOpen, setIsClearDataOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSplitGaze, setIsSplitGaze] = useState(false);
   const [splitTabId, setSplitTabId] = useState<string | undefined>('tab-2');
   const [isAmbientPlaying, setIsAmbientPlaying] = useState(runicAudio.isAmbientEnabled());
@@ -587,6 +590,12 @@ const formatEtaSeconds = (secs: number): string => {
           }
         }
       }
+      // Ctrl+,: Toggle Sanctum Privacy & Settings
+      if (e.ctrlKey && e.key === ',') {
+        e.preventDefault();
+        runicAudio.playClick(650);
+        setIsSettingsOpen((prev) => !prev);
+      }
       // Esc: Close modals & drawers
       if (e.key === 'Escape') {
         setIsRealmSelectorOpen(false);
@@ -598,6 +607,7 @@ const formatEtaSeconds = (secs: number): string => {
         setIsFindOpen(false);
         setIsDownloadsOpen(false);
         setIsClearDataOpen(false);
+        setIsSettingsOpen(false);
       }
     };
 
@@ -891,6 +901,7 @@ const formatEtaSeconds = (secs: number): string => {
       <TitleBar
         activeRealm={activeRealm}
         onOpenRealmSelector={() => setIsRealmSelectorOpen(true)}
+        onOpenSettings={() => setIsSettingsOpen(true)}
       />
 
       {/* Layer 2: Mímisbrunnr Omnibar */}
@@ -930,6 +941,7 @@ const formatEtaSeconds = (secs: number): string => {
         isReaderOpen={isReaderSanctumOpen}
         onToggleSidecar={() => setIsSidecarOpen((prev) => !prev)}
         isSidecarOpen={isSidecarOpen}
+        onOpenSettings={() => setIsSettingsOpen(true)}
       />
 
       {/* Valhalla Revival Crash Sentinel Banner */}
@@ -1089,6 +1101,7 @@ const formatEtaSeconds = (secs: number): string => {
           sanctumMode={sanctumMode}
           onCycleSanctumMode={handleCycleSanctumMode}
           onOpenRealmSelector={() => setIsRealmSelectorOpen(true)}
+          onOpenSettings={() => setIsSettingsOpen(true)}
         />
 
         {/* Overlay 6: Rune Seeker (Find in Page) */}
@@ -1140,6 +1153,17 @@ const formatEtaSeconds = (secs: number): string => {
           activeRealm={activeRealm}
           activeTab={activeTab}
         />
+
+        {/* Overlay 10: Sanctum Privacy & Settings Modal */}
+        <SanctumSettingsModal
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+          activeRealm={activeRealm}
+          onOpenClearData={() => {
+            setIsSettingsOpen(false);
+            setIsClearDataOpen(true);
+          }}
+        />
       </Suspense>
 
       {/* Custom Themed Norse Context Menu */}
@@ -1175,7 +1199,7 @@ const formatEtaSeconds = (secs: number): string => {
         }}
         onBookmarkUrl={(url) => handleToggleBookmark(url)}
         onSearchQuery={(query) => {
-          const searchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(query)}`;
+          const searchUrl = buildSearchUrl(query);
           handleNewTab(searchUrl);
         }}
         onAskHuginn={(prompt) => {

@@ -6,17 +6,19 @@ import { REALMS } from '@/core/realms';
 import { REALM_THEMES } from '@/components/themes/realmThemes';
 import { NorseKnotworkRibbon, ValknutSvg, AegishjalmrSvg } from '@/components/themes/NorsePatterns';
 import { MimirSigil } from '@/components/brand/MimirSigil';
-import { Minus, Square, X, Compass } from 'lucide-react';
+import { Minus, Square, X, Compass, Sliders } from 'lucide-react';
 
 interface TitleBarProps {
   activeRealm: RealmId;
   onOpenRealmSelector: () => void;
+  onOpenSettings?: () => void;
   isMaximized?: boolean;
 }
 
 export const TitleBar: React.FC<TitleBarProps> = ({
   activeRealm,
   onOpenRealmSelector,
+  onOpenSettings,
   isMaximized = false,
 }) => {
   const currentRealm = REALMS[activeRealm];
@@ -153,6 +155,16 @@ export const TitleBar: React.FC<TitleBarProps> = ({
 
       {/* Right: Window Controls */}
       <div className="relative z-10 flex items-center space-x-1">
+        <button
+          onClick={() => {
+            runicAudio.playClick(650);
+            onOpenSettings?.();
+          }}
+          className="flex h-7 w-8 items-center justify-center rounded-sm text-slate-400 transition-all hover:bg-white/10 hover:text-cyan-300 active:scale-95"
+          title="Sanctum Privacy & Settings (Ctrl+,)"
+        >
+          <Sliders className="h-3.5 w-3.5" />
+        </button>
         <button
           onClick={handleMinimize}
           className="flex h-7 w-8 items-center justify-center rounded-sm text-slate-400 transition-all hover:bg-white/10 hover:text-white active:scale-95"

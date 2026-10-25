@@ -357,6 +357,40 @@ youtube.com###player-ads
                     });
                 }
             }
+
+            // -----------------------------------------------------------------
+            // 5. Global Privacy Control (GPC) & Do Not Track (DNT)
+            // -----------------------------------------------------------------
+            try {
+                if (typeof navigator !== 'undefined') {
+                    Object.defineProperty(navigator, 'globalPrivacyControl', {
+                        get: function() { return true; },
+                        enumerable: true,
+                        configurable: true
+                    });
+                    Object.defineProperty(navigator, 'doNotTrack', {
+                        get: function() { return '1'; },
+                        enumerable: true,
+                        configurable: true
+                    });
+                }
+            } catch(e) {}
+
+            // -----------------------------------------------------------------
+            // 6. Canvas & Audio Fingerprint Resistance (Noise Perturbation)
+            // -----------------------------------------------------------------
+            try {
+                if (typeof CanvasRenderingContext2D !== 'undefined') {
+                    var origGetImageData = CanvasRenderingContext2D.prototype.getImageData;
+                    CanvasRenderingContext2D.prototype.getImageData = function() {
+                        var imgData = origGetImageData.apply(this, arguments);
+                        if (imgData && imgData.data && imgData.data.length >= 4) {
+                            imgData.data[0] = (imgData.data[0] ^ 1);
+                        }
+                        return imgData;
+                    };
+                }
+            } catch(e) {}
         })();
         "#
     }

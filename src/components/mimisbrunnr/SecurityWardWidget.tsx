@@ -23,6 +23,7 @@ import {
   Trash2,
   ChevronRight,
   Info,
+  Sliders,
 } from 'lucide-react';
 
 interface SecurityWardWidgetProps {
@@ -33,6 +34,7 @@ interface SecurityWardWidgetProps {
   onOpenClearData?: () => void;
   liveBlockedCount?: number;
   onUpgradeToHttps?: () => void;
+  onOpenSettings?: () => void;
 }
 
 export const SecurityWardWidget: React.FC<SecurityWardWidgetProps> = ({
@@ -43,6 +45,7 @@ export const SecurityWardWidget: React.FC<SecurityWardWidgetProps> = ({
   onOpenClearData,
   liveBlockedCount = 0,
   onUpgradeToHttps,
+  onOpenSettings,
 }) => {
   const theme = REALM_THEMES[activeRealm] || REALM_THEMES.midgard;
   // Check whether current domain is whitelisted
@@ -461,7 +464,18 @@ export const SecurityWardWidget: React.FC<SecurityWardWidgetProps> = ({
                 className="flex flex-1 items-center justify-center space-x-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 py-2 text-[11px] font-bold tracking-wide text-rose-300 transition-colors hover:bg-rose-500/20"
               >
                 <Trash2 className="h-3 w-3" />
-                <span>Purge Threads for this Realm</span>
+                <span>Purge Realm</span>
+              </button>
+              <button
+                onClick={() => {
+                  runicAudio.playClick(600);
+                  onClose();
+                  onOpenSettings?.();
+                }}
+                className="flex flex-1 items-center justify-center space-x-1.5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 py-2 text-[11px] font-bold tracking-wide text-cyan-300 transition-colors hover:bg-cyan-500/20"
+              >
+                <Sliders className="h-3 w-3" />
+                <span>Global Settings</span>
               </button>
             </div>
           </div>

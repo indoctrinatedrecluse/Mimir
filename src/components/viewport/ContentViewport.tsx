@@ -12,6 +12,7 @@ import { motion } from 'framer-motion';
 import { RealmAtmosphereCanvas } from '@/components/themes/RealmAtmosphereCanvas';
 import { RealmVideoBackdrop } from '@/components/themes/RealmVideoBackdrop';
 import { SanctumBackdropMode } from '@/types';
+import { buildSearchUrl } from '@/core/privacy/privacySettings';
 
 interface ContentViewportProps {
   activeTab?: Tab;
@@ -100,7 +101,7 @@ export const ContentViewport: React.FC<ContentViewportProps> = ({
       if (url.includes('.') && !url.includes(' ')) {
         url = 'https://' + url;
       } else {
-        url = `https://duckduckgo.com/?q=${encodeURIComponent(url)}`;
+        url = buildSearchUrl(url);
       }
     }
     runicAudio.playChime();

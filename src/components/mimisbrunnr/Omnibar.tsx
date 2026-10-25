@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getRankedSuggestions, SuggestionItem, cleanDisplayUrl, parseBangQuery, purifyUrl } from '@/core/navigation/autosuggest';
+import { buildSearchUrl } from '@/core/privacy/privacySettings';
 import { SecurityWardWidget } from './SecurityWardWidget';
 import { RunicQrPopover } from './RunicQrPopover';
 
@@ -74,6 +75,7 @@ interface OmnibarProps {
   isReaderOpen?: boolean;
   onToggleSidecar?: () => void;
   isSidecarOpen?: boolean;
+  onOpenSettings?: () => void;
 }
 
 export const Omnibar: React.FC<OmnibarProps> = ({
@@ -109,6 +111,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
   isReaderOpen = false,
   onToggleSidecar,
   isSidecarOpen = false,
+  onOpenSettings,
 }) => {
   const [inputVal, setInputVal] = useState(currentUrl);
   const [isFocused, setIsFocused] = useState(false);
@@ -168,7 +171,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
       if (url.includes('.') && !url.includes(' ')) {
         url = 'https://' + url;
       } else {
-        url = `https://duckduckgo.com/?q=${encodeURIComponent(url)}`;
+        url = buildSearchUrl(url);
       }
     }
     runicAudio.playChime();
@@ -757,6 +760,7 @@ export const Omnibar: React.FC<OmnibarProps> = ({
         onOpenClearData={onOpenClearData}
         liveBlockedCount={liveBlockedCount}
         onUpgradeToHttps={onUpgradeToHttps}
+        onOpenSettings={onOpenSettings}
       />
 
       {/* Offline Runic QR Code Sharing Popover */}
