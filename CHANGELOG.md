@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Planned & In-Flight Roadmap (Next Release)
+* **Streaming Media Codecs & DRM Protocols**:
+  * Investigate and implement Widevine Content Decryption Modules (CDM) and specialized media codecs to enable streaming platforms (Netflix, Amazon Prime Video, Disney+, Spotify Web, and protected media channels).
+* **Floating Rune PiP Overhaul (Enhanced Always-On-Top Mini Player)**:
+  * Resizable popped-out mini-player window with interactive corner drag handles and aspect ratio constraints.
+  * Native OS-level Always-On-Top floating window overlay, ensuring the mini-player stays permanently visible in the foreground even when other non-browser desktop applications are active and focused.
+  * Multi-monitor positioning memory and native video stream projection.
+* **Custom Theme Generator (Milestone 6)**:
+  * Interactive theme designer for user-defined cosmic realms, customizable HSL color palettes, runic staves, and personal shader backdrop generators.
+
+---
+
+## [0.8.0] - 2026-10-25 *(Sovereign Mastery: Einherjar Slumber, Skuld's Canvas, Floating Rune, Havamal Staves & Fafnir's Treasury)*
+
+This milestone release brings sovereign performance, media mastery, viewport annotation, and cryptographic security to Mímir Browser: Einherjar Slumber (Sleeping tabs and native RAM freezer deallocating 180MB–320MB per background tab), Skuld's Canvas (Viewport screenshot and Norse annotation studio), Floating Rune (Universal media controller with Mjolnir 300% Thunder Boost, equalizer & PiP mini-player), Havamal Staves (Runic bookmarks ribbon), Fafnir's Treasury (Zero-knowledge AES-256-GCM encrypted credential vault & Gungnir Key Generator), Svalinn Ward YouTube Adblock Sentinel, and Mythic 100% Native Rust Setup Installer.
+
 ### Added
 
 #### Einherjar Slumber: Sleeping Tabs & Native RAM Freezer (`slumberEngine.ts`, `tab_manager.rs`, `ipc.rs`, `TabTree.tsx`, `App.tsx`)

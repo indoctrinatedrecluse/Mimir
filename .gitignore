@@ -37,3 +37,7 @@ public/realms/videos/*.mp4
 public/realms/videos/*.webm
 !public/realms/videos/.gitkeep
 *.zip
+*.exe
+mimir-portable/
+src-rust/payload.zip
+MicrosoftEdgeWebview2Setup.exe

@@ -311,13 +311,13 @@ Mímir ships with the **Tri-Mode Sanctum Engine**, unifying live hardware-accele
 ### 👤 End-User Installation Guide
 
 #### Option 1: 1-Click Installer (Recommended)
-1. Download **`mimir-v0.7.0-windows-x64-setup.exe`**.
+1. Download **`mimir-v0.8.0-windows-x64-setup.exe`**.
 2. Run the installer and check the optional component:
    - `[x] Living Cinematic Video Realms Pack`
 3. The installer will automatically download `mimir-cinematic-realm-pack.zip` (~88 MB) and install it directly into your Mímir sanctuary!
 
 #### Option 2: Portable / Manual Installation
-1. Download `mimir-v0.7.0-windows-x64-portable.zip` (~12 MB).
+1. Download `mimir-v0.8.0-windows-x64-portable.zip` (~12 MB).
 2. Download `mimir-cinematic-realm-pack.zip` (~88 MB).
 3. Extract the 9 `.mp4` video files into your Mímir directory:
    ```text
