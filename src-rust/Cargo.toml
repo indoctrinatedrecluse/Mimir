@@ -18,6 +18,15 @@ futures = "0.3"
 librqbit = "9.0"
 anyhow = "1.0"
 base64 = "0.22"
+zip = { version = "2", default-features = false, features = ["deflate"] }
+
+[[bin]]
+name = "mimir-core"
+path = "src/main.rs"
+
+[[bin]]
+name = "mimir-installer"
+path = "src/bin/installer.rs"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows = { version = "0.58", features = [
@@ -26,6 +35,7 @@ windows = { version = "0.58", features = [
     "Win32_Graphics_Dwm",
     "Win32_System_Console",
     "Win32_System_Registry",
+    "Win32_Storage_FileSystem",
 ] }
 
 [target.'cfg(target_os = "windows")'.build-dependencies]

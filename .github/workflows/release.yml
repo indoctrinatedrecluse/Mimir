@@ -31,12 +31,6 @@ jobs:
         with:
           targets: x86_64-pc-windows-msvc
 
-      - name: Install NSIS (Installer Compiler)
-        shell: pwsh
-        run: |
-          choco install nsis -y --no-progress
-          echo "C:\Program Files (x86)\NSIS" >> $env:GITHUB_PATH
-
       - name: Install Frontend Dependencies
         run: npm ci
 
@@ -44,7 +38,7 @@ jobs:
         run: npm run build:ui
 
       - name: Build Native Rust Core (Release)
-        run: cargo build --release --manifest-path src-rust/Cargo.toml
+        run: cargo build --release --manifest-path src-rust/Cargo.toml --bin mimir-core
 
       - name: Prepare Release Artifacts
         id: package
@@ -72,23 +66,16 @@ jobs:
           Compress-Archive -Path "$PORTABLE_DIR/*" -DestinationPath $PORTABLE_ZIP -Force
           Write-Host "Created portable archive: $PORTABLE_ZIP"
 
-          # 3. Package Windows Installer via NSIS
+          # 3. Package Mythic Windows Installer via Native Rust Engine
           $SETUP_EXE = "mimir-$TAG-windows-x64-setup.exe"
           
-          # Find makensis executable
-          $MAKENSIS_CMD = "makensis"
-          if (-not (Get-Command "makensis" -ErrorAction SilentlyContinue)) {
-            $MAKENSIS_CMD = "C:\Program Files (x86)\NSIS\makensis.exe"
-          }
-
-          Write-Host "Compiling installer using: $MAKENSIS_CMD"
-          & $MAKENSIS_CMD .github/installer.nsi
-
-          if (Test-Path "mimir-setup.exe") {
-            Move-Item -Path "mimir-setup.exe" -Destination $SETUP_EXE -Force
-          } elseif (Test-Path ".github/mimir-setup.exe") {
-            Move-Item -Path ".github/mimir-setup.exe" -Destination $SETUP_EXE -Force
-          }
+          Write-Host "Preparing embedded payload for Mythic Installer..."
+          Copy-Item -Path $PORTABLE_ZIP -Destination "src-rust/payload.zip" -Force
+          
+          Write-Host "Compiling Mythic Mímir Installer..."
+          cargo build --release --manifest-path src-rust/Cargo.toml --bin mimir-installer
+          
+          Copy-Item -Path "src-rust/target/release/mimir-installer.exe" -Destination $SETUP_EXE -Force
 
           if (-not (Test-Path $SETUP_EXE)) {
             throw "Installer $SETUP_EXE was not generated!"

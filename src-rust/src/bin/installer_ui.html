@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mímir Sanctum Setup</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Inter:wght@300;400;500;600;700&display=swap');
+
+    :root {
+      --bg-dark: #08090D;
+      --bg-card: rgba(16, 18, 26, 0.75);
+      --bg-card-hover: rgba(22, 25, 38, 0.85);
+      --border-gold: rgba(212, 175, 55, 0.35);
+      --border-gold-glow: rgba(212, 175, 55, 0.7);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --text-main: #EDEDF0;
+      --text-muted: #8E92A4;
+      --gold-primary: #D4AF37;
+      --gold-bright: #F6D365;
+      --cyan-accent: #4ECDC4;
+      --red-warn: #FF6B6B;
+      --green-ok: #4EBA6F;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      background: var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--border-gold);
+      border-radius: 12px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), 0 0 30px rgba(212, 175, 55, 0.12);
+    }
+
+    /* Ambient Canvas */
+    #ambient-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Custom Draggable Titlebar */
+    .titlebar {
+      height: 38px;
+      background: rgba(10, 11, 16, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      z-index: 10;
+      cursor: grab;
+    }
+
+    .titlebar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .rune-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      background: rgba(212, 175, 55, 0.15);
+      border: 1px solid var(--border-gold);
+      color: var(--gold-bright);
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .titlebar-title {
+      font-family: 'Cinzel', serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      color: var(--gold-primary);
+    }
+
+    .titlebar-version {
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+    }
+
+    .titlebar-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: default;
+    }
+
+    .ctrl-btn {
+      width: 26px;
+      height: 24px;
+      border-radius: 5px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      transition: all 0.15s ease;
+    }
+
+    .ctrl-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+    }
+
+    .ctrl-btn.close:hover {
+      background: rgba(255, 80, 80, 0.25);
+      color: #FF5A5A;
+    }
+
+    /* Main Container */
+    .sanctum-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      z-index: 1;
+      padding: 22px 28px;
+    }
+
+    /* Screen Views */
+    .screen-view {
+      display: none;
+      flex-direction: column;
+      height: 100%;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .screen-view.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Typography & Headers */
+    .hero-header {
+      margin-bottom: 16px;
+    }
+
+    .hero-title {
+      font-family: 'Cinzel', serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--gold-bright);
+      letter-spacing: 2px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hero-subtitle {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Install Path Section */
+    .path-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 14px;
+      backdrop-filter: blur(10px);
+    }
+
+    .path-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--gold-primary);
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .path-input-group {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .path-input {
+      flex: 1;
+      background: rgba(8, 9, 13, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: var(--text-main);
+      font-size: 12.5px;
+      font-family: 'Inter', monospace;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .path-input:focus {
+      border-color: var(--gold-primary);
+    }
+
+    .btn-browse {
+      padding: 8px 16px;
+      background: rgba(212, 175, 55, 0.12);
+      border: 1px solid var(--border-gold);
+      border-radius: 6px;
+      color: var(--gold-bright);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .btn-browse:hover {
+      background: rgba(212, 175, 55, 0.25);
+      border-color: var(--gold-bright);
+    }
+
+    /* Disk Space Telemetry Bar */
+    .disk-telemetry {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 10px;
+      font-size: 11.5px;
+    }
+
+    .disk-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-muted);
+    }
+
+    .disk-meter-container {
+      width: 140px;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .disk-meter-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--cyan-accent), var(--gold-primary));
+      width: 30%;
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    /* Components Selection Checklist */
+    .components-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow-y: auto;
+      margin-bottom: 14px;
+      padding-right: 4px;
+    }
+
+    .component-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 9px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .component-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(212, 175, 55, 0.3);
+    }
+
+    .component-card.selected {
+      border-color: var(--border-gold);
+      background: rgba(24, 26, 38, 0.7);
+    }
+
+    .comp-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .comp-checkbox {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      border: 1.5px solid rgba(212, 175, 55, 0.5);
+      background: rgba(10, 11, 16, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: transparent;
+      transition: all 0.15s ease;
+    }
+
+    .component-card.selected .comp-checkbox {
+      background: var(--gold-primary);
+      border-color: var(--gold-bright);
+      color: #08090C;
+      font-weight: 800;
+    }
+
+    .comp-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .comp-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .comp-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .comp-tag {
+      font-family: 'Cinzel', serif;
+      font-size: 9.5px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba(212, 175, 55, 0.15);
+      color: var(--gold-bright);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+    }
+
+    .comp-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .comp-size {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--gold-bright);
+      font-family: 'Inter', monospace;
+      text-align: right;
+    }
+
+    /* Dynamic Size Summary Banner */
+    .summary-banner {
+      background: rgba(14, 16, 24, 0.9);
+      border: 1px solid var(--border-gold);
+      border-radius: 8px;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .summary-stat {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .summary-label {
+      font-size: 10.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+    }
+
+    .summary-value {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--gold-bright);
+      font-family: 'Inter', monospace;
+    }
+
+    .summary-value.warn {
+      color: var(--red-warn);
+    }
+
+    .summary-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--green-ok);
+      font-weight: 500;
+    }
+
+    .summary-status.warn {
+      color: var(--red-warn);
+    }
+
+    /* Actions Footer */
+    .action-footer {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-install {
+      padding: 11px 28px;
+      background: linear-gradient(135deg, #D4AF37 0%, #AA820A 100%);
+      border: 1px solid var(--gold-bright);
+      border-radius: 8px;
+      color: #08090C;
+      font-family: 'Cinzel', serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 18px rgba(212, 175, 55, 0.35);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .btn-install:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px rgba(212, 175, 55, 0.55);
+      background: linear-gradient(135deg, #F6D365 0%, #D4AF37 100%);
+    }
+
+    .btn-install:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* ========================================================================= */
+    /* SCREEN 2: ANIMATED SPLASH & INSTALLATION SEQUENCE                          */
+    /* ========================================================================= */
+    .splash-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      text-align: center;
+    }
+
+    .rune-sigil-stage {
+      position: relative;
+      width: 140px;
+      height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+
+    /* Rotating Runic Compass Ring */
+    .runic-ring {
+      position: absolute;
+      width: 140px;
+      height: 140px;
+      border: 1.5px dashed var(--gold-primary);
+      border-radius: 50%;
+      animation: rotateRing 28s linear infinite;
+      box-shadow: 0 0 25px rgba(212, 175, 55, 0.2);
+    }
+
+    .runic-ring-inner {
+      position: absolute;
+      width: 104px;
+      height: 104px;
+      border: 1px dotted var(--cyan-accent);
+      border-radius: 50%;
+      animation: rotateRingRev 18s linear infinite;
+    }
+
+    @keyframes rotateRing {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes rotateRingRev {
+      from { transform: rotate(360deg); }
+      to { transform: rotate(0deg); }
+    }
+
+    /* Pulsing Center Rune */
+    .center-rune {
+      font-family: 'Cinzel', serif;
+      font-size: 52px;
+      font-weight: 900;
+      color: var(--gold-bright);
+      text-shadow: 0 0 20px rgba(212, 175, 55, 0.8), 0 0 40px rgba(78, 205, 196, 0.4);
+      animation: pulseRune 2.4s ease-in-out infinite;
+      z-index: 2;
+    }
+
+    @keyframes pulseRune {
+      0%, 100% { transform: scale(1); filter: brightness(1); }
+      50% { transform: scale(1.08); filter: brightness(1.25); }
+    }
+
+    .splash-title {
+      font-family: 'Cinzel', serif;
+      font-size: 21px;
+      font-weight: 700;
+      color: var(--gold-bright);
+      letter-spacing: 2px;
+      margin-bottom: 6px;
+    }
+
+    .splash-status-ticker {
+      font-size: 13px;
+      color: var(--cyan-accent);
+      margin-bottom: 24px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    /* Glowing Progress Bar */
+    .progress-box {
+      width: 80%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .progress-bar-track {
+      width: 100%;
+      height: 10px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid rgba(212, 175, 55, 0.25);
+      position: relative;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #D4AF37, #4ECDC4, #D4AF37);
+      background-size: 200% 100%;
+      animation: progressGlow 2s linear infinite;
+      border-radius: 6px;
+      transition: width 0.25s ease;
+      box-shadow: 0 0 12px rgba(212, 175, 55, 0.7);
+    }
+
+    @keyframes progressGlow {
+      0% { background-position: 100% 0; }
+      100% { background-position: -100% 0; }
+    }
+
+    .progress-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11.5px;
+      color: var(--text-muted);
+      font-family: 'Inter', monospace;
+    }
+
+    /* ========================================================================= */
+    /* SCREEN 3: SANCTUM FULLY CONSECRATED (COMPLETION)                          */
+    /* ========================================================================= */
+    .complete-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      text-align: center;
+    }
+
+    .complete-sigil {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: rgba(212, 175, 55, 0.15);
+      border: 2px solid var(--gold-bright);
+      color: var(--gold-bright);
+      font-family: 'Cinzel', serif;
+      font-size: 40px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 35px rgba(212, 175, 55, 0.5);
+      margin-bottom: 20px;
+      animation: pulseRune 3s infinite;
+    }
+
+    .complete-title {
+      font-family: 'Cinzel', serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--gold-bright);
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }
+
+    .complete-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      max-width: 440px;
+      line-height: 1.5;
+      margin-bottom: 28px;
+    }
+
+    .launch-checkbox-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-gold);
+      border-radius: 8px;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      margin-bottom: 24px;
+      transition: background 0.2s;
+    }
+
+    .launch-checkbox-card:hover {
+      background: var(--bg-card-hover);
+    }
+
+    .btn-launch {
+      padding: 12px 34px;
+      background: linear-gradient(135deg, #F6D365 0%, #D4AF37 100%);
+      border: 1px solid #FFF;
+      border-radius: 8px;
+      color: #08090C;
+      font-family: 'Cinzel', serif;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      cursor: pointer;
+      box-shadow: 0 6px 28px rgba(212, 175, 55, 0.6);
+      transition: all 0.2s;
+    }
+
+    .btn-launch:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 36px rgba(212, 175, 55, 0.85);
+    }
+  </style>
+</head>
+<body>
+  <!-- Ambient Particle Canvas -->
+  <canvas id="ambient-canvas"></canvas>
+
+  <!-- Titlebar -->
+  <div class="titlebar" id="drag-handle">
+    <div class="titlebar-left">
+      <div class="rune-badge">ᛗ</div>
+      <div class="titlebar-title">MÍMIR SANCTUM SETUP</div>
+      <div class="titlebar-version">v0.7.0</div>
+    </div>
+    <div class="titlebar-controls">
+      <button class="ctrl-btn" id="btn-minimize" title="Minimize">—</button>
+      <button class="ctrl-btn close" id="btn-close" title="Close">✕</button>
+    </div>
+  </div>
+
+  <!-- Sanctum Body -->
+  <div class="sanctum-body">
+
+    <!-- ===================================================================== -->
+    <!-- SCREEN 1: COMPONENT SELECTION & CONFIGURATION                         -->
+    <!-- ===================================================================== -->
+    <div class="screen-view active" id="screen-config">
+      <div class="hero-header">
+        <h1 class="hero-title">CONSECRATE YOUR SANCTUARY</h1>
+        <p class="hero-subtitle">Select installation components and target directory across Midgard:</p>
+      </div>
+
+      <!-- Installation Directory Card -->
+      <div class="path-card">
+        <div class="path-label">SANCTUARY INSTALLATION PATH</div>
+        <div class="path-input-group">
+          <input type="text" class="path-input" id="input-install-path" spellcheck="false" />
+          <button class="btn-browse" id="btn-browse">📁 Browse...</button>
+        </div>
+        <div class="disk-telemetry">
+          <div class="disk-status">
+            <span>💾 <strong id="lbl-drive-name">Drive (C:)</strong> Available: <span id="lbl-disk-available">Calculating...</span></span>
+          </div>
+          <div class="disk-meter-container" title="Drive Storage Utilization">
+            <div class="disk-meter-bar" id="disk-meter-bar"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Components Selection List -->
+      <div class="components-section">
+        <!-- Component 1: Core Engine -->
+        <div class="component-card selected" id="card-comp-core" data-id="core" data-size="16.5" data-installed="42.0">
+          <div class="comp-left">
+            <div class="comp-checkbox">✓</div>
+            <div class="comp-info">
+              <div class="comp-title-row">
+                <span class="comp-title">Core Browser Sanctuary Engine</span>
+                <span class="comp-tag">ᛏ REQUIRED</span>
+              </div>
+              <span class="comp-desc">Native Rust multi-tab engine, WebView2 viewports, and Obsidian Glass HUD</span>
+            </div>
+          </div>
+          <div class="comp-size">16.5 MB</div>
+        </div>
+
+        <!-- Component 2: Shortcuts -->
+        <div class="component-card selected" id="card-comp-shortcuts" data-id="shortcuts" data-size="0.1" data-installed="0.2">
+          <div class="comp-left">
+            <div class="comp-checkbox">✓</div>
+            <div class="comp-info">
+              <div class="comp-title-row">
+                <span class="comp-title">Desktop & Start Menu Runic Portals</span>
+                <span class="comp-tag">ᚱ PORTALS</span>
+              </div>
+              <span class="comp-desc">Quick-launch shortcuts inscribed onto your Desktop and Windows Start Menu</span>
+            </div>
+          </div>
+          <div class="comp-size">&lt; 1 MB</div>
+        </div>
+
+        <!-- Component 3: Video Pack -->
+        <div class="component-card selected" id="card-comp-videos" data-id="videos" data-size="88.5" data-installed="88.5">
+          <div class="comp-left">
+            <div class="comp-checkbox">✓</div>
+            <div class="comp-info">
+              <div class="comp-title-row">
+                <span class="comp-title">Living Cinematic Video Realms Pack</span>
+                <span class="comp-tag">ᚠ HIGH-DEF</span>
+              </div>
+              <span class="comp-desc">All 9 genuine AI-generated high-definition looping videos with animated sovereign rulers</span>
+            </div>
+          </div>
+          <div class="comp-size">88.5 MB</div>
+        </div>
+      </div>
+
+      <!-- Dynamic Sizing Summary Banner -->
+      <div class="summary-banner">
+        <div class="summary-stat">
+          <span class="summary-label">TOTAL SPACE REQUIRED</span>
+          <span class="summary-value" id="lbl-total-required">105.1 MB</span>
+        </div>
+        <div class="summary-stat">
+          <span class="summary-label">SPACE AVAILABLE ON DISK</span>
+          <span class="summary-value" id="lbl-space-available">Checking...</span>
+        </div>
+        <div class="summary-status" id="lbl-space-status">
+          <span id="lbl-status-dot">●</span> <span id="lbl-status-text">Storage Capacity Verified</span>
+        </div>
+      </div>
+
+      <!-- Action Footer -->
+      <div class="action-footer">
+        <button class="btn-install" id="btn-start-install">
+          <span>ᚠ INSCRIBE SANCTUM</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- SCREEN 2: ANIMATED SPLASH & INSTALLATION SEQUENCE                     -->
+    <!-- ===================================================================== -->
+    <div class="screen-view" id="screen-progress">
+      <div class="splash-container">
+        <!-- Runic Compass Sigil -->
+        <div class="rune-sigil-stage">
+          <div class="runic-ring"></div>
+          <div class="runic-ring-inner"></div>
+          <div class="center-rune">ᛗ</div>
+        </div>
+
+        <h2 class="splash-title">AWAKENING THE SANCTUARY</h2>
+        <div class="splash-status-ticker" id="lbl-progress-status">
+          <span>ᛟ Channeling Yggdrasil cosmic conduits...</span>
+        </div>
+
+        <div class="progress-box">
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="progress-bar-fill"></div>
+          </div>
+          <div class="progress-labels">
+            <span id="lbl-progress-phase">Extracting core binaries...</span>
+            <span id="lbl-progress-percent">0%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- SCREEN 3: SANCTUM CONSECRATED (COMPLETION)                            -->
+    <!-- ===================================================================== -->
+    <div class="screen-view" id="screen-complete">
+      <div class="complete-container">
+        <div class="complete-sigil">ᛗ</div>
+        <h2 class="complete-title">SANCTUM FULLY CONSECRATED</h2>
+        <p class="complete-desc">
+          Mímir Browser has been inscribed into your system with hardware-accelerated viewports and the Tri-Mode Sanctum Engine.
+        </p>
+
+        <div class="launch-checkbox-card" id="card-launch-app">
+          <div class="comp-checkbox" id="chk-launch">✓</div>
+          <span style="font-size: 13px; font-weight: 500;">Launch Mímir Browser immediately</span>
+        </div>
+
+        <button class="btn-launch" id="btn-launch-finish">
+          <span>ᛏ ENTER THE NINE REALMS</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // State
+    const state = {
+      installPath: '',
+      diskAvailableBytes: 0,
+      diskTotalBytes: 0,
+      selectedComponents: new Set(['core', 'shortcuts', 'videos']),
+      launchOnFinish: true
+    };
+
+    // IPC Helper
+    function sendIpc(type, payload = {}) {
+      if (window.ipc) {
+        window.ipc.postMessage(JSON.stringify({ type, ...payload }));
+      } else {
+        console.log('[IPC Mock]', type, payload);
+      }
+    }
+
+    // Titlebar Drag & Window Controls
+    const dragHandle = document.getElementById('drag-handle');
+    dragHandle.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.titlebar-controls')) return;
+      sendIpc('DRAG_WINDOW');
+    });
+
+    document.getElementById('btn-minimize').addEventListener('click', () => {
+      sendIpc('MINIMIZE_WINDOW');
+    });
+
+    document.getElementById('btn-close').addEventListener('click', () => {
+      sendIpc('CLOSE_WINDOW');
+    });
+
+    // Formatting utilities
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i];
+    }
+
+    // Component Toggles
+    const cardShortcuts = document.getElementById('card-comp-shortcuts');
+    const cardVideos = document.getElementById('card-comp-videos');
+
+    function toggleComponent(id, cardElement) {
+      if (state.selectedComponents.has(id)) {
+        state.selectedComponents.delete(id);
+        cardElement.classList.remove('selected');
+        cardElement.querySelector('.comp-checkbox').textContent = '';
+      } else {
+        state.selectedComponents.add(id);
+        cardElement.classList.add('selected');
+        cardElement.querySelector('.comp-checkbox').textContent = '✓';
+      }
+      recalculateSizes();
+    }
+
+    cardShortcuts.addEventListener('click', () => toggleComponent('shortcuts', cardShortcuts));
+    cardVideos.addEventListener('click', () => toggleComponent('videos', cardVideos));
+
+    // Dynamic Size Recalculation
+    function recalculateSizes() {
+      let totalMB = 0;
+      document.querySelectorAll('.component-card.selected').forEach(card => {
+        totalMB += parseFloat(card.dataset.size || 0);
+      });
+
+      const totalFormatted = totalMB < 1 ? '< 1 MB' : totalMB.toFixed(1) + ' MB';
+      document.getElementById('lbl-total-required').textContent = totalFormatted;
+
+      const requiredBytes = totalMB * 1024 * 1024;
+      const isEnoughSpace = state.diskAvailableBytes === 0 || state.diskAvailableBytes >= requiredBytes;
+
+      const statusEl = document.getElementById('lbl-space-status');
+      const statValEl = document.getElementById('lbl-space-available');
+      const btnInstall = document.getElementById('btn-start-install');
+
+      if (!isEnoughSpace) {
+        statusEl.className = 'summary-status warn';
+        document.getElementById('lbl-status-dot').textContent = '⚠️';
+        document.getElementById('lbl-status-text').textContent = 'Insufficient Space on Drive!';
+        statValEl.className = 'summary-value warn';
+        btnInstall.disabled = true;
+      } else {
+        statusEl.className = 'summary-status';
+        document.getElementById('lbl-status-dot').textContent = '●';
+        document.getElementById('lbl-status-text').textContent = 'Storage Capacity Verified';
+        statValEl.className = 'summary-value';
+        btnInstall.disabled = false;
+      }
+    }
+
+    // Disk Space Updates
+    function updateDiskTelemetry(driveLetter, freeBytes, totalBytes) {
+      state.diskAvailableBytes = freeBytes;
+      state.diskTotalBytes = totalBytes;
+
+      document.getElementById('lbl-drive-name').textContent = `Drive (${driveLetter})`;
+      document.getElementById('lbl-disk-available').textContent = `${formatBytes(freeBytes)} free of ${formatBytes(totalBytes)}`;
+      document.getElementById('lbl-space-available').textContent = formatBytes(freeBytes);
+
+      if (totalBytes > 0) {
+        const usedPercent = Math.round(((totalBytes - freeBytes) / totalBytes) * 100);
+        document.getElementById('disk-meter-bar').style.width = usedPercent + '%';
+      }
+
+      recalculateSizes();
+    }
+
+    // Path Input Handling
+    const pathInput = document.getElementById('input-install-path');
+    pathInput.addEventListener('change', () => {
+      state.installPath = pathInput.value.trim();
+      sendIpc('CHECK_DISK_SPACE', { path: state.installPath });
+    });
+
+    document.getElementById('btn-browse').addEventListener('click', () => {
+      sendIpc('BROWSE_FOLDER', { initialPath: state.installPath });
+    });
+
+    // Start Install Action
+    document.getElementById('btn-start-install').addEventListener('click', () => {
+      document.getElementById('screen-config').classList.remove('active');
+      document.getElementById('screen-progress').classList.add('active');
+
+      sendIpc('START_INSTALL', {
+        installPath: state.installPath,
+        installShortcuts: state.selectedComponents.has('shortcuts'),
+        installVideoPack: state.selectedComponents.has('videos')
+      });
+    });
+
+    // Progress updates received from Rust
+    window.onInstallProgress = function(percent, phaseText, detailText) {
+      document.getElementById('progress-bar-fill').style.width = percent + '%';
+      document.getElementById('lbl-progress-percent').textContent = percent + '%';
+      document.getElementById('lbl-progress-phase').textContent = phaseText;
+      if (detailText) {
+        document.getElementById('lbl-progress-status').innerHTML = `<span>ᛟ ${detailText}</span>`;
+      }
+    };
+
+    // Install Complete
+    window.onInstallComplete = function() {
+      document.getElementById('screen-progress').classList.remove('active');
+      document.getElementById('screen-complete').classList.add('active');
+    };
+
+    // Finish / Launch Action
+    const cardLaunch = document.getElementById('card-launch-app');
+    cardLaunch.addEventListener('click', () => {
+      state.launchOnFinish = !state.launchOnFinish;
+      document.getElementById('chk-launch').textContent = state.launchOnFinish ? '✓' : '';
+    });
+
+    document.getElementById('btn-launch-finish').addEventListener('click', () => {
+      sendIpc('FINISH_SETUP', { launch: state.launchOnFinish });
+    });
+
+    // Inbound IPC Dispatcher called from Rust
+    window.onIpcMessage = function(msg) {
+      if (msg.type === 'INITIAL_STATE') {
+        state.installPath = msg.defaultPath;
+        pathInput.value = msg.defaultPath;
+        updateDiskTelemetry(msg.driveLetter, msg.freeBytes, msg.totalBytes);
+      } else if (msg.type === 'DISK_SPACE_UPDATE') {
+        updateDiskTelemetry(msg.driveLetter, msg.freeBytes, msg.totalBytes);
+      } else if (msg.type === 'PATH_SELECTED') {
+        state.installPath = msg.path;
+        pathInput.value = msg.path;
+        sendIpc('CHECK_DISK_SPACE', { path: msg.path });
+      } else if (msg.type === 'PROGRESS') {
+        window.onInstallProgress(msg.percent, msg.phase, msg.detail);
+      } else if (msg.type === 'COMPLETE') {
+        window.onInstallComplete();
+      } else if (msg.type === 'ERROR') {
+        alert('Installation Encountered an Issue: ' + msg.error);
+      }
+    };
+
+    // Ambient Golden Particle Simulation
+    const canvas = document.getElementById('ambient-canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    class Particle {
+      constructor() {
+        this.reset();
+      }
+      reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = canvas.height + Math.random() * 20;
+        this.size = Math.random() * 2 + 0.8;
+        this.speedY = Math.random() * 0.6 + 0.2;
+        this.speedX = (Math.random() - 0.5) * 0.4;
+        this.opacity = Math.random() * 0.5 + 0.15;
+        this.isGold = Math.random() > 0.35;
+      }
+      update() {
+        this.y -= this.speedY;
+        this.x += this.speedX;
+        if (this.y < -10) this.reset();
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = this.isGold 
+          ? `rgba(212, 175, 55, ${this.opacity})` 
+          : `rgba(78, 205, 196, ${this.opacity * 0.7})`;
+        ctx.fill();
+      }
+    }
+
+    for (let i = 0; i < 45; i++) {
+      const p = new Particle();
+      p.y = Math.random() * canvas.height;
+      particles.push(p);
+    }
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let p of particles) {
+        p.update();
+        p.draw();
+      }
+      requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    // Signal Rust that DOM is ready
+    window.addEventListener('DOMContentLoaded', () => {
+      sendIpc('DOM_READY');
+    });
+  </script>
+</body>
+</html>

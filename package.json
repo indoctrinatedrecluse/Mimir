@@ -8,6 +8,7 @@
     "dev": "vite",
     "build:ui": "tsc -b && vite build",
     "build:rust": "cargo build --manifest-path src-rust/Cargo.toml",
+    "build:installer": "cargo build --release --manifest-path src-rust/Cargo.toml --bin mimir-installer",
     "build": "npm run build:ui && npm run build:rust",
     "preview": "vite preview"
   },
