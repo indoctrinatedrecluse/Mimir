@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Planned (Next Release: v0.8.0)
+
+#### Sacred Shield Mastery & YouTube Adblocking Engine
+* **High-Performance Rust Adblocking Engine**:
+  * Investigate and integrate native Cargo crates (such as `adblock-rust` / Brave's filtering engine) to deliver full EasyList, EasyPrivacy, and uBlock-grade rule matching directly at the native Rust layer.
+  * Native network resource blocking in WebView2 before requests hit the network stack, drastically improving page load times and reducing memory consumption.
+* **Specialized YouTube Adblock Sentinel**:
+  * Implement dedicated YouTube ad neutralization targeting pre-roll, mid-roll, and overlay advertisements.
+  * Evaluate native scriptlet injection vs. adapting specialized adblock extensions from the Microsoft Edge / Chrome ecosystem via WebView2's extension APIs.
+* **Enhanced Tracker & Telemetry Neutralization**:
+  * Expand Runic Shield to deep telemetry interception and real-time HUD analytics.
+
+#### Mythic Installer Overhaul & Visual Ascendance
+* **Total Thematic Overhaul**:
+  * Re-architect the installation experience into a stunning, fully Norse-themed setup interface matching Mímir's Obsidian Glass design language.
+* **Dynamic Component Sizing**:
+  * Real-time installation footprint calculation and UI updates based on active component selections (Core Browser ~16 MB vs. Living Realm Video Pack ~88.5 MB).
+* **Animated Runic Installation Sequence**:
+  * Repurpose Mímir's animated splash screen and ambient soundscapes/particles into an interactive, visually impressive installation workflow.
+
+---
+
 ## [0.7.0] - 2026-10-25 *(Living Cinematic Video Realms & Tri-Mode Sanctum Engine)*
 
 This milestone release brings the Nine Realms alive with living cinematic video backdrops, animated sovereign rulers, a unified Tri-Mode Sanctum Engine, in-browser visual documentation guides, and a lean Model A modular on-demand distribution architecture.

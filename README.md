@@ -230,6 +230,17 @@ graph TD
   - Added optional component selection checkbox in `mimir-setup.exe` (*"Living Cinematic Video Realms Pack"*).
   - When selected during setup, the installer automatically downloads `mimir-cinematic-realm-pack.zip` from GitHub Releases and unpacks it directly into `<install_dir>\dist\realms\videos\`, delivering automated 1-click installation without manual extraction.
 
+### Phase 9: Mythic Sanctum Installer & Sacred Shield Mastery *(Planned for v0.8.0)*
+- [ ] **Advanced AdGuard & Sacred Shield Upgrade**:
+  - Integrate high-performance Rust adblocking engine (evaluating native crates like `adblock-rust` for EasyList/uBlock-compatible rule evaluation, cosmetic element hiding, and request blocking).
+  - Dedicated **YouTube Adblock Sentinel**: Specialized ad-filtering mechanism eliminating video pre-roll/mid-roll ads, banners, and promotional interruptions (native scriptlet interception or WebView2 extension integration adapted from Edge/Chrome ecosystems).
+  - Deep tracker defense and telemetry neutralization across all webview instances with real-time HUD telemetry.
+- [ ] **Mythic Installer Overhaul & Visual Ascendance**:
+  - Complete thematic overhaul of the Windows installer to match Mímir's Obsidian Glass and Norse sanctuary aesthetic.
+  - Dynamic component sizing: Real-time calculation and display of total installation footprint as users toggle optional packages (Core Browser ~16 MB, Living Cinematic Video Pack ~88.5 MB).
+  - Repurposed animated Runic Splash Screen and atmospheric transitions during the installation sequence.
+  - Rich interactive installer experience with custom styling, animated progress meters, and realm lore previews.
+
 ---
 
 ## ⌨️ Essential Keyboard Shortcuts
