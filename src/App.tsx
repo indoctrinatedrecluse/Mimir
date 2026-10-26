@@ -116,21 +116,21 @@ export const App: React.FC = () => {
   const [isCloakOpen, setIsCloakOpen] = useState(false);
   const [isHeimdallsWatchOpen, setIsHeimdallsWatchOpen] = useState(false);
   const [isMimirsEyeOpen, setIsMimirsEyeOpen] = useState(false);
-  const [proxyConfig, setProxyConfig] = useState<SvalinnProxyConfig>(svalinnProxy.getConfig);
+  const [proxyConfig, setProxyConfig] = useState<SvalinnProxyConfig>(() => svalinnProxy.getConfig());
 
   useEffect(() => {
     return svalinnProxy.subscribe((cfg) => setProxyConfig(cfg));
   }, []);
-  const [activeMediaSession, setActiveMediaSession] = useState<ActiveMediaSession | null>(mediaController.getSession());
+  const [activeMediaSession, setActiveMediaSession] = useState<ActiveMediaSession | null>(() => mediaController.getSession());
   const [isSplitGaze, setIsSplitGaze] = useState(false);
   const [splitTabId, setSplitTabId] = useState<string | undefined>('tab-2');
-  const [isAmbientPlaying, setIsAmbientPlaying] = useState(runicAudio.isAmbientEnabled());
+  const [isAmbientPlaying, setIsAmbientPlaying] = useState(() => runicAudio.isAmbientEnabled());
   const [showSplash, setShowSplash] = useState(true);
   const [huginnPrompt, setHuginnPrompt] = useState<string>('');
 
   // Yggdrasil Realm Workspaces & Branches
-  const [workspaces, setWorkspaces] = useState<YggdrasilWorkspace[]>(workspaceManager.getWorkspaces);
-  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>(workspaceManager.getActiveWorkspaceId);
+  const [workspaces, setWorkspaces] = useState<YggdrasilWorkspace[]>(() => workspaceManager.getWorkspaces());
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>(() => workspaceManager.getActiveWorkspaceId());
   const [isWorkspaceModalOpen, setIsWorkspaceModalOpen] = useState(false);
   const [editingWorkspace, setEditingWorkspace] = useState<YggdrasilWorkspace | null>(null);
 

@@ -129,6 +129,10 @@ This major release elevates Mímir Browser to a full sovereign desktop citadel:
   * Fixed unclickable "Launch Mímir Browser immediately" toggle by styling `.launch-checkbox-card.selected` with active gold glow and high-contrast checkmark (`✓`), synchronizing interactive state on click.
   * Dynamically updated finish button label (`ᛏ LAUNCH MÍMIR BROWSER` vs `ᛏ COMPLETE SETUP`) and added dedicated `CLOSE SETUP` button.
   * Fixed browser launch execution in Rust: removed `CREATE_NO_WINDOW` flag that was suppressing the browser window, accurately routed custom `install_path`, and set process working directory to ensure clean launch.
+* **Pitch Black Screen Eradication & Runic Error Boundary (`App.tsx`, `proxyManager.ts`, `vaultManager.ts`, `MimirsEyeModal.tsx`, `ErrorBoundary.tsx`, `main.tsx`)**:
+  * Resolved critical black screen initialization lockup where passing uninvoked instance methods directly into React `useState` (`svalinnProxy.getConfig`, `vaultManager.getNotes`) stripped `this` execution context during initial `<App />` render, throwing silent uncaught `TypeError: Cannot read properties of undefined` before DOM mounting.
+  * Converted `SvalinnProxyManager` and `VaultManager` public methods to bound arrow properties and wrapped React initializers in anonymous arrow invocations (`() => svalinnProxy.getConfig()`, `() => vaultManager.getNotes()`, `() => workspaceManager.getWorkspaces()`, `() => workspaceManager.getActiveWorkspaceId()`).
+  * Introduced `<ErrorBoundary />` around root mount and window-level error interception with an atmospheric Norse recovery UI ("Rift in the Cosmic Loom"), diagnostic inscription dump, and 1-click sanctum reawaken / cache purge actions.
 
 ### Deferred (Future Roadmap)
 * **Custom Theme Generator (Milestone 6)**:

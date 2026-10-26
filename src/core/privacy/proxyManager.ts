@@ -102,17 +102,18 @@ class SvalinnProxyManager {
     this.listeners.forEach((l) => l(this.config));
   }
 
-  public getConfig(): SvalinnProxyConfig {
+  public getConfig = (): SvalinnProxyConfig => {
     return { ...this.config };
-  }
+  };
 
-  public setDirectMode(): void {
+
+  public setDirectMode = (): void => {
     this.config.enabled = false;
     this.config.proxyType = 'direct';
     this.config.server = '';
     this.syncWithRust();
     this.notify();
-  }
+  };
 
   public setTorCloakMode(port = 9050): void {
     this.config.enabled = true;
@@ -188,9 +189,9 @@ class SvalinnProxyManager {
     }
   }
 
-  public getLastEgressInfo(): EgressIpInfo | null {
+  public getLastEgressInfo = (): EgressIpInfo | null => {
     return this.lastEgressInfo;
-  }
+  };
 }
 
 export const svalinnProxy = new SvalinnProxyManager();

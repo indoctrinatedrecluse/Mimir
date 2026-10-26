@@ -46,7 +46,7 @@ export const MimirsEyeModal: React.FC<MimirsEyeModalProps> = ({
 }) => {
   const [view, setView] = useState<ModalView>('clipper');
   const [editorTab, setEditorTab] = useState<EditorTab>('preview');
-  const [notes, setNotes] = useState<ClippedNote[]>(vaultManager.getNotes);
+  const [notes, setNotes] = useState<ClippedNote[]>(() => vaultManager.getNotes());
 
   // Active Clipper Form State
   const [noteId, setNoteId] = useState<string | undefined>(undefined);

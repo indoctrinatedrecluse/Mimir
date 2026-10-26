@@ -96,17 +96,17 @@ Beneath the root of Yggdrasil that reaches into the realm of the frost giants li
     return () => this.listeners.delete(listener);
   }
 
-  public getNotes(): ClippedNote[] {
+  public getNotes = (): ClippedNote[] => {
     return [...this.notes].sort((a, b) => {
       if (a.isPinned && !b.isPinned) return -1;
       if (!a.isPinned && b.isPinned) return 1;
       return b.updatedAt - a.updatedAt;
     });
-  }
+  };
 
-  public getNote(id: string): ClippedNote | undefined {
+  public getNote = (id: string): ClippedNote | undefined => {
     return this.notes.find((n) => n.id === id);
-  }
+  };
 
   public saveNote(data: {
     id?: string;
