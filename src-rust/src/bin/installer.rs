@@ -1,7 +1,15 @@
+#![windows_subsystem = "windows"]
+
 use std::fs::File;
 use std::io::Cursor;
 use std::path::{Path, PathBuf};
 use std::thread;
+
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 use serde::{Deserialize, Serialize};
 use tao::dpi::LogicalSize;
@@ -148,8 +156,11 @@ fn browse_for_folder(initial: &str) -> Option<String> {
         initial.replace('\'', "''")
     );
 
-    let output = std::process::Command::new("powershell")
-        .args(["-NoProfile", "-NonInteractive", "-Command", &script])
+    let mut cmd = std::process::Command::new("powershell");
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(CREATE_NO_WINDOW);
+    let output = cmd
+        .args(["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", &script])
         .output()
         .ok()?;
 
@@ -189,8 +200,11 @@ fn create_shortcut(
         icon_path.replace('\'', "''")
     );
 
-    let _ = std::process::Command::new("powershell")
-        .args(["-NoProfile", "-NonInteractive", "-Command", &script])
+    let mut cmd = std::process::Command::new("powershell");
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(CREATE_NO_WINDOW);
+    let _ = cmd
+        .args(["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", &script])
         .output();
     Ok(())
 }
@@ -214,8 +228,11 @@ fn register_uninstaller(install_dir: &str, display_version: &str) {
         ico_path.replace('\'', "''")
     );
 
-    let _ = std::process::Command::new("powershell")
-        .args(["-NoProfile", "-NonInteractive", "-Command", &script])
+    let mut cmd = std::process::Command::new("powershell");
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(CREATE_NO_WINDOW);
+    let _ = cmd
+        .args(["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", &script])
         .output();
 }
 
@@ -247,8 +264,11 @@ fn run_uninstall() {
             );
         }
     "#;
-    let _ = std::process::Command::new("powershell")
-        .args(["-NoProfile", "-Command", script])
+    let mut cmd = std::process::Command::new("powershell");
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(CREATE_NO_WINDOW);
+    let _ = cmd
+        .args(["-NoProfile", "-WindowStyle", "Hidden", "-Command", script])
         .status();
 }
 
@@ -307,8 +327,12 @@ fn find_portable_zip() -> Option<PathBuf> {
     let cur = std::env::current_dir().ok()?;
     let candidates = [
         cur.join("mimir-portable.zip"),
+        cur.join("mimir-v0.9.0-windows-x64-portable.zip"),
         cur.join("mimir-v0.8.0-windows-x64-portable.zip"),
         cur.join("mimir-v0.7.0-windows-x64-portable.zip"),
+        cur.parent()
+            .map(|p| p.join("mimir-v0.9.0-windows-x64-portable.zip"))
+            .unwrap_or_default(),
         cur.parent()
             .map(|p| p.join("mimir-v0.8.0-windows-x64-portable.zip"))
             .unwrap_or_default(),
@@ -523,7 +547,7 @@ fn execute_installation(
         "Consecrating System Registry...",
         "Registering uninstaller...",
     );
-    register_uninstaller(&install_path, "0.8.0");
+    register_uninstaller(&install_path, "0.9.0");
 
     // Copy installer as uninstaller
     if let Ok(current_exe) = std::env::current_exe() {
@@ -630,7 +654,10 @@ fn main() {
                         if launch {
                             let default_dir = get_default_install_dir();
                             let exe_path = format!("{}\\mimir.exe", default_dir);
-                            let _ = std::process::Command::new(exe_path).spawn();
+                            let mut cmd = std::process::Command::new(exe_path);
+                            #[cfg(target_os = "windows")]
+                            cmd.creation_flags(CREATE_NO_WINDOW);
+                            let _ = cmd.spawn();
                         }
                         let _ = proxy_ipc.send_event(UserEvent::Close);
                     }

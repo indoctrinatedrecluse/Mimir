@@ -241,13 +241,37 @@ graph TD
   - Real-time disk capacity telemetry queried via Win32 `GetDiskFreeSpaceExW`.
   - Repurposed animated Runic Splash Screen with rotating Vegvísir compass, pulsing `ᛗ` rune, and ambient particle simulations during installation.
 
+### Phase 10: Sovereign Citadels, Cloak & Cosmic Navigation *(v0.9.0)*
+- [x] **Yggdrasil Realm Workspaces (`Alt+1..9`)**:
+  - Multi-context workspace isolation with custom guardian runes and tailored accent colors.
+  - Top Obsidian Glass `WorkspaceRibbon` and 1-click batch background tab hibernation saving hundreds of MBs of RAM.
+- [x] **Svalinn Proxy & Network Cloak (`Ctrl+Shift+P`)**:
+  - Native OS-level WebView2 proxy overrides supporting Tor Onion Routing (`socks5://127.0.0.1:9050`), SOCKS5, and HTTP proxies.
+  - Live TCP daemon socket probe, egress IP detection, and quick-switch presets in `SvalinnCloakModal.tsx`.
+- [x] **Heimdall’s Watch: Sovereign Task Manager (`Shift+Esc`)**:
+  - Real Win32 process discovery (`CreateToolhelp32Snapshot`, `K32GetProcessMemoryInfo`), CPU/RAM telemetry, instant `K32EmptyWorkingSet` memory purge, and `TerminateProcess` slayer.
+- [x] **Mímir’s Eye: Runic Web Clipper & Knowledge Vault (`Ctrl+Shift+C`)**:
+  - Injected DOM article extractor and HTML-to-Markdown engine with YAML frontmatter, persistent local vault search, and dual-pane Inscription Forge.
+- [x] **Valkyrie Gesture & Vim Key Navigator (`Alt+F` & Mouse Drag Navigation)**:
+  - Right-click mouse drag directional vector gestures with neon particle trails.
+  - Vim Runic Link Navigation (`Alt+F`) with floating two-letter rune badges and passive Vim scrolling (`j`/`k`/`d`/`u`/`G`).
+- [x] **Bifröst Start: Cosmic Dashboard (`mimir://newtab`)**:
+  - Runic Celestial Clock with 24 Elder Futhark hour runes, Old Norse calendar, realm atmospheric conditions HUD, customizable speed dials, and citadel fast dock.
+- [x] **Silent Background Installer**:
+  - Pure Windows GUI subsystem (`windows_subsystem = "windows"`) and `CREATE_NO_WINDOW` execution eliminating background PowerShell console windows.
+
 ---
 
 ## ⌨️ Essential Keyboard Shortcuts
 
 | Shortcut | Action |
 | :--- | :--- |
-| `Ctrl + K` / `Ctrl + Shift + P` | Open **Hliðskjálf Command Palette** |
+| `Ctrl + K` | Open **Hliðskjálf Command Palette** |
+| `Shift + Esc` | Open **Heimdall’s Watch** (Sovereign Task & RAM Manager) |
+| `Ctrl + Shift + P` | Open **Svalinn Network Cloak** (Tor & Proxy Setup) |
+| `Ctrl + Shift + C` | Open **Mímir’s Eye** (Web Clipper & Knowledge Vault) |
+| `Alt + F` | Toggle **Valkyrie Vim Runic Link Navigator** |
+| `Alt + 1` .. `Alt + 9` | Switch **Yggdrasil Realm Workspace** |
 | `Ctrl + Shift + U` | Open **Naglfar Swarm** (BitTorrent Client) |
 | `Ctrl + Shift + J` | Open **Bifröst Turbo** (Download Accelerator) |
 | `Ctrl + B` | Toggle **Runic Sidecar** (Docked Scratchpad & Notes) |
@@ -263,7 +287,6 @@ graph TD
 | `Ctrl + P` | **Inscribe Parchment** (Print Page) |
 | `Ctrl + +` / `Ctrl + -` | Zoom In / Zoom Out |
 | `Ctrl + 0` | Reset Zoom to 100% |
-| `Alt + 1` .. `Alt + 9` | Instant Realm Teleportation |
 | `Ctrl + Shift + Del` | **Fate Thread Purge** (Clear Browsing Data) |
 | `Escape` | Dismiss Active Modal, Command Palette, or AI Drawer |
 
@@ -311,13 +334,13 @@ Mímir ships with the **Tri-Mode Sanctum Engine**, unifying live hardware-accele
 ### 👤 End-User Installation Guide
 
 #### Option 1: 1-Click Installer (Recommended)
-1. Download **`mimir-v0.8.0-windows-x64-setup.exe`**.
+1. Download **`mimir-v0.9.0-windows-x64-setup.exe`**.
 2. Run the installer and check the optional component:
    - `[x] Living Cinematic Video Realms Pack`
 3. The installer will automatically download `mimir-cinematic-realm-pack.zip` (~88 MB) and install it directly into your Mímir sanctuary!
 
 #### Option 2: Portable / Manual Installation
-1. Download `mimir-v0.8.0-windows-x64-portable.zip` (~12 MB).
+1. Download `mimir-v0.9.0-windows-x64-portable.zip` (~12 MB).
 2. Download `mimir-cinematic-realm-pack.zip` (~88 MB).
 3. Extract the 9 `.mp4` video files into your Mímir directory:
    ```text

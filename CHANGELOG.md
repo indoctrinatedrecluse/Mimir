@@ -7,7 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [0.9.0] - 2026-10-26 *(Sovereign Citadels, Cloak & Cosmic Navigation: Yggdrasil Workspaces, Svalinn Proxy, Heimdall's Watch, Mímir's Eye, Valkyrie Gestures & Bifröst Start)*
+
+This major release elevates Mímir Browser to a full sovereign desktop citadel:
+- **Yggdrasil Realm Workspaces (`Alt+1..9`)**: Multi-context workspace isolation with custom guardian runes and tailored accent colors, `WorkspaceRibbon`, and 1-click batch background tab hibernation saving hundreds of megabytes of RAM.
+- **Svalinn Proxy & Network Cloak (`Ctrl+Shift+P`)**: Native OS-level WebView2 proxy routing supporting Tor Onion routing (`socks5://127.0.0.1:9050`), SOCKS5, and HTTP proxies, plus live TCP daemon reachability probe and egress IP/GeoIP detection.
+- **Heimdall’s Watch: Sovereign Task Manager (`Shift+Esc`)**: Zero-mock Win32 process discovery (`CreateToolhelp32Snapshot`, `K32GetProcessMemoryInfo`), CPU/RAM telemetry, instant `K32EmptyWorkingSet` memory purge, and `TerminateProcess` slayer.
+- **Mímir’s Eye: Runic Web Clipper & Knowledge Vault (`Ctrl+Shift+C`)**: Injected DOM article extractor and HTML-to-Markdown engine with YAML frontmatter, persistent local vault search, and dual-pane Inscription Forge.
+- **Valkyrie Gesture & Vim Key Navigator (`Alt+F` & Mouse Gestures)**: Right-click mouse drag directional vector gestures with neon particle trails, Vim Runic Link Navigation (`Alt+F`) with floating two-letter rune badges, and passive Vim scrolling (`j`/`k`/`d`/`u`/`G`).
+- **Bifröst Start: Cosmic Dashboard (`mimir://newtab`)**: Runic Celestial Clock with 24 Elder Futhark hour runes, Old Norse calendar, realm atmospheric conditions HUD, customizable speed dials, and citadel fast dock.
+- **Silent Background Installer**: Pure Windows GUI subsystem (`windows_subsystem = "windows"`) and `CREATE_NO_WINDOW` execution eliminating background PowerShell console windows.
 
 ### Added
 
@@ -102,6 +111,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * Live telemetry badges and 1-click launch cards right on the new tab page for Yggdrasil Workspaces, Svalinn Network Cloak, Heimdall's Watch Task Manager, Mímir's Eye Vault, and Fafnir's Treasury.
 * **Central Mímisbrunnr Search Pool**:
   * Concentric runic orbit rings with multi-engine channel routing and instant query dispatch.
+
+#### 🛡️ Silent Background Installer & Windows Subsystem (`installer.rs`, `installer_ui.html`)
+* **Elimination of Background PowerShell Console Windows**:
+  * Added unconditional `#![windows_subsystem = "windows"]` to `installer.rs`, ensuring the installer is compiled as a native GUI subsystem application instead of a console application that causes Windows to allocate a visible console window.
+  * Applied Win32 `CREATE_NO_WINDOW` (flag `0x08000000`) and `-WindowStyle Hidden` across all child PowerShell invocations (`browse_for_folder`, `create_shortcut`, `register_uninstaller`, `run_uninstall`, and browser launch), eliminating any visible or flashing background command windows.
+  * Updated version badge and registry uninstaller keys to `0.9.0`.
 
 ### Deferred (Future Roadmap)
 * **Custom Theme Generator (Milestone 6)**:

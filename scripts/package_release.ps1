@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-$TAG = "v0.8.0"
+$TAG = "v0.9.0"
 
 # 1. Download WebView2 bootstrapper if missing
 if (-not (Test-Path "MicrosoftEdgeWebview2Setup.exe")) {
