@@ -42,6 +42,19 @@ export interface Tab {
   isSleeping?: boolean;
   lastActiveTime?: number;
   memorySavedBytes?: number;
+  workspaceId?: string; // Links tab to a specific Yggdrasil Workspace branch
+  audioPlaying?: boolean;
+}
+
+export interface YggdrasilWorkspace {
+  id: string;
+  name: string;
+  rune: string;
+  realm: RealmId;
+  color?: string;
+  activeTabId?: string;
+  createdAt: number;
+  lastActiveAt: number;
 }
 
 export interface RunicWardStats {

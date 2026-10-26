@@ -30,6 +30,79 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * Native Tao frameless window creation with `.with_always_on_top(true)` and `.with_resizable(true)` that stays permanently floating in the foreground even when other non-browser desktop applications (IDE, Office, games) are focused.
   * Bidirectional IPC bridge (`SPAWN_PIP_WINDOW`, `CLOSE_PIP_WINDOW`, `DRAG_PIP_WINDOW`, `SYNC_PIP_STATE`) synchronizing title, playback state, transport controls, and volume between the host tab and native OS PiP window.
 
+#### 🌌 Yggdrasil Realm Workspaces (`workspaceManager.ts`, `WorkspaceRibbon.tsx`, `WorkspaceModal.tsx`, `TabTree.tsx`, `App.tsx`)
+* **Multi-Context Workspace Branch Isolation (`Alt+1..9`)**:
+  * Organize tabs into distinct sovereign branches of Yggdrasil (e.g. Midgard Sanctuary, Asgardian Forge, Vanaheim Grove, Alfheim Archives, or user-forged custom workspaces).
+  * Rapid workspace switching with global hotkeys `Alt+1` through `Alt+9` or via the top Obsidian Glass `WorkspaceRibbon`.
+  * Active workspace indicator with custom guardian runes and tailored accent colors.
+* **Workspace Hibernation & Memory Optimization**:
+  * 1-click batch hibernation of all background tabs in inactive workspaces, freeing hundreds of megabytes of RAM without losing session states.
+* **Workspace Inscription Modal**:
+  * Forge, customize, recolor, and assign realm runes to workspaces with complete JSON snapshot export and import.
+* **Tab Tree Scope Filtering**:
+  * TabTree dynamically scopes tab rendering to the active workspace while preserving cross-workspace tab dragging and quick counts.
+
+#### 🛡️ Svalinn Proxy & Network Cloak (`proxy.rs`, `proxyManager.ts`, `SvalinnCloakModal.tsx`, `ipc.rs`, `main.rs`, `App.tsx`, `Omnibar.tsx`, `CommandPalette.tsx`)
+* **Native WebView2 Network Proxy Routing (`Ctrl+Shift+P`)**:
+  * Native OS-level proxy configuration via `CoreWebView2EnvironmentOptions` and `ICoreWebView2_16::SetProxyOverride`.
+  * Multi-protocol support: Direct connections, Tor Onion Routing (`socks5://127.0.0.1:9050`), SOCKS5 proxies, and HTTP proxies with customizable localhost bypass lists.
+* **Live TCP Daemon Connectivity Probing**:
+  * Non-blocking Rust TCP socket probe (`test_proxy_reachability`) testing host and port reachability prior to applying configurations.
+* **Egress IP & GeoIP Diagnostic Telemetry**:
+  * Real-time egress IP address check with cloaked vs exposed state indicators, ISP/organization detection, and geographic details.
+* **Svalinn Network Cloak Modal & Presets**:
+  * Quick 1-click presets for Tor Browser Daemon (`127.0.0.1:9150`), System Tor Service (`127.0.0.1:9050`), Local SOCKS5 (`127.0.0.1:1080`), and Privoxy / HTTP (`127.0.0.1:8118`).
+  * Live status shield indicator in the Omnibar and Command Palette integration.
+
+#### ⚡ Heimdall’s Watch: Sovereign Task & Resource Manager (`system_metrics.rs`, `heimdallWatchManager.ts`, `HeimdallsWatchModal.tsx`, `ipc.rs`, `main.rs`, `App.tsx`, `Omnibar.tsx`, `CommandPalette.tsx`)
+* **Zero-Mock Win32 Process Discovery (`Shift+Esc`)**:
+  * Native telemetry engine leveraging Win32 `CreateToolhelp32Snapshot`, `K32GetProcessMemoryInfo`, and `GlobalMemoryStatusEx`.
+  * Discovers Mímir Core main process, child WebView2 renderer processes, GPU compositors, and utility processes.
+  * Real-time metrics: Process PID, working set memory, private bytes, process role, and active tab association.
+* **Instant OS Working Set Purge (`K32EmptyWorkingSet`)**:
+  * Native memory reclamation invoking `K32EmptyWorkingSet` across all browser processes to immediately release unused memory pages back to the Windows OS.
+* **Win32 Process Slayer (`TerminateProcess`)**:
+  * Safely force-terminate runaway or hung background renderer processes directly from the task manager without crashing the host browser.
+* **Heimdall's Watch Modal & Global Shortcut**:
+  * Dedicated modal accessible via `Shift+Esc`, Omnibar activity button, or Command Palette. Includes quick tab switching, slumbering, awakening, and real-time RAM gauges.
+
+#### 📜 Mímir’s Eye: Runic Web Clipper & Markdown Knowledge Vault (`clipperEngine.ts`, `vaultManager.ts`, `MimirsEyeModal.tsx`, `tab_manager.rs`, `ipc.rs`, `main.rs`, `NorseContextMenu.tsx`, `App.tsx`, `CommandPalette.tsx`)
+* **Full-Page Article & DOM Extraction (`Ctrl+Shift+C`)**:
+  * Injected DOM extraction script capturing title, canonical URL, author, meta description, and cleaned inner content.
+* **Pure TypeScript HTML-to-Markdown Engine**:
+  * Comprehensive conversion supporting headings, paragraphs, nested lists, blockquotes, code blocks with language tags, tables, links, and images.
+  * Automated YAML frontmatter generation (`title`, `url`, `date`, `realm`, `tags`, `author`, `clippedWith: "Mimir Browser"`).
+* **Local Knowledge Vault Archives (`mimir_knowledge_vault`)**:
+  * Encrypted local storage persistence, tag indexing, reading time estimation, and full-text search across titles, URLs, tags, and markdown bodies.
+  * 1-click export to local `.md` files or full vault JSON backup and restoration.
+* **Dual-View Inscription Forge**:
+  * Live side-by-side Markdown source editor and rendered HTML preview with syntax highlighting.
+  * Accessible via `Ctrl+Shift+C`, Norse context menu item ("Inscribe into Knowledge Vault"), or Command Palette.
+
+#### 🦅 Valkyrie Gesture & Vim Runic Key Navigator (`valkyrieGestures.ts`, `valkyrie_gestures.rs`, `tab_manager.rs`, `App.tsx`, `CommandPalette.tsx`)
+* **Mouse Drag Gesture Recognition**:
+  * Right-click drag directional recognition injected into all child WebView2 instances via `full_init_script`.
+  * Vector gestures: Left (Back), Right (Forward), Up (Scroll to Top), Down (Scroll to Bottom), Up-Down (Reload), Down-Right (Close Tab), Up-Right (Open Web Clipper).
+  * Dynamic neon particle gesture trail and floating HUD direction badge during mouse movement.
+* **Vim Runic Link Navigation (`Alt+F`)**:
+  * Identifies all interactive DOM elements (links, buttons, inputs) and paints floating glowing two-letter rune badges (`AA`, `AB`, `AC`...).
+  * Typing the runic combination immediately dispatches native click events to the target element.
+* **Passive Vim Scrolling**:
+  * Fast keyboard scrolling support: `j` / `k` (smooth scroll down/up), `d` / `u` (half-page down/up), `gg` / `G` (jump to top/bottom).
+
+#### 🌲 Bifröst Start: Cosmic Dashboard & Dynamic New Tab Portal (`mimir://newtab`, `bifrostManager.ts`, `BifrostCosmicDashboard.tsx`, `AddPortalModal.tsx`, `ContentViewport.tsx`, `App.tsx`)
+* **Runic Celestial Clock & Viking Calendar**:
+  * Real-time 24-hour clock displaying the 24 Elder Futhark hour runes (`ᚠ`..`ᛟ`), pulsing seconds rune, Old Norse day names (*Sunnudagr, Mánadagr, Týsdagr, Óðinsdagr, Þórsdagr, Frjádagr, Laugardagr*), historical Icelandic months (*Gormánuður, Ýlir, Sólmánuður, etc.*), and lunar tide phase calculations (*Fullr Máni, Ný Máni*).
+* **Dynamic Realm Atmospheric Conditions HUD**:
+  * Real-time atmospheric telemetry and cosmic aether measurements (auroral flux, solar wind, ionospheric resonance, and mythic lore quotes) customized to the active realm.
+* **Customizable Bifröst Waystones (Speed Dials)**:
+  * Dynamic grid of sacred waystones with guardian rune sigils, custom icons, titles, and Norse mythic epithets.
+  * Interactive Inscription Modal (`AddPortalModal.tsx`) for adding, editing, and dissolving custom waystones with persistent `localStorage` storage.
+* **Sovereign Citadel Fast Dock & Telemetry Badges**:
+  * Live telemetry badges and 1-click launch cards right on the new tab page for Yggdrasil Workspaces, Svalinn Network Cloak, Heimdall's Watch Task Manager, Mímir's Eye Vault, and Fafnir's Treasury.
+* **Central Mímisbrunnr Search Pool**:
+  * Concentric runic orbit rings with multi-engine channel routing and instant query dispatch.
+
 ### Deferred (Future Roadmap)
 * **Custom Theme Generator (Milestone 6)**:
   * Interactive theme designer for user-defined cosmic realms, customizable HSL color palettes, runic staves, and personal shader backdrop generators deferred to a subsequent release cycle.

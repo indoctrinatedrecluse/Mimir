@@ -5,14 +5,12 @@ import { Tab, RealmId } from '@/types';
 import { REALMS } from '@/core/realms';
 import { REALM_THEMES } from '@/components/themes/realmThemes';
 import { YggdrasilRootsSvg, ValknutSvg, AegishjalmrSvg } from '@/components/themes/NorsePatterns';
-import { MimirSigil } from '@/components/brand/MimirSigil';
-import { getRandomHavamal, HavamalStanza } from '@/core/havamal';
-import { Compass, Sparkles, Globe, Terminal, Shield, BookOpen, RefreshCw, Feather, Flame, Search, Columns, ArrowLeftRight, X, Plus, Layers, Film, HelpCircle } from 'lucide-react';
+import { Sparkles, Globe, Columns, ArrowLeftRight, X, Film, HelpCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { RealmAtmosphereCanvas } from '@/components/themes/RealmAtmosphereCanvas';
 import { RealmVideoBackdrop } from '@/components/themes/RealmVideoBackdrop';
 import { SanctumBackdropMode } from '@/types';
-import { buildSearchUrl } from '@/core/privacy/privacySettings';
+import { BifrostCosmicDashboard } from '@/components/viewport/BifrostCosmicDashboard';
 
 interface ContentViewportProps {
   activeTab?: Tab;
@@ -31,14 +29,12 @@ interface ContentViewportProps {
   onCycleSanctumMode?: () => void;
   isAnimatedBackground?: boolean;
   onToggleAnimatedBackground?: () => void;
+  onOpenWorkspaces?: () => void;
+  onOpenProxyCloak?: () => void;
+  onOpenHeimdallWatch?: () => void;
+  onOpenMimirsEye?: () => void;
+  onOpenTreasury?: () => void;
 }
-
-const SPEED_DIALS = [
-  { name: 'GitHub', norse: 'Forge of Code', url: 'https://github.com', icon: Terminal, rune: 'ᚲ' },
-  { name: 'DuckDuckGo', norse: 'Well of Search', url: 'https://duckduckgo.com', icon: Compass, rune: 'ᛗ' },
-  { name: 'Rust Docs', norse: 'Iron Lore', url: 'https://doc.rust-lang.org', icon: BookOpen, rune: 'ᚱ' },
-  { name: 'YouTube', norse: 'Gjallarhorn Stream', url: 'https://youtube.com', icon: Flame, rune: 'ᚹ' },
-];
 
 export const ContentViewport: React.FC<ContentViewportProps> = ({
   activeTab,
@@ -57,11 +53,14 @@ export const ContentViewport: React.FC<ContentViewportProps> = ({
   onCycleSanctumMode,
   isAnimatedBackground = true,
   onToggleAnimatedBackground,
+  onOpenWorkspaces,
+  onOpenProxyCloak,
+  onOpenHeimdallWatch,
+  onOpenMimirsEye,
+  onOpenTreasury,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [showIframeInDev, setShowIframeInDev] = useState(false);
-  const [havamal, setHavamal] = useState<HavamalStanza>(getRandomHavamal());
-  const [searchQuery, setSearchQuery] = useState('');
 
   const currentMode: SanctumBackdropMode = sanctumMode || (isAnimatedBackground ? 'particles' : 'static');
   const realm = REALMS[activeRealm];
@@ -93,31 +92,11 @@ export const ContentViewport: React.FC<ContentViewportProps> = ({
     };
   }, []);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
-    let url = searchQuery.trim();
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      if (url.includes('.') && !url.includes(' ')) {
-        url = 'https://' + url;
-      } else {
-        url = buildSearchUrl(url);
-      }
-    }
-    runicAudio.playChime();
-    onNavigate(url);
-  };
-
-  const cycleHavamal = () => {
-    runicAudio.playChime();
-    setHavamal(getRandomHavamal());
-  };
-
   const isHome = !activeTab?.url || activeTab.url === 'mimir://newtab' || activeTab.url === 'about:blank';
   const isSplitHome = !splitTab?.url || splitTab.url === 'mimir://newtab' || splitTab.url === 'about:blank';
 
   const renderSanctum = (tab?: Tab, r = realm, th = theme, isPrimary = true) => (
-    <div className="relative flex h-full w-full flex-col items-center justify-between p-6 overflow-y-auto z-10">
+    <div className="relative flex h-full w-full flex-col items-center justify-between p-4 overflow-y-auto z-10">
       {/* Sanctum Backdrop Layer: Tri-State Engine (Option B: Video / Option A: Particles / Static) */}
       {currentMode === 'video' ? (
         <RealmVideoBackdrop
@@ -173,209 +152,20 @@ export const ContentViewport: React.FC<ContentViewportProps> = ({
         </div>
       </div>
 
-      {/* Top Section: Realm Ruler & Hávamál Stanza (Full Lore, No Truncation) */}
-      <div className="relative z-10 w-full max-w-5xl flex flex-col md:flex-row gap-4">
-        {/* Ruler Lore Card */}
-        <motion.div
-          initial={{ opacity: 0, x: -15 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="flex-1 rounded-xl border border-white/10 bg-[#070b14]/90 p-4 backdrop-blur-xl shadow-xl flex items-start space-x-4"
-          style={{
-            borderColor: `${th.accentColor}35`,
-            boxShadow: `0 8px 30px -10px rgba(0,0,0,0.7), 0 0 15px -4px ${th.glowColor}`,
-          }}
-        >
-          <div
-            className="relative h-14 w-14 rounded-lg overflow-hidden border flex items-center justify-center shrink-0 shadow-inner mt-0.5"
-            style={{ borderColor: `${th.accentColor}60` }}
-          >
-            <img
-              src={r.bgUrl}
-              alt={r.ruler}
-              className="absolute inset-0 h-full w-full object-cover opacity-90"
-            />
-            <div className="absolute inset-0 bg-black/35 backdrop-blur-[1px]" />
-            <span className="relative z-10 text-2xl font-black" style={{ color: th.accentColor }}>
-              {r.rune}
-            </span>
-          </div>
-
-          <div className="flex flex-col min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
-              <span className="text-[10px] font-mono tracking-widest uppercase font-bold text-slate-400">
-                SOVEREIGN OF {r.norseName.toUpperCase()}
-              </span>
-              <span
-                className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
-                style={{
-                  backgroundColor: `${th.accentColor}25`,
-                  color: th.accentColor,
-                  border: `1px solid ${th.accentColor}40`,
-                }}
-              >
-                {r.ruler}
-              </span>
-            </div>
-            <div className="text-xs font-bold text-slate-100 leading-snug">
-              {r.rulerTitle}
-            </div>
-            <p className="text-[11px] italic text-slate-300 font-serif leading-relaxed mt-1">
-              "{r.quote}"
-            </p>
-            <div className="mt-1 text-[10px] text-slate-400 font-mono tracking-wide">
-              {r.description}
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Hávamál Stanza Card */}
-        <motion.div
-          initial={{ opacity: 0, x: 15 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="flex-1 rounded-xl border border-white/10 bg-[#070b14]/90 p-4 backdrop-blur-xl shadow-xl flex flex-col justify-between"
-          style={{
-            borderColor: `${th.accentColor}30`,
-            boxShadow: `0 8px 30px -10px rgba(0,0,0,0.7), 0 0 15px -4px ${th.glowColor}`,
-          }}
-        >
-          <div>
-            <div className="flex items-center justify-between border-b border-white/5 pb-2 text-[10px] text-slate-400">
-              <div className="flex items-center space-x-1.5">
-                <Feather className="h-3.5 w-3.5" style={{ color: th.accentColor }} />
-                <span className="font-mono font-bold tracking-wider uppercase text-slate-200">
-                  HÁVAMÁL {havamal.stanzaNumber}
-                </span>
-                <span className="text-[9px] text-slate-500 font-serif italic">
-                  (Words of the High One)
-                </span>
-              </div>
-
-              <button
-                onClick={cycleHavamal}
-                className="group flex items-center space-x-1 text-slate-400 hover:text-white transition-colors"
-                title="Drink anew from the Well (New Stanza)"
-              >
-                <span className="text-[9px] font-mono">DRINK ANEW</span>
-                <RefreshCw className="h-2.5 w-2.5 transition-transform group-hover:rotate-180" />
-              </button>
-            </div>
-
-            <p className="mt-2 text-xs text-slate-200 font-serif italic leading-relaxed">
-              "{havamal.english}"
-            </p>
-          </div>
-
-          <div className="mt-2 flex items-center justify-between pt-1 border-t border-white/5 text-[9px] font-mono text-slate-500">
-            <span>SACRED WELL WISDOM</span>
-            <span style={{ color: th.accentColor }}>{r.name.toUpperCase()} REPOSITORY</span>
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Central Sanctum: The Eye of Mímir & Search Pool */}
-      <div className="relative z-10 flex flex-col items-center justify-center my-auto w-full max-w-2xl">
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-          className="relative mb-4 flex items-center justify-center"
-        >
-          <div
-            className="absolute h-36 w-36 rounded-full border border-dashed opacity-30 animate-ripple pointer-events-none"
-            style={{ borderColor: th.accentColor }}
-          />
-          <div
-            className="absolute h-52 w-52 rounded-full border opacity-20 animate-ripple pointer-events-none"
-            style={{ borderColor: th.accentColor, animationDelay: '2s' }}
-          />
-          <div
-            className="absolute -inset-8 rounded-full blur-3xl opacity-35 pointer-events-none animate-pulse"
-            style={{ backgroundColor: th.accentColor }}
-          />
-
-          <MimirSigil size={90} animated={true} showRings={true} />
-        </motion.div>
-
-        <h1 className="text-2xl font-black tracking-[0.25em] text-slate-100 uppercase">
-          MÍMISBRUNNR
-        </h1>
-        <p className="mt-1 max-w-lg text-[11px] tracking-wider text-slate-400 text-center font-mono">
-          THE SACRED WELL OF WISDOM • <span style={{ color: th.accentColor }}>{th.title.toUpperCase()}</span>
-        </p>
-
-        {/* Search Input Bar */}
-        <form
-          onSubmit={handleSearchSubmit}
-          className="mt-5 w-full relative flex items-center rounded-xl border border-white/10 bg-[#080e1a]/85 p-1 shadow-2xl backdrop-blur-xl transition-all focus-within:border-cyan-500/60"
-          style={{
-            boxShadow: `0 10px 40px -10px rgba(0,0,0,0.8), 0 0 20px -5px ${th.glowColor}`,
-          }}
-        >
-          <div className="pl-3.5 pr-2" style={{ color: th.accentColor }}>
-            <Search className="h-4 w-4" />
-          </div>
-
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Inquire of the Well or enter destination URL..."
-            className="h-9 flex-1 bg-transparent text-xs text-slate-100 placeholder:text-slate-500/70 outline-none"
-          />
-
-          <button
-            type="submit"
-            className="flex items-center space-x-1.5 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all active:scale-95"
-            style={{
-              backgroundColor: `${th.accentColor}25`,
-              color: th.accentColor,
-              border: `1px solid ${th.accentColor}40`,
-            }}
-          >
-            <span>CHANNEL</span>
-            <span className="font-mono">ᚱ</span>
-          </button>
-        </form>
-
-        {/* Sacred Runestones (Speed Dials) */}
-        <div className="mt-6 grid grid-cols-2 gap-2.5 sm:grid-cols-4 w-full">
-          {SPEED_DIALS.map((dial) => {
-            const Icon = dial.icon;
-            return (
-              <button
-                key={dial.name}
-                onClick={() => {
-                  runicAudio.playChime();
-                  onNavigate(dial.url);
-                }}
-                className="group relative flex flex-col items-center justify-center rounded-xl border border-white/10 bg-[#070c18]/80 p-3 transition-all hover:bg-white/[0.05] hover:scale-102 active:scale-98 overflow-hidden backdrop-blur-md shadow-lg"
-              >
-                <div className="absolute top-1 right-2 text-[10px] font-mono text-slate-600 group-hover:text-cyan-400">
-                  {dial.rune}
-                </div>
-
-                <div
-                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/5 bg-white/[0.03] text-slate-300 transition-all group-hover:scale-110"
-                  style={{
-                    color: th.accentColor,
-                  }}
-                >
-                  <Icon className="h-4 w-4" />
-                </div>
-                <span className="mt-2 text-xs font-bold text-slate-200 group-hover:text-white">
-                  {dial.name}
-                </span>
-                <span className="text-[9px] text-slate-500 font-mono">
-                  {dial.norse}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      {/* Bifröst Start: Cosmic Dashboard & Dynamic New Tab Portal */}
+      <BifrostCosmicDashboard
+        activeRealm={r.id}
+        onNavigate={onNavigate}
+        onOpenWorkspaces={onOpenWorkspaces}
+        onOpenProxyCloak={onOpenProxyCloak}
+        onOpenHeimdallWatch={onOpenHeimdallWatch}
+        onOpenMimirsEye={onOpenMimirsEye}
+        onOpenTreasury={onOpenTreasury}
+        onOpenRealmSelector={onOpenRealmSelector}
+      />
 
       {/* Bottom Realm Gateways (Quick Cosmic Switcher) */}
-      <div className="relative z-10 flex flex-wrap items-center justify-center gap-1.5 pt-4">
+      <div className="relative z-10 flex flex-wrap items-center justify-center gap-1.5 pt-2 pb-2">
         <span className="text-[10px] font-mono font-bold tracking-widest text-slate-500 uppercase mr-1">
           REALMS:
         </span>

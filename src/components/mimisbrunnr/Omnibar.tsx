@@ -36,6 +36,7 @@ import {
   PanelRight,
   PanelRightClose,
   Camera,
+  Activity,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getRankedSuggestions, SuggestionItem, cleanDisplayUrl, parseBangQuery, purifyUrl } from '@/core/navigation/autosuggest';
@@ -78,6 +79,11 @@ interface OmnibarProps {
   isSidecarOpen?: boolean;
   onOpenSettings?: () => void;
   onOpenCanvas?: () => void;
+  onToggleCloak?: () => void;
+  isCloakActive?: boolean;
+  cloakType?: string;
+  onToggleHeimdallsWatch?: () => void;
+  isHeimdallsWatchOpen?: boolean;
 }
 
 export const Omnibar: React.FC<OmnibarProps> = ({
@@ -93,6 +99,11 @@ export const Omnibar: React.FC<OmnibarProps> = ({
   isSplitGazeActive = false,
   onToggleBifrost,
   onToggleForge,
+  onToggleCloak,
+  isCloakActive = false,
+  cloakType = 'direct',
+  onToggleHeimdallsWatch,
+  isHeimdallsWatchOpen = false,
   isAmbientPlaying = false,
   onToggleAmbient,
   onZoomIn,
@@ -682,6 +693,49 @@ export const Omnibar: React.FC<OmnibarProps> = ({
           title="Bifröst Matrix (Per-Realm Proxy & DoH Conduits)"
         >
           <Network className="h-3.5 w-3.5" />
+        </button>
+
+        {/* Svalinn Network Cloak (SOCKS5 / Tor / Proxy) */}
+        <button
+          onClick={() => {
+            runicAudio.playClick(650);
+            onToggleCloak?.();
+          }}
+          className={`flex h-8 items-center px-2 rounded border transition-all space-x-1.5 ${
+            isCloakActive
+              ? 'border-emerald-400 bg-emerald-500/20 text-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
+              : 'border-white/10 bg-white/[0.03] text-slate-400 hover:text-white hover:bg-white/[0.08]'
+          }`}
+          title={
+            isCloakActive
+              ? `Svalinn Network Cloak: ACTIVE (${cloakType?.toUpperCase() || 'PROXY'}) — Click to configure`
+              : 'Svalinn Network Cloak: Direct Bifröst (Click to engage proxy/Tor)'
+          }
+        >
+          {isCloakActive ? (
+            <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+          ) : (
+            <Shield className="h-3.5 w-3.5 text-slate-400" />
+          )}
+          <span className="text-[10px] font-mono uppercase tracking-wider hidden sm:inline">
+            {isCloakActive ? (cloakType || 'CLOAK') : 'DIRECT'}
+          </span>
+        </button>
+
+        {/* Heimdall's Watch (Sovereign Task & Resource Manager) */}
+        <button
+          onClick={() => {
+            runicAudio.playClick(900);
+            onToggleHeimdallsWatch?.();
+          }}
+          className={`flex h-8 w-8 items-center justify-center rounded border transition-all ${
+            isHeimdallsWatchOpen
+              ? 'border-amber-400 bg-amber-500/20 text-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.4)]'
+              : 'border-white/10 bg-white/[0.03] text-slate-400 hover:text-amber-300 hover:bg-white/[0.08]'
+          }`}
+          title="Heimdall's Watch (Sovereign Task & Resource Manager — Shift+Esc)"
+        >
+          <Activity className="h-3.5 w-3.5" />
         </button>
 
         {/* Brokkr's Forge */}

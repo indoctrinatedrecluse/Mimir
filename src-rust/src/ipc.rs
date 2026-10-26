@@ -113,6 +113,30 @@ pub enum IpcCommand {
     #[serde(rename = "SYNC_PIP_STATE")]
     SyncPipState { payload: PipStatePayload },
 
+    #[serde(rename = "SET_PROXY_CONFIG")]
+    SetProxyConfig { payload: ProxyConfigPayload },
+
+    #[serde(rename = "GET_PROXY_CONFIG")]
+    GetProxyConfig,
+
+    #[serde(rename = "TEST_PROXY_CONNECTIVITY")]
+    TestProxyConnectivity { payload: TestProxyPayload },
+
+    #[serde(rename = "GET_SYSTEM_TELEMETRY")]
+    GetSystemTelemetry,
+
+    #[serde(rename = "SYSTEM_TELEMETRY")]
+    SystemTelemetry { payload: crate::system_metrics::SystemTelemetryPayload },
+
+    #[serde(rename = "KILL_PROCESS")]
+    KillProcess { payload: KillProcessPayload },
+
+    #[serde(rename = "RECLAIM_MEMORY")]
+    ReclaimMemory,
+
+    #[serde(rename = "MEMORY_RECLAIMED")]
+    MemoryReclaimed { bytes_reclaimed: u64 },
+
     // Internal and child webview relayed events
     #[serde(rename = "DOWNLOAD_STARTED")]
     DownloadStarted { payload: DownloadStartedPayload },
@@ -167,6 +191,12 @@ pub enum IpcCommand {
 
     #[serde(rename = "PAGE_CONTENT")]
     PageContent { payload: PageContentPayload },
+
+    #[serde(rename = "CLIP_PAGE")]
+    ClipPage,
+
+    #[serde(rename = "PAGE_CLIPPED")]
+    PageClipped { payload: PageClippedPayload },
 
     #[serde(rename = "PROXY_CONFIGURED")]
     ProxyConfigured { payload: ConfigureProxyPayload },
@@ -438,6 +468,41 @@ pub struct PipStatePayload {
     pub volume: Option<f64>,
     pub title: Option<String>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProxyConfigPayload {
+    pub enabled: bool,
+    pub proxy_type: String,
+    pub server: String,
+    pub bypass_list: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TestProxyPayload {
+    pub host: String,
+    pub port: u16,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct KillProcessPayload {
+    pub pid: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PageClippedPayload {
+    pub title: String,
+    pub url: String,
+    #[serde(default)]
+    pub selected_text: Option<String>,
+    pub html_content: String,
+    pub text_content: String,
+    #[serde(default)]
+    pub meta_description: String,
+    #[serde(default)]
+    pub author: Option<String>,
+}
+
+
 
 
 

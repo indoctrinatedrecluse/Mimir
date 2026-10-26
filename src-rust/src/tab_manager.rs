@@ -231,7 +231,8 @@ impl TabManager {
         "#;
 
         let adblock_script = crate::adblocker::AdBlocker::generate_injection_script();
-        let full_init_script = format!("{}\n{}", context_menu_script, adblock_script);
+        let valkyrie_script = crate::valkyrie_gestures::get_injection_script();
+        let full_init_script = format!("{}\n{}\n{}", context_menu_script, adblock_script, valkyrie_script);
         builder = builder.with_initialization_script(&full_init_script);
 
         // 4. Child IPC handler for messages originating in child webview
@@ -717,6 +718,50 @@ impl TabManager {
         })();
         "#;
         self.execute_on_active(extract_script);
+    }
+
+    pub fn clip_active_page(&self) {
+        let clip_script = r#"
+        (function() {
+            try {
+                var title = document.title || window.location.hostname || 'Clipped Sanctuary';
+                var url = window.location.href || '';
+                var sel = window.getSelection() ? window.getSelection().toString().trim() : '';
+
+                var metaDesc = '';
+                var metaDescEl = document.querySelector('meta[name="description"]') || document.querySelector('meta[property="og:description"]');
+                if (metaDescEl) metaDesc = metaDescEl.getAttribute('content') || '';
+
+                var author = '';
+                var authorEl = document.querySelector('meta[name="author"]') || document.querySelector('meta[property="article:author"]') || document.querySelector('[rel="author"]');
+                if (authorEl) author = authorEl.getAttribute('content') || authorEl.innerText || '';
+
+                var articleEl = document.querySelector('article') || document.querySelector('main') || document.querySelector('.post-content') || document.body;
+                var htmlContent = articleEl ? articleEl.innerHTML.slice(0, 100000) : '';
+                var textContent = articleEl ? (articleEl.innerText || '').slice(0, 50000) : '';
+
+                var payload = {
+                    type: 'PAGE_CLIPPED',
+                    payload: {
+                        title: title,
+                        url: url,
+                        selected_text: sel ? sel : null,
+                        html_content: htmlContent,
+                        text_content: textContent,
+                        meta_description: metaDesc,
+                        author: author ? author : null
+                    }
+                };
+
+                if (window.ipc && typeof window.ipc.postMessage === 'function') {
+                    window.ipc.postMessage(JSON.stringify(payload));
+                } else if (window.chrome && window.chrome.webview && typeof window.chrome.webview.postMessage === 'function') {
+                    window.chrome.webview.postMessage(JSON.stringify(payload));
+                }
+            } catch(e) {}
+        })();
+        "#;
+        self.execute_on_active(clip_script);
     }
 
     pub fn configure_proxy(&mut self, realm: &str, mode: &str, proxy_url: &str, enabled: bool) {

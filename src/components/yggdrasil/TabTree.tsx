@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { Tab, RealmId } from '@/types';
+import { Tab, RealmId, YggdrasilWorkspace } from '@/types';
 import { runicAudio } from '@/core/audio/runicAudio';
 import { mimirIpc } from '@/core/ipc/bridge';
 import { REALM_THEMES } from '@/components/themes/realmThemes';
 import { NorseKnotworkRibbon } from '@/components/themes/NorsePatterns';
+import { WorkspaceRibbon } from '@/components/yggdrasil/WorkspaceRibbon';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { Plus, X, Volume2, VolumeX, ChevronLeft, ChevronRight, History, Terminal, Pin, PinOff, Copy, Search, GitBranch, Moon, Snowflake } from 'lucide-react';
 
@@ -22,6 +23,13 @@ interface TabTreeProps {
   onReorderTabs?: (newTabs: Tab[]) => void;
   onToggleMuteTab?: (id: string) => void;
   onToggleSlumberTab?: (id: string) => void;
+  workspaces?: YggdrasilWorkspace[];
+  activeWorkspaceId?: string;
+  onSelectWorkspace?: (id: string) => void;
+  onOpenCreateWorkspaceModal?: () => void;
+  onOpenEditWorkspaceModal?: (ws: YggdrasilWorkspace) => void;
+  onDeleteWorkspace?: (id: string) => void;
+  onHibernateWorkspaceTabs?: (wsId: string) => void;
 }
 
 export const TabTree: React.FC<TabTreeProps> = ({
@@ -39,6 +47,13 @@ export const TabTree: React.FC<TabTreeProps> = ({
   onReorderTabs,
   onToggleMuteTab,
   onToggleSlumberTab,
+  workspaces,
+  activeWorkspaceId,
+  onSelectWorkspace,
+  onOpenCreateWorkspaceModal,
+  onOpenEditWorkspaceModal,
+  onDeleteWorkspace,
+  onHibernateWorkspaceTabs,
 }) => {
   const theme = REALM_THEMES[activeRealm] || REALM_THEMES.midgard;
   const [searchQuery, setSearchQuery] = useState('');
@@ -94,6 +109,21 @@ export const TabTree: React.FC<TabTreeProps> = ({
       <div className="h-[2px] w-full opacity-20" style={{ color: theme.accentColor }}>
         <NorseKnotworkRibbon opacity={0.4} />
       </div>
+
+      {/* Yggdrasil Realm Workspace Ribbon */}
+      {workspaces && workspaces.length > 0 && activeWorkspaceId && onSelectWorkspace && (
+        <WorkspaceRibbon
+          workspaces={workspaces}
+          activeWorkspaceId={activeWorkspaceId}
+          tabs={tabs}
+          isCollapsed={isCollapsed}
+          onSelectWorkspace={onSelectWorkspace}
+          onOpenCreateModal={onOpenCreateWorkspaceModal || (() => {})}
+          onOpenEditModal={onOpenEditWorkspaceModal || (() => {})}
+          onDeleteWorkspace={onDeleteWorkspace || (() => {})}
+          onHibernateWorkspaceTabs={onHibernateWorkspaceTabs || (() => {})}
+        />
+      )}
 
       {/* Command Palette Trigger Button (Just above tabs) */}
       <div className="px-2 pt-2 pb-1 shrink-0 space-y-1.5">

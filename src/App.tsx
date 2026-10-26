@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { TitleBar } from '@/components/chrome/TitleBar';
 import { Omnibar } from '@/components/mimisbrunnr/Omnibar';
 import { TabTree } from '@/components/yggdrasil/TabTree';
@@ -35,12 +35,19 @@ const FloatingRuneMediaHud = lazy(() => import('@/components/media/FloatingRuneM
 const FloatingPipMiniPlayer = lazy(() => import('@/components/media/FloatingPipMiniPlayer').then((m) => ({ default: m.FloatingPipMiniPlayer })));
 const FafnirsTreasuryModal = lazy(() => import('@/components/vault/FafnirsTreasuryModal').then((m) => ({ default: m.FafnirsTreasuryModal })));
 const MediaSentinelModal = lazy(() => import('@/components/mimisbrunnr/MediaSentinelModal').then((m) => ({ default: m.MediaSentinelModal })));
+const WorkspaceModal = lazy(() => import('@/components/yggdrasil/WorkspaceModal').then((m) => ({ default: m.WorkspaceModal })));
+const SvalinnCloakModal = lazy(() => import('@/components/network/SvalinnCloakModal').then((m) => ({ default: m.SvalinnCloakModal })));
+const HeimdallsWatchModal = lazy(() => import('@/components/hud/HeimdallsWatchModal').then((m) => ({ default: m.HeimdallsWatchModal })));
+const MimirsEyeModal = lazy(() => import('@/components/vault/MimirsEyeModal').then((m) => ({ default: m.MimirsEyeModal })));
 import { buildSearchUrl } from '@/core/privacy/privacySettings';
 import { slumberEngine } from '@/core/tabs/slumberEngine';
 import { mediaController } from '@/core/media/mediaController';
 import { bookmarkManager } from '@/core/bookmarks/bookmarkManager';
 import { RunicBookmarksBar } from '@/components/bookmarks/RunicBookmarksBar';
-import { ActiveMediaSession } from '@/types';
+import { ActiveMediaSession, YggdrasilWorkspace } from '@/types';
+import { workspaceManager } from '@/core/workspaces/workspaceManager';
+import { svalinnProxy, SvalinnProxyConfig } from '@/core/privacy/proxyManager';
+import { VALKYRIE_GESTURE_INJECTION_SCRIPT } from '@/core/navigation/valkyrieGestures';
 
 const getInitialRealm = (): RealmId => {
   try {
@@ -67,6 +74,7 @@ const createInitialTabs = (realm: RealmId): Tab[] => [
     realm,
     rune: 'ᛗ',
     zoomLevel: 100,
+    workspaceId: 'ws-midgard',
   },
   {
     id: 'tab-2',
@@ -79,6 +87,7 @@ const createInitialTabs = (realm: RealmId): Tab[] => [
     realm: 'asgard',
     rune: 'ᚨ',
     zoomLevel: 100,
+    workspaceId: 'ws-asgard',
   },
 ];
 
@@ -104,12 +113,31 @@ export const App: React.FC = () => {
   const [isMediaHudOpen, setIsMediaHudOpen] = useState(false);
   const [isVaultOpen, setIsVaultOpen] = useState(false);
   const [isMediaSentinelOpen, setIsMediaSentinelOpen] = useState(false);
+  const [isCloakOpen, setIsCloakOpen] = useState(false);
+  const [isHeimdallsWatchOpen, setIsHeimdallsWatchOpen] = useState(false);
+  const [isMimirsEyeOpen, setIsMimirsEyeOpen] = useState(false);
+  const [proxyConfig, setProxyConfig] = useState<SvalinnProxyConfig>(svalinnProxy.getConfig);
+
+  useEffect(() => {
+    return svalinnProxy.subscribe((cfg) => setProxyConfig(cfg));
+  }, []);
   const [activeMediaSession, setActiveMediaSession] = useState<ActiveMediaSession | null>(mediaController.getSession());
   const [isSplitGaze, setIsSplitGaze] = useState(false);
   const [splitTabId, setSplitTabId] = useState<string | undefined>('tab-2');
   const [isAmbientPlaying, setIsAmbientPlaying] = useState(runicAudio.isAmbientEnabled());
   const [showSplash, setShowSplash] = useState(true);
   const [huginnPrompt, setHuginnPrompt] = useState<string>('');
+
+  // Yggdrasil Realm Workspaces & Branches
+  const [workspaces, setWorkspaces] = useState<YggdrasilWorkspace[]>(workspaceManager.getWorkspaces);
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>(workspaceManager.getActiveWorkspaceId);
+  const [isWorkspaceModalOpen, setIsWorkspaceModalOpen] = useState(false);
+  const [editingWorkspace, setEditingWorkspace] = useState<YggdrasilWorkspace | null>(null);
+
+  const currentWorkspaceTabs = useMemo(() => {
+    const defaultWsId = workspaces[0]?.id || 'ws-midgard';
+    return tabs.filter((t) => (t.workspaceId || defaultWsId) === activeWorkspaceId);
+  }, [tabs, activeWorkspaceId, workspaces]);
 
   // Session Restoration & Valhalla Crash Sentinel
   const [pendingRevivalSession, setPendingRevivalSession] = useState<SavedSession | null>(() => {
@@ -221,6 +249,15 @@ export const App: React.FC = () => {
       type: 'CREATE_TAB',
       payload: { tabId: 'tab-1', url: 'mimir://newtab', realm: activeRealm },
     });
+  }, []);
+
+  // Initialize Valkyrie Gestures & Vim Key Navigator in main HUD window
+  useEffect(() => {
+    try {
+      const scriptEl = document.createElement('script');
+      scriptEl.textContent = VALKYRIE_GESTURE_INJECTION_SCRIPT;
+      document.head.appendChild(scriptEl);
+    } catch {}
   }, []);
 
 const formatDownloadSpeed = (bytesSec: number): string => {
@@ -601,25 +638,31 @@ const formatEtaSeconds = (secs: number): string => {
         e.preventDefault();
         handleHibernateAllBackgroundTabs();
       }
-      // Alt+1 to Alt+9: Realm Jump Hotkeys
+      // Alt+1 to Alt+9: Yggdrasil Workspace Branch Switcher
       if (e.altKey && !e.ctrlKey && !e.shiftKey) {
         const num = parseInt(e.key, 10);
         if (num >= 1 && num <= 9) {
-          const realms: RealmId[] = [
-            'midgard',
-            'asgard',
-            'vanaheim',
-            'alfheim',
-            'jotunheim',
-            'muspelheim',
-            'niflheim',
-            'nidavellir',
-            'helheim',
-          ];
-          const target = realms[num - 1];
-          if (target) {
+          const wsIndex = num - 1;
+          if (wsIndex < workspaces.length) {
             e.preventDefault();
-            handleSelectRealm(target);
+            handleSelectWorkspace(workspaces[wsIndex].id);
+          } else {
+            const realms: RealmId[] = [
+              'midgard',
+              'asgard',
+              'vanaheim',
+              'alfheim',
+              'jotunheim',
+              'muspelheim',
+              'niflheim',
+              'nidavellir',
+              'helheim',
+            ];
+            const target = realms[num - 1];
+            if (target) {
+              e.preventDefault();
+              handleSelectRealm(target);
+            }
           }
         }
       }
@@ -653,6 +696,24 @@ const formatEtaSeconds = (secs: number): string => {
         runicAudio.playChime();
         setIsMediaSentinelOpen((prev) => !prev);
       }
+      // Ctrl+Shift+P: Svalinn Network Cloak (Multi-Hop Proxy & Tor Relay)
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'p') {
+        e.preventDefault();
+        runicAudio.playClick(700);
+        setIsCloakOpen((prev) => !prev);
+      }
+      // Ctrl+Shift+C: Mímir's Eye (Runic Web Clipper & Knowledge Vault)
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'c') {
+        e.preventDefault();
+        runicAudio.playChime();
+        setIsMimirsEyeOpen((prev) => !prev);
+      }
+      // Shift+Esc: Heimdall's Watch (Sovereign Task & Resource Manager)
+      if (e.shiftKey && e.key === 'Escape') {
+        e.preventDefault();
+        runicAudio.playClick(900);
+        setIsHeimdallsWatchOpen((prev) => !prev);
+      }
       // Esc: Close modals & drawers
       if (e.key === 'Escape') {
         setIsRealmSelectorOpen(false);
@@ -669,6 +730,10 @@ const formatEtaSeconds = (secs: number): string => {
         setIsMediaHudOpen(false);
         setIsVaultOpen(false);
         setIsMediaSentinelOpen(false);
+        setIsWorkspaceModalOpen(false);
+        setIsCloakOpen(false);
+        setIsHeimdallsWatchOpen(false);
+        setIsMimirsEyeOpen(false);
       }
     };
 
@@ -705,6 +770,11 @@ const formatEtaSeconds = (secs: number): string => {
     const target = tabs.find((t) => t.id === id);
     if (target?.realm) {
       setActiveRealm(target.realm);
+    }
+    if (target?.workspaceId) {
+      setWorkspaces((prev) =>
+        prev.map((w) => (w.id === target.workspaceId ? { ...w, activeTabId: id } : w))
+      );
     }
     mimirIpc.send({ type: 'SWITCH_TAB', payload: { tabId: id } });
   };
@@ -749,6 +819,117 @@ const formatEtaSeconds = (secs: number): string => {
     );
   };
 
+  // Yggdrasil Realm Workspace Handlers
+  const handleSelectWorkspace = (wsId: string) => {
+    if (wsId === activeWorkspaceId) return;
+    const targetWs = workspaces.find((w) => w.id === wsId);
+    if (!targetWs) return;
+
+    // Memory optimization: Hibernate non-pinned tabs of previous workspace to reclaim RAM
+    tabs.forEach((t) => {
+      const tWsId = t.workspaceId || workspaces[0]?.id || 'ws-midgard';
+      if (tWsId === activeWorkspaceId && t.id !== activeTabId && !t.isPinned && !t.isSleeping) {
+        slumberEngine.hibernateTab(t);
+      }
+    });
+
+    setActiveWorkspaceId(wsId);
+    workspaceManager.setActiveWorkspaceId(wsId);
+    setActiveRealm(targetWs.realm);
+
+    // Find tabs in target workspace
+    const targetTabs = tabs.filter((t) => (t.workspaceId || workspaces[0]?.id || 'ws-midgard') === wsId);
+    if (targetTabs.length > 0) {
+      const nextActive = targetTabs.find((t) => t.id === targetWs.activeTabId) || targetTabs[0];
+      setTabs((prev) =>
+        prev.map((t) => {
+          if (t.id === nextActive.id) {
+            if (t.isSleeping) slumberEngine.awakenTab(t);
+            return { ...t, isActive: true, isSleeping: false, lastActiveTime: Date.now() };
+          }
+          return { ...t, isActive: false };
+        })
+      );
+      setActiveTabId(nextActive.id);
+      mimirIpc.send({ type: 'SWITCH_TAB', payload: { tabId: nextActive.id } });
+    } else {
+      // Spawn fresh tab for this newly inscribed workspace branch
+      const newTabId = `tab-${Date.now()}`;
+      const newTab: Tab = {
+        id: newTabId,
+        title: `${targetWs.name} (New Tab)`,
+        url: 'mimir://newtab',
+        isActive: true,
+        isLoading: false,
+        isMuted: false,
+        isPinned: false,
+        realm: targetWs.realm,
+        rune: targetWs.rune,
+        zoomLevel: 100,
+        workspaceId: wsId,
+      };
+      setTabs((prev) => prev.map((t) => ({ ...t, isActive: false })).concat(newTab));
+      setActiveTabId(newTabId);
+      mimirIpc.send({
+        type: 'CREATE_TAB',
+        payload: { tabId: newTabId, url: 'mimir://newtab', realm: targetWs.realm },
+      });
+    }
+
+    setWorkspaces((prev) =>
+      prev.map((w) => (w.id === wsId ? { ...w, lastActiveAt: Date.now() } : w))
+    );
+    runicAudio.playRunicHum();
+  };
+
+  const handleSaveWorkspace = (name: string, realm: RealmId, rune: string, color?: string) => {
+    if (editingWorkspace) {
+      const updated = workspaceManager.updateWorkspace(editingWorkspace.id, { name, realm, rune, color });
+      setWorkspaces(updated);
+      setEditingWorkspace(null);
+    } else {
+      const created = workspaceManager.createWorkspace(name, realm, rune, color);
+      setWorkspaces(workspaceManager.getWorkspaces());
+      handleSelectWorkspace(created.id);
+    }
+  };
+
+  const handleDeleteWorkspace = (id: string) => {
+    if (workspaces.length <= 1) return;
+    const fallbackWsId = workspaces.find((w) => w.id !== id)?.id || workspaces[0].id;
+    setTabs((prev) =>
+      prev.map((t) => (t.workspaceId === id ? { ...t, workspaceId: fallbackWsId } : t))
+    );
+    const updated = workspaceManager.deleteWorkspace(id);
+    setWorkspaces(updated);
+    if (activeWorkspaceId === id) {
+      handleSelectWorkspace(fallbackWsId);
+    }
+  };
+
+  const handleHibernateWorkspaceTabs = (wsId: string) => {
+    tabs.forEach((t) => {
+      const tWsId = t.workspaceId || workspaces[0]?.id || 'ws-midgard';
+      if (tWsId === wsId && !t.isPinned && !t.isSleeping) {
+        slumberEngine.hibernateTab(t);
+      }
+    });
+    setTabs((prev) =>
+      prev.map((t) => {
+        const tWsId = t.workspaceId || workspaces[0]?.id || 'ws-midgard';
+        if (tWsId === wsId && !t.isPinned) {
+          return {
+            ...t,
+            isSleeping: true,
+            memorySavedBytes: slumberEngine.estimateTabMemoryMb(t),
+          };
+        }
+        return t;
+      })
+    );
+    runicAudio.playClick(400);
+  };
+
   // Einherjar Slumber periodic inactivity check
   useEffect(() => {
     const timer = setInterval(() => {
@@ -786,34 +967,40 @@ const formatEtaSeconds = (secs: number): string => {
   const handleCloseTab = (id: string) => {
     mimirIpc.send({ type: 'CLOSE_TAB', payload: { tabId: id } });
 
-    if (tabs.length === 1) {
-      // Don't close last tab, just reset to new tab
-      setTabs([
-        {
-          id: 'tab-1',
-          title: 'Mímisbrunnr (New Tab)',
-          url: 'mimir://newtab',
-          isActive: true,
-          isLoading: false,
-          isMuted: false,
-          isPinned: false,
-          realm: activeRealm,
-          rune: 'ᛗ',
-          zoomLevel: 100,
-        },
-      ]);
-      setActiveTabId('tab-1');
+    const currentWsTabs = tabs.filter(
+      (t) => (t.workspaceId || workspaces[0]?.id || 'ws-midgard') === activeWorkspaceId
+    );
+
+    if (currentWsTabs.length <= 1) {
+      // Don't close the sole tab of the branch, reset to mimir://newtab in this workspace
+      const targetWs = workspaces.find((w) => w.id === activeWorkspaceId);
+      const resetTab: Tab = {
+        id: `tab-${Date.now()}`,
+        title: `${targetWs?.name || 'Mímisbrunnr'} (New Tab)`,
+        url: 'mimir://newtab',
+        isActive: true,
+        isLoading: false,
+        isMuted: false,
+        isPinned: false,
+        realm: activeRealm,
+        rune: targetWs?.rune || 'ᛗ',
+        zoomLevel: 100,
+        workspaceId: activeWorkspaceId,
+      };
+      setTabs((prev) => prev.filter((t) => t.id !== id).concat(resetTab));
+      setActiveTabId(resetTab.id);
       mimirIpc.send({
         type: 'CREATE_TAB',
-        payload: { tabId: 'tab-1', url: 'mimir://newtab', realm: activeRealm },
+        payload: { tabId: resetTab.id, url: 'mimir://newtab', realm: activeRealm },
       });
       return;
     }
 
     const nextTabs = tabs.filter((t) => t.id !== id);
     if (activeTabId === id) {
-      const idx = tabs.findIndex((t) => t.id === id);
-      const newActive = nextTabs[Math.max(0, idx - 1)];
+      const idx = currentWsTabs.findIndex((t) => t.id === id);
+      const remainingWsTabs = currentWsTabs.filter((t) => t.id !== id);
+      const newActive = remainingWsTabs[Math.max(0, idx - 1)] || remainingWsTabs[0];
       nextTabs.forEach((t) => (t.isActive = t.id === newActive.id));
       setActiveTabId(newActive.id);
       mimirIpc.send({ type: 'SWITCH_TAB', payload: { tabId: newActive.id } });
@@ -835,6 +1022,7 @@ const formatEtaSeconds = (secs: number): string => {
       realm: activeRealm,
       rune: randomRune,
       zoomLevel: 100,
+      workspaceId: activeWorkspaceId,
     };
 
     setTabs((prev) => prev.map((t) => ({ ...t, isActive: false })).concat(newTab));
@@ -1076,6 +1264,11 @@ const formatEtaSeconds = (secs: number): string => {
         isSidecarOpen={isSidecarOpen}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenCanvas={() => setIsCanvasOpen(true)}
+        onToggleCloak={() => setIsCloakOpen((prev) => !prev)}
+        isCloakActive={proxyConfig.enabled}
+        cloakType={proxyConfig.proxyType}
+        onToggleHeimdallsWatch={() => setIsHeimdallsWatchOpen((prev) => !prev)}
+        isHeimdallsWatchOpen={isHeimdallsWatchOpen}
       />
 
       {/* Runic Bookmarks Bar (Havamal Staves Ribbon) */}
@@ -1119,7 +1312,7 @@ const formatEtaSeconds = (secs: number): string => {
       {/* Layer 3: Main Workspace (Yggdrasil Tree + Content Viewport + Runic Sidecar) */}
       <div className="relative flex flex-1 overflow-hidden">
         <TabTree
-          tabs={tabs}
+          tabs={currentWorkspaceTabs}
           activeTabId={activeTabId}
           activeRealm={activeRealm}
           onSelectTab={handleSelectTab}
@@ -1130,9 +1323,28 @@ const formatEtaSeconds = (secs: number): string => {
           onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
           onTogglePinTab={handleTogglePinTab}
           onDuplicateTab={handleDuplicateTab}
-          onReorderTabs={(newTabs) => setTabs(newTabs)}
+          onReorderTabs={(newTabs) => {
+            const defaultWsId = workspaces[0]?.id || 'ws-midgard';
+            const otherTabs = tabs.filter(
+              (t) => (t.workspaceId || defaultWsId) !== activeWorkspaceId
+            );
+            setTabs([...newTabs, ...otherTabs]);
+          }}
           onToggleMuteTab={handleToggleMuteTab}
           onToggleSlumberTab={handleToggleSlumberTab}
+          workspaces={workspaces}
+          activeWorkspaceId={activeWorkspaceId}
+          onSelectWorkspace={handleSelectWorkspace}
+          onOpenCreateWorkspaceModal={() => {
+            setEditingWorkspace(null);
+            setIsWorkspaceModalOpen(true);
+          }}
+          onOpenEditWorkspaceModal={(ws) => {
+            setEditingWorkspace(ws);
+            setIsWorkspaceModalOpen(true);
+          }}
+          onDeleteWorkspace={handleDeleteWorkspace}
+          onHibernateWorkspaceTabs={handleHibernateWorkspaceTabs}
         />
 
         <ContentViewport
@@ -1155,6 +1367,11 @@ const formatEtaSeconds = (secs: number): string => {
           sanctumMode={sanctumMode}
           onCycleSanctumMode={handleCycleSanctumMode}
           onOpenRealmSelector={() => setIsRealmSelectorOpen(true)}
+          onOpenWorkspaces={() => setIsWorkspaceModalOpen(true)}
+          onOpenProxyCloak={() => setIsCloakOpen(true)}
+          onOpenHeimdallWatch={() => setIsHeimdallsWatchOpen(true)}
+          onOpenMimirsEye={() => setIsMimirsEyeOpen(true)}
+          onOpenTreasury={() => setIsVaultOpen(true)}
         />
 
         {/* Persistent Runic Sidecar (Scratchpad, Huginn AI, Telemetry) */}
@@ -1270,6 +1487,16 @@ const formatEtaSeconds = (secs: number): string => {
           onToggleBookmarksBar={() => bookmarkManager.toggleBarVisible()}
           onOpenVault={() => setIsVaultOpen(true)}
           onOpenMediaSentinel={() => setIsMediaSentinelOpen(true)}
+          onOpenCloak={() => setIsCloakOpen(true)}
+          onOpenHeimdallsWatch={() => setIsHeimdallsWatchOpen(true)}
+          onOpenMimirsEye={() => setIsMimirsEyeOpen(true)}
+          workspaces={workspaces}
+          onSelectWorkspace={handleSelectWorkspace}
+          onOpenCreateWorkspaceModal={() => {
+            setEditingWorkspace(null);
+            setIsWorkspaceModalOpen(true);
+          }}
+          onHibernateWorkspaceTabs={handleHibernateWorkspaceTabs}
         />
 
         {/* Overlay 6: Rune Seeker (Find in Page) */}
@@ -1378,6 +1605,42 @@ const formatEtaSeconds = (secs: number): string => {
           onClose={() => setIsMediaSentinelOpen(false)}
           onNavigate={handleNavigate}
         />
+
+        {/* Overlay 15: Yggdrasil Workspace Inscription Modal */}
+        <WorkspaceModal
+          isOpen={isWorkspaceModalOpen}
+          onClose={() => setIsWorkspaceModalOpen(false)}
+          onSaveWorkspace={handleSaveWorkspace}
+          editingWorkspace={editingWorkspace}
+        />
+
+        {/* Overlay 16: Svalinn Network Cloak & Proxy Modal */}
+        <SvalinnCloakModal
+          isOpen={isCloakOpen}
+          onClose={() => setIsCloakOpen(false)}
+          activeRealm={activeRealm}
+        />
+
+        {/* Overlay 17: Heimdall's Watch Sovereign Task & Resource Manager */}
+        <HeimdallsWatchModal
+          isOpen={isHeimdallsWatchOpen}
+          onClose={() => setIsHeimdallsWatchOpen(false)}
+          tabs={tabs}
+          activeTabId={activeTabId}
+          onSwitchTab={handleSelectTab}
+          onCloseTab={handleCloseTab}
+          onHibernateTab={(tab) => handleToggleSlumberTab(tab.id)}
+          onAwakenTab={(tab) => handleToggleSlumberTab(tab.id)}
+          onHibernateAllBackgroundTabs={handleHibernateAllBackgroundTabs}
+        />
+
+        {/* Overlay 18: Mímir's Eye Runic Web Clipper & Knowledge Vault */}
+        <MimirsEyeModal
+          isOpen={isMimirsEyeOpen}
+          onClose={() => setIsMimirsEyeOpen(false)}
+          activeRealm={activeRealm}
+          activeTab={activeTab}
+        />
       </Suspense>
 
       {/* Custom Themed Norse Context Menu */}
@@ -1388,6 +1651,7 @@ const formatEtaSeconds = (secs: number): string => {
         eventData={contextMenuEvent}
         onOpenInNewTab={(url) => handleNewTab(url)}
         onOpenReader={() => setIsReaderSanctumOpen(true)}
+        onOpenMimirsEye={() => setIsMimirsEyeOpen(true)}
         onOpenInSplitGaze={(url) => {
           const newId = `tab-${Date.now()}`;
           const newTab: Tab = {

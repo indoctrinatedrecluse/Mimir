@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { RealmId, SanctumBackdropMode } from '@/types';
+import { RealmId, SanctumBackdropMode, YggdrasilWorkspace } from '@/types';
 import { REALMS } from '@/core/realms';
 import { REALM_THEMES } from '@/components/themes/realmThemes';
 import { runicAudio } from '@/core/audio/runicAudio';
+import { heimdallWatch } from '@/core/system/heimdallWatchManager';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
@@ -44,6 +45,8 @@ import {
   Disc3,
   Key,
   Lock,
+  GitBranch,
+  Activity,
 } from 'lucide-react';
 
 export interface CommandItem {
@@ -99,6 +102,13 @@ interface CommandPaletteProps {
   onToggleBookmarksBar?: () => void;
   onOpenVault?: () => void;
   onOpenMediaSentinel?: () => void;
+  onOpenCloak?: () => void;
+  onOpenHeimdallsWatch?: () => void;
+  onOpenMimirsEye?: () => void;
+  workspaces?: YggdrasilWorkspace[];
+  onSelectWorkspace?: (wsId: string) => void;
+  onOpenCreateWorkspaceModal?: () => void;
+  onHibernateWorkspaceTabs?: (wsId: string) => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
@@ -143,6 +153,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onToggleBookmarksBar,
   onOpenVault,
   onOpenMediaSentinel,
+  onOpenCloak,
+  onOpenHeimdallsWatch,
+  onOpenMimirsEye,
+  workspaces,
+  onSelectWorkspace,
+  onOpenCreateWorkspaceModal,
+  onHibernateWorkspaceTabs,
 }) => {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -201,6 +218,30 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         rune: 'ᛗ',
         icon: Compass,
         action: onNavigateHome,
+      },
+      // Yggdrasil Realm Workspaces
+      ...(workspaces || []).map((ws, index) => ({
+        id: `ws-switch-${ws.id}`,
+        category: 'Tabs & Navigation' as const,
+        title: `Switch to Workspace Branch: ${ws.name}`,
+        description: `Commune with ${ws.name} threads (${ws.realm} realm context)`,
+        shortcut: index < 9 ? `Alt+${index + 1}` : undefined,
+        rune: ws.rune,
+        icon: GitBranch,
+        action: () => {
+          onSelectWorkspace?.(ws.id);
+        },
+      })),
+      {
+        id: 'ws-create-new',
+        category: 'Tabs & Navigation',
+        title: 'Inscribe New Realm Branch (Yggdrasil Workspace)',
+        description: 'Create an isolated workspace with dedicated realm styling and memory context',
+        rune: 'ᛏ',
+        icon: Plus,
+        action: () => {
+          onOpenCreateWorkspaceModal?.();
+        },
       },
 
       // Wisdom & Ravens
@@ -495,6 +536,76 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         rune: 'ᛏ',
         icon: Zap,
         action: () => onOpenVault?.(),
+      },
+      {
+        id: 'svalinn-cloak',
+        category: 'System & Wards',
+        title: 'Svalinn Network Cloak (Multi-Hop Proxy & Tor Relay)',
+        description: 'Configure SOCKS5, Tor Onion Routing, custom HTTP proxy, and verify egress IP',
+        shortcut: 'Ctrl+Shift+P',
+        rune: 'ᛋ',
+        icon: Shield,
+        action: () => onOpenCloak?.(),
+      },
+      {
+        id: 'heimdall-watch',
+        category: 'System & Wards',
+        title: "Heimdall's Watch (Sovereign Task & Resource Manager)",
+        description: 'Real-time telemetry, memory load, Win32 process slaying, and working set reclamation',
+        shortcut: 'Shift+Esc',
+        rune: 'ᚺ',
+        icon: Activity,
+        action: () => onOpenHeimdallsWatch?.(),
+      },
+      {
+        id: 'purge-working-sets',
+        category: 'System & Wards',
+        title: 'Purge Working Set Memory (Win32 OS Trim)',
+        description: 'Force Windows OS to trim and flush idle pages across Mímir Core and all WebViews',
+        rune: 'ᛉ',
+        icon: Zap,
+        action: () => {
+          heimdallWatch.purgeWorkingSets();
+          runicAudio.playClick(950);
+        },
+      },
+      {
+        id: 'mimirs-eye-clipper',
+        category: 'System & Wards',
+        title: "Mímir’s Eye (Runic Web Clipper & Knowledge Vault)",
+        description: 'Extract clean Markdown with YAML frontmatter, tag taxonomy, and local vault archiving',
+        shortcut: 'Ctrl+Shift+C',
+        rune: 'ᛗ',
+        icon: BookOpen,
+        action: () => onOpenMimirsEye?.(),
+      },
+      {
+        id: 'valkyrie-vim-nav',
+        category: 'Viewports & Tools',
+        title: 'Vim Runic Key Navigator (Keyboard-Only Link Hop)',
+        description: 'Inscribes Elder Futhark key badges on clickable elements for lightning keyboard traversal',
+        shortcut: 'Alt+F',
+        rune: 'ᚠ',
+        icon: Terminal,
+        action: () => {
+          runicAudio.playChime();
+          const win = window as any;
+          if (win.__activateVimNavigator) {
+            win.__activateVimNavigator();
+          }
+        },
+      },
+      {
+        id: 'valkyrie-mouse-gestures',
+        category: 'Viewports & Tools',
+        title: 'Valkyrie Mouse Flight (Right-Click Drag Gestures)',
+        description: 'Hold Right-Click and drag: Left (Back), Right (Forward), Up (Top), Down (Bottom), Down-Right (Close Tab)',
+        rune: 'ᚱ',
+        icon: Compass,
+        action: () => {
+          runicAudio.playClick(750);
+          alert("🦅 Valkyrie Mouse Flight Active!\n\nHold Right-Click anywhere and drag:\n• Drag Left (←): Go Back\n• Drag Right (→): Go Forward\n• Drag Up (↑): Scroll to Top\n• Drag Down (↓): Scroll to Bottom\n• Drag Up-Down (↕): Reload Page\n• Drag Down-Right (↳): Close Tab\n• Drag Right-Up (↱): Mímir's Eye Web Clipper");
+        },
       },
       {
         id: 'purge-data',

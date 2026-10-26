@@ -106,6 +106,36 @@ export interface PageContentPayload {
   wordCount: number;
 }
 
+export interface PageClippedPayload {
+  title: string;
+  url: string;
+  selected_text?: string | null;
+  html_content: string;
+  text_content: string;
+  meta_description?: string;
+  author?: string | null;
+}
+
+export interface ProcessItem {
+  pid: number;
+  name: string;
+  role: string;
+  working_set_bytes: number;
+  commit_bytes: number;
+  is_main: boolean;
+}
+
+export interface SystemTelemetryPayload {
+  main_pid: number;
+  total_mimir_memory_bytes: number;
+  main_process_memory_bytes: number;
+  child_process_count: number;
+  processes: ProcessItem[];
+  total_system_ram_bytes: number;
+  available_system_ram_bytes: number;
+  memory_load_percent: number;
+}
+
 export type IpcCommand =
   | { type: 'NAVIGATE'; payload: { url: string; tabId?: string } }
   | { type: 'GO_BACK' }
@@ -146,7 +176,14 @@ export type IpcCommand =
   | { type: 'SPAWN_PIP_WINDOW'; payload: { title: string; is_playing?: boolean; width?: number; height?: number; x?: number; y?: number } }
   | { type: 'CLOSE_PIP_WINDOW' }
   | { type: 'DRAG_PIP_WINDOW' }
-  | { type: 'SYNC_PIP_STATE'; payload: { is_playing: boolean; volume?: number; title?: string } };
+  | { type: 'SYNC_PIP_STATE'; payload: { is_playing: boolean; volume?: number; title?: string } }
+  | { type: 'SET_PROXY_CONFIG'; payload: { enabled: boolean; proxy_type: string; server: string; bypass_list?: string } }
+  | { type: 'GET_PROXY_CONFIG' }
+  | { type: 'TEST_PROXY_CONNECTIVITY'; payload: { host: string; port: number } }
+  | { type: 'GET_SYSTEM_TELEMETRY' }
+  | { type: 'KILL_PROCESS'; payload: { pid: number } }
+  | { type: 'RECLAIM_MEMORY' }
+  | { type: 'CLIP_PAGE' };
 
 type DownloadStartedListener = (event: NativeDownloadStartedEvent) => void;
 type DownloadProgressListener = (event: NativeDownloadProgressEvent) => void;
@@ -161,6 +198,9 @@ type TorrentCompletedListener = (event: NativeTorrentCompletedEvent) => void;
 type BrowsingDataClearedListener = () => void;
 type PageContentListener = (event: PageContentPayload) => void;
 type ProxyConfiguredListener = (event: any) => void;
+type SystemTelemetryListener = (event: SystemTelemetryPayload) => void;
+type MemoryReclaimedListener = (event: { bytesReclaimed: number }) => void;
+type PageClippedListener = (event: PageClippedPayload) => void;
 
 class MimirIpcBridge {
   private downloadStartedListeners: Set<DownloadStartedListener> = new Set();
@@ -176,6 +216,9 @@ class MimirIpcBridge {
   private browsingDataClearedListeners: Set<BrowsingDataClearedListener> = new Set();
   private pageContentListeners: Set<PageContentListener> = new Set();
   private proxyConfiguredListeners: Set<ProxyConfiguredListener> = new Set();
+  private systemTelemetryListeners: Set<SystemTelemetryListener> = new Set();
+  private memoryReclaimedListeners: Set<MemoryReclaimedListener> = new Set();
+  private pageClippedListeners: Set<PageClippedListener> = new Set();
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -231,6 +274,18 @@ class MimirIpcBridge {
 
       win.__mimirOnProxyConfigured = (payload: any) => {
         this.proxyConfiguredListeners.forEach((l) => l(payload));
+      };
+
+      win.__mimirOnSystemTelemetry = (payload: SystemTelemetryPayload) => {
+        this.systemTelemetryListeners.forEach((l) => l(payload));
+      };
+
+      win.__mimirOnMemoryReclaimed = (payload: { bytesReclaimed: number }) => {
+        this.memoryReclaimedListeners.forEach((l) => l(payload));
+      };
+
+      win.__mimirOnPageClipped = (payload: PageClippedPayload) => {
+        this.pageClippedListeners.forEach((l) => l(payload));
       };
     }
   }
@@ -415,6 +470,46 @@ class MimirIpcBridge {
       type: 'RESUME_TAB',
       payload: { tabId },
     });
+  }
+
+  public getSystemTelemetry() {
+    this.send({
+      type: 'GET_SYSTEM_TELEMETRY',
+    });
+  }
+
+  public killProcess(pid: number) {
+    this.send({
+      type: 'KILL_PROCESS',
+      payload: { pid },
+    });
+  }
+
+  public reclaimMemory() {
+    this.send({
+      type: 'RECLAIM_MEMORY',
+    });
+  }
+
+  public onSystemTelemetry(listener: SystemTelemetryListener): () => void {
+    this.systemTelemetryListeners.add(listener);
+    return () => this.systemTelemetryListeners.delete(listener);
+  }
+
+  public onMemoryReclaimed(listener: MemoryReclaimedListener): () => void {
+    this.memoryReclaimedListeners.add(listener);
+    return () => this.memoryReclaimedListeners.delete(listener);
+  }
+
+  public clipPage() {
+    this.send({
+      type: 'CLIP_PAGE',
+    });
+  }
+
+  public onPageClipped(listener: PageClippedListener): () => void {
+    this.pageClippedListeners.add(listener);
+    return () => this.pageClippedListeners.delete(listener);
   }
 }
 

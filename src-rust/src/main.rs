@@ -8,6 +8,9 @@ mod accelerator;
 mod torrent;
 mod adblocker;
 pub mod media_drm;
+pub mod proxy;
+pub mod system_metrics;
+pub mod valkyrie_gestures;
 
 use std::borrow::Cow;
 use std::path::PathBuf;
@@ -247,6 +250,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Configure streaming DRM protocols, Widevine seeding, and media hardware acceleration
     media_drm::configure_media_environment(&data_dir);
+    // Inscribe Svalinn Proxy & Network Cloak arguments into environment
+    proxy::apply_proxy_to_environment(&data_dir);
 
     let event_loop = EventLoopBuilder::<IpcCommand>::with_user_event().build();
     let event_loop_proxy = event_loop.create_proxy();
@@ -808,12 +813,76 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         let _ = _hud.evaluate_script(&script);
                     }
                 }
+                IpcCommand::ClipPage => {
+                    tab_manager.clip_active_page();
+                }
+                IpcCommand::PageClipped { payload } => {
+                    if let Ok(json) = serde_json::to_string(&payload) {
+                        let script = format!("window.__mimirOnPageClipped && window.__mimirOnPageClipped({});", json);
+                        let _ = _hud.evaluate_script(&script);
+                    }
+                }
+                IpcCommand::SetProxyConfig { payload } => {
+                    let config = proxy::ProxyConfig {
+                        enabled: payload.enabled,
+                        proxy_type: payload.proxy_type,
+                        server: payload.server,
+                        bypass_list: payload.bypass_list,
+                    };
+                    let success = proxy::save_proxy_config(&data_dir, &config);
+                    if let Ok(json) = serde_json::to_string(&config) {
+                        let script = format!("window.__mimirOnProxyConfigured && window.__mimirOnProxyConfigured({{ success: {}, config: {} }});", success, json);
+                        let _ = _hud.evaluate_script(&script);
+                    }
+                }
+                IpcCommand::GetProxyConfig => {
+                    let config = proxy::load_proxy_config(&data_dir);
+                    if let Ok(json) = serde_json::to_string(&config) {
+                        let script = format!("window.__mimirOnProxyConfig && window.__mimirOnProxyConfig({});", json);
+                        let _ = _hud.evaluate_script(&script);
+                    }
+                }
+                IpcCommand::TestProxyConnectivity { payload } => {
+                    let is_reachable = proxy::test_connectivity(&payload.host, payload.port);
+                    let script = format!("window.__mimirOnProxyTestResult && window.__mimirOnProxyTestResult({{ host: \"{}\", port: {}, reachable: {} }});", payload.host, payload.port, is_reachable);
+                    let _ = _hud.evaluate_script(&script);
+                }
                 IpcCommand::ProxyConfigured { payload } => {
                     if let Ok(json) = serde_json::to_string(&payload) {
                         let script = format!("window.__mimirOnProxyConfigured && window.__mimirOnProxyConfigured({});", json);
                         let _ = _hud.evaluate_script(&script);
                     }
                 }
+                IpcCommand::GetSystemTelemetry => {
+                    let telemetry = system_metrics::get_telemetry();
+                    if let Ok(json) = serde_json::to_string(&telemetry) {
+                        let script = format!("window.__mimirOnSystemTelemetry && window.__mimirOnSystemTelemetry({});", json);
+                        let _ = _hud.evaluate_script(&script);
+                    }
+                }
+                IpcCommand::SystemTelemetry { .. } => {}
+                IpcCommand::KillProcess { payload } => {
+                    let success = system_metrics::kill_process(payload.pid);
+                    logger::info(&format!("Heimdall's Watch: Slaying runaway process (PID: {}, success: {})", payload.pid, success));
+                    let telemetry = system_metrics::get_telemetry();
+                    if let Ok(json) = serde_json::to_string(&telemetry) {
+                        let script = format!("window.__mimirOnSystemTelemetry && window.__mimirOnSystemTelemetry({});", json);
+                        let _ = _hud.evaluate_script(&script);
+                    }
+                }
+                IpcCommand::ReclaimMemory => {
+                    let reclaimed_bytes = system_metrics::reclaim_working_sets();
+                    logger::info(&format!("Heimdall's Watch: Purged working sets, reclaimed {} bytes", reclaimed_bytes));
+                    let telemetry = system_metrics::get_telemetry();
+                    if let Ok(json) = serde_json::to_string(&telemetry) {
+                        let script = format!(
+                            "window.__mimirOnMemoryReclaimed && window.__mimirOnMemoryReclaimed({{ bytesReclaimed: {} }});\nwindow.__mimirOnSystemTelemetry && window.__mimirOnSystemTelemetry({});",
+                            reclaimed_bytes, json
+                        );
+                        let _ = _hud.evaluate_script(&script);
+                    }
+                }
+                IpcCommand::MemoryReclaimed { .. } => {}
                 IpcCommand::SpawnPipWindow { payload } => {
                     logger::info(&format!("Spawning Sovereign OS-Level Always-On-Top PiP Window: {}", payload.title));
                     if let Some(win) = &pip_window {
