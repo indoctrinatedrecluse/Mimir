@@ -58,7 +58,11 @@ enum InboundMessage {
         install_video_pack: bool,
     },
     #[serde(rename = "FINISH_SETUP")]
-    FinishSetup { launch: bool },
+    FinishSetup {
+        launch: bool,
+        #[serde(rename = "installPath", default)]
+        install_path: Option<String>,
+    },
 }
 
 #[allow(dead_code)]
@@ -904,14 +908,20 @@ fn main() {
                             );
                         });
                     }
-                    InboundMessage::FinishSetup { launch } => {
+                    InboundMessage::FinishSetup {
+                        launch,
+                        install_path,
+                    } => {
                         if launch {
-                            let default_dir = get_default_install_dir();
-                            let exe_path = format!("{}\\mimir.exe", default_dir);
-                            let mut cmd = std::process::Command::new(exe_path);
-                            #[cfg(target_os = "windows")]
-                            cmd.creation_flags(CREATE_NO_WINDOW);
-                            let _ = cmd.spawn();
+                            let target_dir = install_path
+                                .filter(|p| !p.trim().is_empty())
+                                .unwrap_or_else(get_default_install_dir);
+                            let exe_path = format!("{}\\mimir.exe", target_dir);
+                            if Path::new(&exe_path).exists() {
+                                let mut cmd = std::process::Command::new(&exe_path);
+                                cmd.current_dir(&target_dir);
+                                let _ = cmd.spawn();
+                            }
                         }
                         let _ = proxy_ipc.send_event(UserEvent::Close);
                     }

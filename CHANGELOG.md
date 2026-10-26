@@ -125,6 +125,10 @@ This major release elevates Mímir Browser to a full sovereign desktop citadel:
   * Deep registry scrubbing across `HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Mimir`, `HKCU:\Software\Mimir`, protocol associations, and default browser keys.
   * Thorough purge of WebView2 user data caches (`%TEMP%\mimir_webview2_data`), realm archive packs (`%TEMP%\mimir-cinematic-realm-pack.zip`), and user appdata directories.
   * Detached post-exit cleaner script that completely purges `uninstall.exe` and the installation sanctuary folder with zero remaining locks.
+* **Interactive Post-Install Launch Screen (`installer_ui.html`, `installer.rs`)**:
+  * Fixed unclickable "Launch Mímir Browser immediately" toggle by styling `.launch-checkbox-card.selected` with active gold glow and high-contrast checkmark (`✓`), synchronizing interactive state on click.
+  * Dynamically updated finish button label (`ᛏ LAUNCH MÍMIR BROWSER` vs `ᛏ COMPLETE SETUP`) and added dedicated `CLOSE SETUP` button.
+  * Fixed browser launch execution in Rust: removed `CREATE_NO_WINDOW` flag that was suppressing the browser window, accurately routed custom `install_path`, and set process working directory to ensure clean launch.
 
 ### Deferred (Future Roadmap)
 * **Custom Theme Generator (Milestone 6)**:

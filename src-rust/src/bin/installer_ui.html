@@ -651,37 +651,83 @@
       background: var(--bg-card);
       border: 1px solid var(--border-gold);
       border-radius: 8px;
-      padding: 10px 18px;
+      padding: 11px 20px;
       display: flex;
       align-items: center;
       gap: 12px;
       cursor: pointer;
       margin-bottom: 24px;
-      transition: background 0.2s;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .launch-checkbox-card:hover {
       background: var(--bg-card-hover);
+      border-color: var(--gold-bright);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 18px rgba(212, 175, 55, 0.15);
+    }
+
+    .launch-checkbox-card.selected {
+      border-color: var(--gold-bright);
+      background: rgba(212, 175, 55, 0.12);
+      box-shadow: 0 0 16px rgba(212, 175, 55, 0.2);
+    }
+
+    .launch-checkbox-card.selected .comp-checkbox {
+      background: var(--gold-primary);
+      border-color: var(--gold-bright);
+      color: #08090C !important;
+      font-weight: 800;
+    }
+
+    .complete-btn-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
 
     .btn-launch {
-      padding: 12px 34px;
+      padding: 12px 30px;
       background: linear-gradient(135deg, #F6D365 0%, #D4AF37 100%);
       border: 1px solid #FFF;
       border-radius: 8px;
       color: #08090C;
       font-family: 'Cinzel', serif;
-      font-size: 14px;
+      font-size: 13.5px;
       font-weight: 800;
-      letter-spacing: 2px;
+      letter-spacing: 1.5px;
       cursor: pointer;
       box-shadow: 0 6px 28px rgba(212, 175, 55, 0.6);
       transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .btn-launch:hover {
       transform: translateY(-2px);
       box-shadow: 0 8px 36px rgba(212, 175, 55, 0.85);
+      background: linear-gradient(135deg, #FFF 0%, #F6D365 40%, #D4AF37 100%);
+    }
+
+    .btn-exit-installer {
+      padding: 12px 22px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--text-muted);
+      font-family: 'Cinzel', serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-exit-installer:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
+      border-color: rgba(255, 255, 255, 0.25);
     }
   </style>
 </head>
@@ -842,14 +888,19 @@
           Mímir Browser has been inscribed into your system with hardware-accelerated viewports and the Tri-Mode Sanctum Engine.
         </p>
 
-        <div class="launch-checkbox-card" id="card-launch-app">
+        <div class="launch-checkbox-card selected" id="card-launch-app" title="Click to toggle automatic launch">
           <div class="comp-checkbox" id="chk-launch">✓</div>
-          <span style="font-size: 13px; font-weight: 500;">Launch Mímir Browser immediately</span>
+          <span style="font-size: 13.5px; font-weight: 600; letter-spacing: 0.3px;">Launch Mímir Browser immediately</span>
         </div>
 
-        <button class="btn-launch" id="btn-launch-finish">
-          <span>ᛏ ENTER THE NINE REALMS</span>
-        </button>
+        <div class="complete-btn-row">
+          <button class="btn-launch" id="btn-launch-finish" title="Launch Mímir Browser and exit setup">
+            <span id="lbl-finish-action">ᛏ LAUNCH MÍMIR BROWSER</span>
+          </button>
+          <button class="btn-exit-installer" id="btn-exit-finish" title="Exit setup without launching">
+            <span>CLOSE SETUP</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -1008,14 +1059,39 @@
 
     // Finish / Launch Action
     const cardLaunch = document.getElementById('card-launch-app');
+    const lblFinishAction = document.getElementById('lbl-finish-action');
+
+    function updateFinishUi() {
+      cardLaunch.classList.toggle('selected', state.launchOnFinish);
+      document.getElementById('chk-launch').textContent = state.launchOnFinish ? '✓' : '';
+      if (lblFinishAction) {
+        lblFinishAction.textContent = state.launchOnFinish
+          ? 'ᛏ LAUNCH MÍMIR BROWSER'
+          : 'ᛏ COMPLETE SETUP';
+      }
+    }
+
     cardLaunch.addEventListener('click', () => {
       state.launchOnFinish = !state.launchOnFinish;
-      document.getElementById('chk-launch').textContent = state.launchOnFinish ? '✓' : '';
+      updateFinishUi();
     });
 
     document.getElementById('btn-launch-finish').addEventListener('click', () => {
-      sendIpc('FINISH_SETUP', { launch: state.launchOnFinish });
+      sendIpc('FINISH_SETUP', {
+        launch: state.launchOnFinish,
+        installPath: state.installPath
+      });
     });
+
+    const btnExitFinish = document.getElementById('btn-exit-finish');
+    if (btnExitFinish) {
+      btnExitFinish.addEventListener('click', () => {
+        sendIpc('FINISH_SETUP', {
+          launch: false,
+          installPath: state.installPath
+        });
+      });
+    }
 
     // Inbound IPC Dispatcher called from Rust
     window.onIpcMessage = function(msg) {
