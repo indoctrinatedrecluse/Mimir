@@ -236,40 +236,294 @@ fn register_uninstaller(install_dir: &str, display_version: &str) {
         .output();
 }
 
-fn run_uninstall() {
-    let script = r#"
-        Add-Type -AssemblyName System.Windows.Forms
-        $ans = [System.Windows.Forms.MessageBox]::Show(
-            'Are you sure you wish to dismantle the Mímir Sanctuary from your system?',
-            'Mímir Browser Uninstallation',
-            [System.Windows.Forms.MessageBoxButtons]::YesNo,
-            [System.Windows.Forms.MessageBoxIcon]::Question
+#[cfg(target_os = "windows")]
+fn show_confirm_dialog(title: &str, message: &str) -> bool {
+    use std::os::windows::ffi::OsStrExt;
+    use windows::core::PCWSTR;
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::WindowsAndMessaging::{MessageBoxW, IDYES, MB_ICONQUESTION, MB_YESNO};
+
+    let wide_title: Vec<u16> = std::ffi::OsStr::new(title)
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect();
+    let wide_msg: Vec<u16> = std::ffi::OsStr::new(message)
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect();
+
+    unsafe {
+        let res = MessageBoxW(
+            HWND::default(),
+            PCWSTR(wide_msg.as_ptr()),
+            PCWSTR(wide_title.as_ptr()),
+            MB_YESNO | MB_ICONQUESTION,
         );
-        if ($ans -eq [System.Windows.Forms.DialogResult]::Yes) {
-            Remove-Item -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Mimir' -Recurse -ErrorAction SilentlyContinue;
+        res == IDYES
+    }
+}
 
-            $desk = [Environment]::GetFolderPath('Desktop');
-            $start = [Environment]::GetFolderPath('Programs');
-            Remove-Item -Path "$desk\Mimir.lnk" -Force -ErrorAction SilentlyContinue;
-            Remove-Item -Path "$start\Mimir.lnk" -Force -ErrorAction SilentlyContinue;
+#[cfg(not(target_os = "windows"))]
+fn show_confirm_dialog(_title: &str, _message: &str) -> bool {
+    true
+}
 
-            $appDir = Split-Path -Parent $MyInvocation.MyCommand.Path;
-            Start-Process cmd.exe -ArgumentList "/c timeout /t 2 & rmdir /s /q `"$appDir`"" -WindowStyle Hidden;
+#[cfg(target_os = "windows")]
+fn show_info_dialog(title: &str, message: &str) {
+    use std::os::windows::ffi::OsStrExt;
+    use windows::core::PCWSTR;
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::WindowsAndMessaging::{MessageBoxW, MB_ICONINFORMATION, MB_OK};
 
-            [System.Windows.Forms.MessageBox]::Show(
-                'Mímir Browser has been cleanly uninstalled from your machine.',
-                'Uninstallation Complete',
-                [System.Windows.Forms.MessageBoxButtons]::OK,
-                [System.Windows.Forms.MessageBoxIcon]::Information
-            );
-        }
-    "#;
+    let wide_title: Vec<u16> = std::ffi::OsStr::new(title)
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect();
+    let wide_msg: Vec<u16> = std::ffi::OsStr::new(message)
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect();
+
+    unsafe {
+        let _ = MessageBoxW(
+            HWND::default(),
+            PCWSTR(wide_msg.as_ptr()),
+            PCWSTR(wide_title.as_ptr()),
+            MB_OK | MB_ICONINFORMATION,
+        );
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+fn show_info_dialog(_title: &str, _message: &str) {}
+
+fn is_uninstaller_mode() -> bool {
+    let exe_name = std::env::current_exe()
+        .ok()
+        .and_then(|p| p.file_name().map(|n| n.to_string_lossy().to_lowercase()))
+        .unwrap_or_default();
+
+    exe_name.contains("uninstall")
+        || std::env::args().any(|a| {
+            let lower = a.to_lowercase();
+            lower == "--uninstall"
+                || lower == "-u"
+                || lower == "/uninstall"
+                || lower == "/u"
+                || lower == "-uninstall"
+        })
+}
+
+fn get_registered_install_dir() -> Option<PathBuf> {
+    let script = "(Get-ItemProperty -Path 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Mimir' -ErrorAction SilentlyContinue).InstallLocation";
     let mut cmd = std::process::Command::new("powershell");
     #[cfg(target_os = "windows")]
     cmd.creation_flags(CREATE_NO_WINDOW);
-    let _ = cmd
-        .args(["-NoProfile", "-WindowStyle", "Hidden", "-Command", script])
-        .status();
+    let output = cmd
+        .args(["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", script])
+        .output()
+        .ok()?;
+    let path_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if !path_str.is_empty() {
+        let path = PathBuf::from(path_str);
+        if path.exists() {
+            return Some(path);
+        }
+    }
+    None
+}
+
+fn resolve_install_dir() -> Option<PathBuf> {
+    if let Ok(current_exe) = std::env::current_exe() {
+        if let Some(parent) = current_exe.parent() {
+            if parent.join("mimir.exe").exists() || parent.join("mimir-core.exe").exists() {
+                return Some(parent.to_path_buf());
+            }
+        }
+    }
+
+    if let Some(registered) = get_registered_install_dir() {
+        return Some(registered);
+    }
+
+    let default_path = PathBuf::from(get_default_install_dir());
+    if default_path.exists() {
+        return Some(default_path);
+    }
+
+    None
+}
+
+fn is_safe_to_delete(dir: &Path) -> bool {
+    let s = dir.to_string_lossy();
+    if s.is_empty() || s.len() <= 3 {
+        return false;
+    }
+    let lower = s.to_lowercase();
+    if lower == "c:\\"
+        || lower == "c:\\windows"
+        || lower.starts_with("c:\\windows\\system32")
+        || lower == "c:\\program files"
+        || lower == "c:\\program files (x86)"
+        || lower == "c:\\users"
+    {
+        return false;
+    }
+    dir.components().count() >= 3
+}
+
+fn run_uninstall() {
+    let is_silent = std::env::args().any(|a| {
+        let l = a.to_lowercase();
+        l == "--silent" || l == "-s" || l == "/s" || l == "/silent" || l == "-q" || l == "--quiet"
+    });
+
+    if !is_silent {
+        let confirmed = show_confirm_dialog(
+            "Mímir Sanctuary Dismantling",
+            "Are you sure you wish to dismantle the Mímir Sanctuary and completely banish all installed binaries, realm caches, and desktop shortcuts from your system?",
+        );
+        if !confirmed {
+            return;
+        }
+    }
+
+    // 1. Forcefully terminate any running Mímir processes so all file locks and sockets are released
+    let mut kill_cmd = std::process::Command::new("taskkill");
+    #[cfg(target_os = "windows")]
+    kill_cmd.creation_flags(CREATE_NO_WINDOW);
+    let _ = kill_cmd
+        .args(["/F", "/IM", "mimir.exe", "/IM", "mimir-core.exe"])
+        .output();
+
+    std::thread::sleep(std::time::Duration::from_millis(500));
+
+    // 2. Remove all shortcuts (Desktop and Start Menu)
+    let mut shortcut_paths = Vec::new();
+    if let Ok(userprofile) = std::env::var("USERPROFILE") {
+        shortcut_paths.push(format!("{}\\Desktop\\Mimir.lnk", userprofile));
+    }
+    if let Ok(public) = std::env::var("PUBLIC") {
+        shortcut_paths.push(format!("{}\\Desktop\\Mimir.lnk", public));
+    }
+    if let Ok(appdata) = std::env::var("APPDATA") {
+        shortcut_paths.push(format!(
+            "{}\\Microsoft\\Windows\\Start Menu\\Programs\\Mimir.lnk",
+            appdata
+        ));
+        shortcut_paths.push(format!(
+            "{}\\Microsoft\\Windows\\Start Menu\\Programs\\Mimir",
+            appdata
+        ));
+    }
+    if let Ok(allusers) = std::env::var("ALLUSERSPROFILE") {
+        shortcut_paths.push(format!(
+            "{}\\Microsoft\\Windows\\Start Menu\\Programs\\Mimir.lnk",
+            allusers
+        ));
+        shortcut_paths.push(format!(
+            "{}\\Microsoft\\Windows\\Start Menu\\Programs\\Mimir",
+            allusers
+        ));
+    }
+    if let Ok(programdata) = std::env::var("PROGRAMDATA") {
+        shortcut_paths.push(format!(
+            "{}\\Microsoft\\Windows\\Start Menu\\Programs\\Mimir.lnk",
+            programdata
+        ));
+    }
+    for p in shortcut_paths {
+        let path = Path::new(&p);
+        if path.is_file() {
+            let _ = std::fs::remove_file(path);
+        } else if path.is_dir() {
+            let _ = std::fs::remove_dir_all(path);
+        }
+    }
+
+    // 3. Purge Windows Registry entries
+    let reg_script = r#"
+        Remove-Item -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Mimir' -Recurse -Force -ErrorAction SilentlyContinue;
+        Remove-Item -Path 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Mimir' -Recurse -Force -ErrorAction SilentlyContinue;
+        Remove-Item -Path 'HKCU:\Software\Mimir' -Recurse -Force -ErrorAction SilentlyContinue;
+        Remove-Item -Path 'HKLM:\Software\Mimir' -Recurse -Force -ErrorAction SilentlyContinue;
+        Remove-Item -Path 'HKCU:\Software\Classes\mimir' -Recurse -Force -ErrorAction SilentlyContinue;
+        Remove-Item -Path 'HKCU:\Software\Clients\StartMenuInternet\Mimir' -Recurse -Force -ErrorAction SilentlyContinue;
+    "#;
+    let mut reg_cmd = std::process::Command::new("powershell");
+    #[cfg(target_os = "windows")]
+    reg_cmd.creation_flags(CREATE_NO_WINDOW);
+    let _ = reg_cmd
+        .args(["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", reg_script])
+        .output();
+
+    // 4. Clean user caches and temporary remnants
+    if let Ok(temp) = std::env::var("TEMP") {
+        let webview_cache = format!("{}\\mimir_webview2_data", temp);
+        let _ = std::fs::remove_dir_all(&webview_cache);
+        let realm_pack = format!("{}\\mimir-cinematic-realm-pack.zip", temp);
+        let _ = std::fs::remove_file(&realm_pack);
+    }
+    if let Ok(local_app_data) = std::env::var("LOCALAPPDATA") {
+        let app_cache = format!("{}\\Mimir", local_app_data);
+        let _ = std::fs::remove_dir_all(&app_cache);
+    }
+    if let Ok(app_data) = std::env::var("APPDATA") {
+        let roaming_dir = format!("{}\\Mimir", app_data);
+        let _ = std::fs::remove_dir_all(&roaming_dir);
+    }
+
+    // 5. Clean up installation directory
+    let install_dir_opt = resolve_install_dir();
+    let current_exe = std::env::current_exe().ok();
+
+    if let Some(install_dir) = install_dir_opt {
+        if is_safe_to_delete(&install_dir) {
+            // Delete all non-executing files and subdirectories first
+            if let Ok(entries) = std::fs::read_dir(&install_dir) {
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    if let Some(ref exe) = current_exe {
+                        if &path == exe {
+                            continue;
+                        }
+                    }
+                    if path.is_dir() {
+                        let _ = std::fs::remove_dir_all(&path);
+                    } else {
+                        let _ = std::fs::remove_file(&path);
+                    }
+                }
+            }
+
+            // Launch detached background cleaner to delete uninstall.exe and the installation folder once we exit
+            let install_dir_str = install_dir.to_string_lossy().to_string();
+            let cleaner_script = format!(
+                "Start-Sleep -Milliseconds 1200; \
+                 for ($i = 0; $i -lt 30; $i++) {{ \
+                     if (-not (Test-Path -LiteralPath '{}')) {{ break }} \
+                     Remove-Item -LiteralPath '{}' -Recurse -Force -ErrorAction SilentlyContinue; \
+                     Start-Sleep -Milliseconds 500; \
+                 }}",
+                install_dir_str.replace('\'', "''"),
+                install_dir_str.replace('\'', "''")
+            );
+
+            let mut bg_cmd = std::process::Command::new("powershell");
+            #[cfg(target_os = "windows")]
+            bg_cmd.creation_flags(CREATE_NO_WINDOW);
+            let _ = bg_cmd
+                .args(["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", &cleaner_script])
+                .spawn();
+        }
+    }
+
+    if !is_silent {
+        show_info_dialog(
+            "Sanctuary Dismantled",
+            "Mímir Browser and all realm components have been cleanly banish'd from your machine.",
+        );
+    }
 }
 
 fn extract_zip_bytes<R: std::io::Read + std::io::Seek>(
@@ -566,8 +820,8 @@ fn execute_installation(
 }
 
 fn main() {
-    // Check if uninstallation flag is passed
-    if std::env::args().any(|a| a == "--uninstall") {
+    // Check if invoked as uninstaller (either by filename or argument)
+    if is_uninstaller_mode() {
         run_uninstall();
         return;
     }

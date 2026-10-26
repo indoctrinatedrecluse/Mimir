@@ -112,11 +112,19 @@ This major release elevates Mímir Browser to a full sovereign desktop citadel:
 * **Central Mímisbrunnr Search Pool**:
   * Concentric runic orbit rings with multi-engine channel routing and instant query dispatch.
 
-#### 🛡️ Silent Background Installer & Windows Subsystem (`installer.rs`, `installer_ui.html`)
+#### 🛡️ Silent Background Installer & Clean Sovereign Uninstaller (`installer.rs`, `installer_ui.html`)
 * **Elimination of Background PowerShell Console Windows**:
   * Added unconditional `#![windows_subsystem = "windows"]` to `installer.rs`, ensuring the installer is compiled as a native GUI subsystem application instead of a console application that causes Windows to allocate a visible console window.
   * Applied Win32 `CREATE_NO_WINDOW` (flag `0x08000000`) and `-WindowStyle Hidden` across all child PowerShell invocations (`browse_for_folder`, `create_shortcut`, `register_uninstaller`, `run_uninstall`, and browser launch), eliminating any visible or flashing background command windows.
   * Updated version badge and registry uninstaller keys to `0.9.0`.
+* **Clean Sovereign Uninstaller & Deep Remnant Eradication (`uninstall.exe`)**:
+  * Fixed uninstaller mode detection so that double-clicking `<install_dir>\uninstall.exe` directly in Windows Explorer or launching it from Windows Settings / Add & Remove Programs correctly triggers the uninstallation routine instead of reopening the installer UI.
+  * Native Win32 confirmation dialog (`MessageBoxW`) to verify dismantling consent.
+  * Automated process termination (`taskkill`) for active `mimir.exe` and `mimir-core.exe` instances to unlock binaries and webview handles.
+  * Comprehensive shortcuts purge across User Desktop, Public Desktop, User Start Menu, and All Users Start Menu programs.
+  * Deep registry scrubbing across `HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Mimir`, `HKCU:\Software\Mimir`, protocol associations, and default browser keys.
+  * Thorough purge of WebView2 user data caches (`%TEMP%\mimir_webview2_data`), realm archive packs (`%TEMP%\mimir-cinematic-realm-pack.zip`), and user appdata directories.
+  * Detached post-exit cleaner script that completely purges `uninstall.exe` and the installation sanctuary folder with zero remaining locks.
 
 ### Deferred (Future Roadmap)
 * **Custom Theme Generator (Milestone 6)**:
