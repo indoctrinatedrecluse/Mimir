@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Outer Runic Ring -->
+    <path
+        android:strokeColor="#22D3EE"
+        android:strokeWidth="2.5"
+        android:pathData="M54,20 A34,34 0 1,0 54,88 A34,34 0 1,0 54,20 Z"/>
+    <!-- Mímir's Eye Diamond -->
+    <path
+        android:fillColor="#0E7490"
+        android:strokeColor="#38BDF8"
+        android:strokeWidth="2"
+        android:pathData="M54,34 L72,54 L54,74 L36,54 Z"/>
+    <!-- Inner Pupil Rune -->
+    <path
+        android:strokeColor="#F59E0B"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M54,42 L54,66 M46,50 L62,58 M46,58 L62,50"/>
+</vector>
