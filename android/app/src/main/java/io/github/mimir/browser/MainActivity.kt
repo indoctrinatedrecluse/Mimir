@@ -48,6 +48,8 @@ class MainActivity : AppCompatActivity(), MimirWebViewCallback {
     private var proxyServer = ""
     private var proxyBypassList = "<local>;localhost;127.0.0.1"
 
+    var isOverlayOpen = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -121,6 +123,44 @@ class MainActivity : AppCompatActivity(), MimirWebViewCallback {
 
             // Load local bundled React build
             loadUrl("file:///android_asset/dist/index.html")
+        }
+
+        setupChromeTouchPassthrough()
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private fun setupChromeTouchPassthrough() {
+        chromeWebView.setOnTouchListener { _, event ->
+            // If viewing internal home (mimir://newtab) or an overlay is open, chrome handles all touches
+            if (viewportContainer.visibility != View.VISIBLE || isOverlayOpen) {
+                return@setOnTouchListener false
+            }
+
+            val density = resources.displayMetrics.density
+            val statusBarHeight = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                window.decorView.rootWindowInsets?.getInsets(WindowInsets.Type.statusBars())?.top ?: (24 * density).toInt()
+            } else {
+                (24 * density).toInt()
+            }
+            val navBarHeight = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                window.decorView.rootWindowInsets?.getInsets(WindowInsets.Type.navigationBars())?.bottom ?: (24 * density).toInt()
+            } else {
+                (24 * density).toInt()
+            }
+
+            val headerCutoff = statusBarHeight + (44 * density)
+            val dockCutoff = rootLayout.height - (navBarHeight + (64 * density))
+
+            // In the active viewport zone, forward touches directly to the active tab's native webview
+            if (event.y > headerCutoff && event.y < dockCutoff) {
+                val activeTab = tabManager.getActiveTab()
+                if (activeTab != null && activeTab.webView.visibility == View.VISIBLE) {
+                    activeTab.webView.dispatchTouchEvent(event)
+                    return@setOnTouchListener true
+                }
+            }
+
+            false
         }
     }
 
@@ -267,6 +307,36 @@ class MainActivity : AppCompatActivity(), MimirWebViewCallback {
         }
 
         bridge.evaluateJs("window.__mimirOnSystemTelemetry && window.__mimirOnSystemTelemetry($json);")
+    }
+
+    fun downloadUrl(url: String) {
+        runOnUiThread {
+            MimirDownloadManager.enqueueDownload(this, url) { downloadId, filename ->
+                onDownloadStarted(tabManager.getActiveTab()?.id ?: "", downloadId, filename)
+            }
+        }
+    }
+
+    fun executeScript(script: String) {
+        runOnUiThread {
+            tabManager.getActiveTab()?.webView?.evaluateJavascript(script, null)
+        }
+    }
+
+    fun reclaimMemory() {
+        runOnUiThread {
+            MimirHaptics.performRunicPulse(this)
+            System.gc()
+            Runtime.getRuntime().gc()
+            tabManager.getTabs().forEach {
+                if (it.id != tabManager.getActiveTab()?.id) {
+                    it.webView.onPause()
+                    it.webView.freeMemory()
+                }
+            }
+            sendSystemTelemetry()
+            bridge.evaluateJs("window.__mimirOnMemoryReclaimed && window.__mimirOnMemoryReclaimed({ bytesReclaimed: 0 });")
+        }
     }
 
     fun requestBiometricAuth() {

@@ -308,6 +308,42 @@ export const App: React.FC = () => {
     };
   }, [activeTabId]);
 
+  // Synchronize mobile overlay state with Android native shell to manage touch routing
+  useEffect(() => {
+    const isAnyOverlayOpen = Boolean(
+      isMobileOmnibarOpen ||
+      isMobileTabsOpen ||
+      isMobileMenuOpen ||
+      mobileContextMenu ||
+      isRealmSelectorOpen ||
+      isSettingsOpen ||
+      isVaultOpen ||
+      isCloakOpen ||
+      isHuginnOpen ||
+      isClearDataOpen ||
+      isWorkspaceModalOpen
+    );
+
+    if (mimirIpc.isAndroid()) {
+      mimirIpc.send({
+        type: 'SET_OVERLAY_STATE',
+        payload: { isOpen: isAnyOverlayOpen },
+      });
+    }
+  }, [
+    isMobileOmnibarOpen,
+    isMobileTabsOpen,
+    isMobileMenuOpen,
+    mobileContextMenu,
+    isRealmSelectorOpen,
+    isSettingsOpen,
+    isVaultOpen,
+    isCloakOpen,
+    isHuginnOpen,
+    isClearDataOpen,
+    isWorkspaceModalOpen,
+  ]);
+
 const formatDownloadSpeed = (bytesSec: number): string => {
   if (!bytesSec || bytesSec <= 0) return '0 B/s';
   if (bytesSec >= 1024 * 1024 * 1024) return `${(bytesSec / (1024 * 1024 * 1024)).toFixed(1)} GB/s`;
@@ -1405,7 +1441,7 @@ const formatEtaSeconds = (secs: number): string => {
       />
 
       {/* Layer 3: Main Workspace (Yggdrasil Tree + Content Viewport + Runic Sidecar) */}
-      <div className={`relative flex flex-1 overflow-hidden ${isMobile ? 'pt-10 pb-14' : ''}`}>
+      <div className={`relative flex flex-1 overflow-hidden ${isMobile ? 'pt-[calc(2.5rem+env(safe-area-inset-top,0px))] pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))]' : ''}`}>
         {!isMobile && (
           <TabTree
             tabs={currentWorkspaceTabs}

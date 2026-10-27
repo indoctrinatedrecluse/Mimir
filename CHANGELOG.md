@@ -31,6 +31,11 @@ This milestone debuts the mobile edition of Mímir Browser (**Mímir Mobile**):
   - **In-App Tab Search & History Filter (`MobileTabSwitcher.tsx`)**: Fast, responsive live search bar allowing filtering of open tabs by title, domain, or realm with empty-state indicators and quick clear.
   - **Android Web Intent Filters & `onNewIntent` Routing**: Configured `AndroidManifest.xml` with `singleTask` and intent filters for `http`, `https`, and `mimir://` schemes; implemented `onNewIntent()` in `MainActivity.kt` to open incoming links directly into new tabs.
   - **Dynamic Android System Bar Tinting**: Integrated dynamic status and navigation bar tinting in `MainActivity.kt` responding to `SET_REALM` IPC commands, dynamically shifting the Android system bar background to match the active Realm's accent hue.
+- **Mobile Hardening & Bugfix Pass**:
+  - **Hybrid Viewport Touch Passthrough**: Resolved touch interception conflict where `chromeWebView` absorbed touches over the entire screen; implemented dynamic touch routing in `MainActivity.kt` forwarding touches to the underlying web viewport when no modal/drawer is active.
+  - **IPC Command Matrix Parity**: Added command aliases (`NAVIGATE` / `NAVIGATE_TO`, `CREATE_TAB` / `NEW_TAB`, `REFRESH` / `RELOAD`) and implemented missing handlers for `DOWNLOAD_URL`, `EXECUTE_SCRIPT`, `GET_SYSTEM_TELEMETRY`, and `RECLAIM_MEMORY` in `MimirNativeBridge.kt`.
+  - **Download Manager Null-Safety**: Fixed `MimirDownloadManager.kt` crash vulnerability when downloading links without User-Agent or Content-Disposition headers.
+  - **Safe-Area Inset Viewport Calculations**: Applied dynamic `env(safe-area-inset-top)` and `env(safe-area-inset-bottom)` padding to prevent web content cutoffs on notch and punch-hole displays.
 
 ---
 

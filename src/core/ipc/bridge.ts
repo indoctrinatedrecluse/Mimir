@@ -186,7 +186,8 @@ export type IpcCommand =
   | { type: 'CLIP_PAGE' }
   | { type: 'REQUEST_BIOMETRIC_AUTH' }
   | { type: 'SHARE_URL'; payload: { url: string; title?: string } }
-  | { type: 'SET_REALM'; payload: { realm: string } };
+  | { type: 'SET_REALM'; payload: { realm: string } }
+  | { type: 'SET_OVERLAY_STATE'; payload: { isOpen: boolean } };
 
 type DownloadStartedListener = (event: NativeDownloadStartedEvent) => void;
 type DownloadProgressListener = (event: NativeDownloadProgressEvent) => void;

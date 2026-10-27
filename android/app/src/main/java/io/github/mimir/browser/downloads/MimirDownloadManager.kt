@@ -13,17 +13,21 @@ object MimirDownloadManager {
     fun enqueueDownload(
         context: Context,
         url: String,
-        userAgent: String,
-        contentDisposition: String,
-        mimeType: String,
-        contentLength: Long,
+        userAgent: String? = null,
+        contentDisposition: String? = null,
+        mimeType: String? = null,
+        contentLength: Long = -1,
         onStarted: (downloadId: Long, filename: String) -> Unit
     ) {
         try {
             val filename = URLUtil.guessFileName(url, contentDisposition, mimeType)
             val request = DownloadManager.Request(Uri.parse(url)).apply {
-                setMimeType(mimeType)
-                addRequestHeader("User-Agent", userAgent)
+                if (!mimeType.isNullOrBlank()) {
+                    setMimeType(mimeType)
+                }
+                if (!userAgent.isNullOrBlank()) {
+                    addRequestHeader("User-Agent", userAgent)
+                }
                 setDescription("Acquiring artifact from the Nine Realms...")
                 setTitle(filename)
                 setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)

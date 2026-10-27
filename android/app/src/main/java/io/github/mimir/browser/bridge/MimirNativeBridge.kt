@@ -28,14 +28,14 @@ class MimirNativeBridge(
                 Log.d("MimirNativeBridge", "ᛗ Bridge dispatch: $type")
 
                 when (type) {
-                    "NAVIGATE_TO" -> {
+                    "NAVIGATE", "NAVIGATE_TO" -> {
                         val url = payload?.optString("url") ?: ""
                         activity.navigateTo(url)
                     }
-                    "RELOAD" -> activity.reloadActiveTab()
+                    "REFRESH", "RELOAD" -> activity.reloadActiveTab()
                     "GO_BACK" -> activity.goBackActiveTab()
                     "GO_FORWARD" -> activity.goForwardActiveTab()
-                    "NEW_TAB" -> {
+                    "CREATE_TAB", "NEW_TAB" -> {
                         val url = payload?.optString("url") ?: "mimir://newtab"
                         val realm = payload?.optString("realm") ?: "midgard"
                         activity.createNewTab(url, realm)
@@ -47,6 +47,20 @@ class MimirNativeBridge(
                     "SWITCH_TAB" -> {
                         val tabId = payload?.optString("tabId") ?: ""
                         activity.switchTab(tabId)
+                    }
+                    "DOWNLOAD_URL" -> {
+                        val url = payload?.optString("url") ?: ""
+                        if (url.isNotBlank()) activity.downloadUrl(url)
+                    }
+                    "EXECUTE_SCRIPT" -> {
+                        val script = payload?.optString("script") ?: ""
+                        if (script.isNotBlank()) activity.executeScript(script)
+                    }
+                    "GET_SYSTEM_TELEMETRY" -> {
+                        activity.sendSystemTelemetry()
+                    }
+                    "RECLAIM_MEMORY" -> {
+                        activity.reclaimMemory()
                     }
                     "REQUEST_BIOMETRIC_AUTH" -> {
                         activity.requestBiometricAuth()
@@ -72,6 +86,10 @@ class MimirNativeBridge(
                     "SET_REALM" -> {
                         val realm = payload?.optString("realm", "midgard") ?: "midgard"
                         activity.updateSystemBars(realm)
+                    }
+                    "SET_OVERLAY_STATE" -> {
+                        val isOpen = payload?.optBoolean("isOpen", false) ?: false
+                        activity.isOverlayOpen = isOpen
                     }
                     else -> {
                         Log.d("MimirNativeBridge", "Unhandled command type: $type")
