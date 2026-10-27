@@ -53,6 +53,7 @@ import { MobileBottomDock } from '@/components/mobile/MobileBottomDock';
 import { MobileOmnibarModal } from '@/components/mobile/MobileOmnibarModal';
 import { MobileTabSwitcher } from '@/components/mobile/MobileTabSwitcher';
 import { MobileDrawerMenu } from '@/components/mobile/MobileDrawerMenu';
+import { MobileContextMenuSheet, MobileContextMenuData } from '@/components/mobile/MobileContextMenuSheet';
 
 const getInitialRealm = (): RealmId => {
   try {
@@ -138,6 +139,9 @@ export const App: React.FC = () => {
   const [isMobileOmnibarOpen, setIsMobileOmnibarOpen] = useState(false);
   const [isMobileTabsOpen, setIsMobileTabsOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [mobileContextMenu, setMobileContextMenu] = useState<MobileContextMenuData | null>(null);
+  const [mobileCanGoBack, setMobileCanGoBack] = useState(false);
+  const [mobileCanGoForward, setMobileCanGoForward] = useState(false);
 
   // Yggdrasil Realm Workspaces & Branches
   const [workspaces, setWorkspaces] = useState<YggdrasilWorkspace[]>(() => workspaceManager.getWorkspaces());
@@ -270,6 +274,38 @@ export const App: React.FC = () => {
       document.head.appendChild(scriptEl);
     } catch {}
   }, []);
+
+  // Mobile Navigation & Long-Press Context Menu Listeners
+  useEffect(() => {
+    const prevNavHandler = (window as any).__mimirOnNavigationState;
+    (window as any).__mimirOnNavigationState = (state: any) => {
+      if (state) {
+        if (typeof state.canGoBack === 'boolean') setMobileCanGoBack(state.canGoBack);
+        if (typeof state.canGoForward === 'boolean') setMobileCanGoForward(state.canGoForward);
+        if (state.url) {
+          setTabs((prev) =>
+            prev.map((t) => (t.id === (state.tabId || activeTabId) ? { ...t, url: state.url, title: state.title || t.title } : t))
+          );
+        }
+      }
+    };
+
+    const prevContextHandler = (window as any).__mimirOnNativeContextMenu;
+    (window as any).__mimirOnNativeContextMenu = (payload: any) => {
+      if (payload && payload.targetUrl) {
+        setMobileContextMenu({
+          type: payload.type || 'link',
+          targetUrl: payload.targetUrl,
+          tabId: payload.tabId,
+        });
+      }
+    };
+
+    return () => {
+      (window as any).__mimirOnNavigationState = prevNavHandler;
+      (window as any).__mimirOnNativeContextMenu = prevContextHandler;
+    };
+  }, [activeTabId]);
 
 const formatDownloadSpeed = (bytesSec: number): string => {
   if (!bytesSec || bytesSec <= 0) return '0 B/s';
@@ -788,6 +824,22 @@ const formatEtaSeconds = (secs: number): string => {
       );
     }
     mimirIpc.send({ type: 'SWITCH_TAB', payload: { tabId: id } });
+  };
+
+  const handleNextTab = () => {
+    if (tabs.length <= 1) return;
+    const currentIndex = tabs.findIndex((t) => t.id === activeTabId);
+    const nextIndex = (currentIndex + 1) % tabs.length;
+    handleSelectTab(tabs[nextIndex].id);
+    runicAudio.playClick(600);
+  };
+
+  const handlePrevTab = () => {
+    if (tabs.length <= 1) return;
+    const currentIndex = tabs.findIndex((t) => t.id === activeTabId);
+    const prevIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+    handleSelectTab(tabs[prevIndex].id);
+    runicAudio.playClick(600);
   };
 
   const handleToggleSlumberTab = (id: string) => {
@@ -1417,14 +1469,16 @@ const formatEtaSeconds = (secs: number): string => {
             currentUrl={activeTab?.url || ''}
             tabCount={tabs.length}
             activeRealm={activeRealm}
-            canGoBack={true}
-            canGoForward={true}
+            canGoBack={mobileCanGoBack}
+            canGoForward={mobileCanGoForward}
             onGoBack={() => mimirIpc.send({ type: 'GO_BACK' })}
             onGoForward={() => mimirIpc.send({ type: 'GO_FORWARD' })}
             onOpenOmnibar={() => setIsMobileOmnibarOpen(true)}
             onOpenTabs={() => setIsMobileTabsOpen(true)}
             onOpenMenu={() => setIsMobileMenuOpen(true)}
             onOpenNewTab={() => handleNewTab('mimir://newtab')}
+            onNextTab={handleNextTab}
+            onPrevTab={handlePrevTab}
           />
 
           <MobileOmnibarModal
@@ -1463,6 +1517,35 @@ const formatEtaSeconds = (secs: number): string => {
             onOpenSettings={() => setIsSettingsOpen(true)}
             onOpenPurge={() => setIsClearDataOpen(true)}
             onClose={() => setIsMobileMenuOpen(false)}
+          />
+
+          <MobileContextMenuSheet
+            data={mobileContextMenu}
+            activeRealm={activeRealm}
+            onClose={() => setMobileContextMenu(null)}
+            onOpenNewTab={(url) => {
+              handleNewTab(url);
+              setMobileContextMenu(null);
+            }}
+            onOpenBackgroundTab={(url) => {
+              const newId = `tab-${Date.now()}`;
+              const newTab: Tab = {
+                id: newId,
+                title: url,
+                url,
+                isActive: false,
+                isLoading: false,
+                isMuted: false,
+                isPinned: false,
+                realm: activeRealm,
+                rune: 'ᛉ',
+                zoomLevel: 100,
+                workspaceId: activeWorkspaceId,
+              };
+              setTabs((prev) => [...prev, newTab]);
+              mimirIpc.send({ type: 'CREATE_TAB', payload: { tabId: newId, url, realm: activeRealm } });
+              setMobileContextMenu(null);
+            }}
           />
         </>
       )}

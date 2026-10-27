@@ -15,6 +15,8 @@ interface MobileBottomDockProps {
   onOpenTabs: () => void;
   onOpenMenu: () => void;
   onOpenNewTab: () => void;
+  onNextTab?: () => void;
+  onPrevTab?: () => void;
 }
 
 export const MobileBottomDock: React.FC<MobileBottomDockProps> = ({
@@ -29,6 +31,8 @@ export const MobileBottomDock: React.FC<MobileBottomDockProps> = ({
   onOpenTabs,
   onOpenMenu,
   onOpenNewTab,
+  onNextTab,
+  onPrevTab,
 }) => {
   const isInternal = currentUrl.startsWith('mimir://') || !currentUrl;
   const displayHost = isInternal
@@ -36,6 +40,23 @@ export const MobileBottomDock: React.FC<MobileBottomDockProps> = ({
       ? 'Bifröst Portal'
       : currentUrl.replace('mimir://', '')
     : currentUrl.replace(/^https?:\/\//i, '').split('/')[0];
+
+  const [touchStartX, setTouchStartX] = React.useState<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX === null) return;
+    const deltaX = e.changedTouches[0].clientX - touchStartX;
+    if (deltaX > 45 && onPrevTab) {
+      onPrevTab();
+    } else if (deltaX < -45 && onNextTab) {
+      onNextTab();
+    }
+    setTouchStartX(null);
+  };
 
   return (
     <nav
@@ -73,10 +94,12 @@ export const MobileBottomDock: React.FC<MobileBottomDockProps> = ({
         <ChevronRight className="w-5 h-5" />
       </button>
 
-      {/* 3. Center Omnibar Capsule Trigger */}
+      {/* 3. Center Omnibar Capsule Trigger (Swipe left/right to cycle tabs) */}
       <button
         type="button"
         onClick={onOpenOmnibar}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
         className="flex-1 mx-1.5 h-10 px-3 rounded-xl bg-slate-900/90 border border-slate-700/60 flex items-center gap-2 active:border-cyan-500/50 shadow-inner group overflow-hidden transition-all text-left"
       >
         <div className="w-5 h-5 flex items-center justify-center shrink-0">

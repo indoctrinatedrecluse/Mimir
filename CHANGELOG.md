@@ -21,6 +21,11 @@ This milestone debuts the mobile edition of Mímir Browser (**Mímir Mobile**):
 - **Runic Biometric Authentication (`BiometricPrompt`)**: Hardware-backed fingerprint and biometric authentication in `FafnirVaultEngine` for fast, secure unlocking of AES-256-GCM encrypted credentials.
 - **Native Download Manager & HTML5 Video**: Android system `DownloadManager` piping to `Environment.DIRECTORY_DOWNLOADS` with progress notifications, plus `onShowCustomView` / `onHideCustomView` full-screen video playback.
 - **Runic Haptics & Gesture Navigation**: Tactile feedback on clicks and tracker drops (`MimirHaptics`), pull-to-refresh (`SwipeRefreshLayout`), and full predictive back button dispatching.
+- **Phase 3: Mobile Gestures, Touch Interactions & Long-Press Context Menus**:
+  - **Obsidian Glass Mobile Context Sheet (`MobileContextMenuSheet.tsx`)**: Long-pressing web links or images in `MimirWebView` triggers native `hitTestResult` inspection and haptic feedback, opening a spring-animated bottom sheet with runic actions: Open in New Branch (`ᚦ`), Open in Background (`ᛉ`), Copy Runic Link (`ᚲ`), Download Media via Svalinn (`ᛗ`), and Share with Bifröst Conduit (`ᛋ`).
+  - **Swipe-to-Dismiss Tab Cards (`MobileTabSwitcher.tsx`)**: Integrated `framer-motion` horizontal drag physics (`drag="x"`) to dismiss tabs with a flick (> 85px threshold) accompanied by runic audio feedback, plus a 1-tap "Purge Inactive Tabs" (`Trash2`) quick action.
+  - **Horizontal Dock Tab Cycling (`MobileBottomDock.tsx`)**: Added touch swipe detection on the center Omnibar capsule to smoothly cycle back and forth between open tabs.
+  - **Bifröst Conduit Native Sharing (`SHARE_URL`)**: Native Android `Intent.ACTION_SEND` chooser integration enabling instant sharing of page and image URLs to any installed Android application.
 
 ---
 

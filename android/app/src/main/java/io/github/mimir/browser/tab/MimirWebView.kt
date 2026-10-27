@@ -14,6 +14,7 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import io.github.mimir.browser.downloads.MimirDownloadManager
+import io.github.mimir.browser.haptics.MimirHaptics
 import io.github.mimir.browser.privacy.SvalinnAdBlocker
 import java.io.ByteArrayInputStream
 
@@ -27,6 +28,7 @@ interface MimirWebViewCallback {
     fun onDownloadStarted(tabId: String, id: Long, filename: String)
     fun onShowCustomView(view: View, callback: WebChromeClient.CustomViewCallback)
     fun onHideCustomView()
+    fun onContextMenuRequested(tabId: String, type: String, targetUrl: String)
 }
 
 @SuppressLint("SetJavaScriptEnabled")
@@ -41,6 +43,7 @@ class MimirWebView(
         setupSettings()
         setupClients()
         setupDownloads()
+        setupContextMenu()
     }
 
     private fun setupSettings() {
@@ -141,6 +144,27 @@ class MimirWebView(
                 contentLength
             ) { downloadId, filename ->
                 callback?.onDownloadStarted(tabId, downloadId, filename)
+            }
+        }
+    }
+
+    private fun setupContextMenu() {
+        setOnLongClickListener {
+            val result = hitTestResult
+            val extra = result.extra ?: ""
+            when (result.type) {
+                HitTestResult.SRC_ANCHOR_TYPE,
+                HitTestResult.SRC_IMAGE_ANCHOR_TYPE -> {
+                    MimirHaptics.performClick(context)
+                    callback?.onContextMenuRequested(tabId, "link", extra)
+                    true
+                }
+                HitTestResult.IMAGE_TYPE -> {
+                    MimirHaptics.performClick(context)
+                    callback?.onContextMenuRequested(tabId, "image", extra)
+                    true
+                }
+                else -> false
             }
         }
     }

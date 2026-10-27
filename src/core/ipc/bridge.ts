@@ -184,7 +184,8 @@ export type IpcCommand =
   | { type: 'KILL_PROCESS'; payload: { pid: number } }
   | { type: 'RECLAIM_MEMORY' }
   | { type: 'CLIP_PAGE' }
-  | { type: 'REQUEST_BIOMETRIC_AUTH' };
+  | { type: 'REQUEST_BIOMETRIC_AUTH' }
+  | { type: 'SHARE_URL'; payload: { url: string; title?: string } };
 
 type DownloadStartedListener = (event: NativeDownloadStartedEvent) => void;
 type DownloadProgressListener = (event: NativeDownloadProgressEvent) => void;

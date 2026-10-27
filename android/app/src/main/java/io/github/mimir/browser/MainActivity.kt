@@ -1,6 +1,7 @@
 package io.github.mimir.browser
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.graphics.Bitmap
 import android.os.Build
 import android.os.Bundle
@@ -417,6 +418,29 @@ class MainActivity : AppCompatActivity(), MimirWebViewCallback {
         } else {
             @Suppress("DEPRECATION")
             window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+        }
+    }
+
+    override fun onContextMenuRequested(tabId: String, type: String, targetUrl: String) {
+        val json = JSONObject().apply {
+            put("type", type)
+            put("targetUrl", targetUrl)
+            put("tabId", tabId)
+        }
+        bridge.evaluateJs("window.__mimirOnNativeContextMenu && window.__mimirOnNativeContextMenu($json);")
+    }
+
+    fun shareUrl(url: String, title: String) {
+        runOnUiThread {
+            MimirHaptics.performClick(this)
+            val sendIntent = Intent().apply {
+                action = Intent.ACTION_SEND
+                putExtra(Intent.EXTRA_TEXT, url)
+                putExtra(Intent.EXTRA_TITLE, title)
+                type = "text/plain"
+            }
+            val shareIntent = Intent.createChooser(sendIntent, "Share with Bifröst Conduit")
+            startActivity(shareIntent)
         }
     }
 }

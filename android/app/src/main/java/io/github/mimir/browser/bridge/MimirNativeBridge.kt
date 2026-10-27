@@ -64,6 +64,11 @@ class MimirNativeBridge(
                     "GET_PROXY_CONFIG" -> {
                         activity.getProxyConfig()
                     }
+                    "SHARE_URL" -> {
+                        val url = payload?.optString("url", "") ?: ""
+                        val title = payload?.optString("title", "Mímir Browser") ?: "Mímir Browser"
+                        activity.shareUrl(url, title)
+                    }
                     else -> {
                         Log.d("MimirNativeBridge", "Unhandled command type: $type")
                     }
