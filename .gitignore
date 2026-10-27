@@ -47,6 +47,7 @@ MicrosoftEdgeWebview2Setup.exe
 **/build/
 android/app/build/
 android/app/src/main/assets/dist/
+android/local.properties
 *.apk
 *.aab
 

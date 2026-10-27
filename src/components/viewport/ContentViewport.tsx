@@ -34,6 +34,7 @@ interface ContentViewportProps {
   onOpenHeimdallWatch?: () => void;
   onOpenMimirsEye?: () => void;
   onOpenTreasury?: () => void;
+  isMobile?: boolean;
 }
 
 export const ContentViewport: React.FC<ContentViewportProps> = ({
@@ -58,6 +59,7 @@ export const ContentViewport: React.FC<ContentViewportProps> = ({
   onOpenHeimdallWatch,
   onOpenMimirsEye,
   onOpenTreasury,
+  isMobile = false,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [showIframeInDev, setShowIframeInDev] = useState(false);
@@ -286,6 +288,15 @@ export const ContentViewport: React.FC<ContentViewportProps> = ({
       )}
     </div>
   );
+
+  if (isMobile && !isHome) {
+    return (
+      <main
+        ref={containerRef}
+        className="relative flex-1 overflow-hidden select-none bg-transparent"
+      />
+    );
+  }
 
   return (
     <main

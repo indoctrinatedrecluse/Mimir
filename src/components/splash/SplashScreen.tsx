@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { MimirSigil } from '@/components/brand/MimirSigil';
 import { YggdrasilRootsSvg, ValknutSvg, ElderFutharkBanner } from '@/components/themes/NorsePatterns';
 import { runicAudio } from '@/core/audio/runicAudio';
+import { mimirIpc } from '@/core/ipc/bridge';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface SplashScreenProps {
@@ -22,6 +23,32 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
 
   useEffect(() => {
     runicAudio.playRunicHum();
+
+    const isMobile = mimirIpc.isAndroid() || (typeof window !== 'undefined' && window.innerWidth < 768);
+
+    if (isMobile) {
+      // Rapid mobile sanctum boot
+      const t1 = setTimeout(() => {
+        setStepIndex(2);
+        setProgress(60);
+      }, 300);
+
+      const t2 = setTimeout(() => {
+        setStepIndex(4);
+        setProgress(100);
+        runicAudio.playChime();
+      }, 600);
+
+      const t3 = setTimeout(() => {
+        onComplete();
+      }, 850);
+
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
+      };
+    }
 
     const t1 = setTimeout(() => {
       setStepIndex(1);

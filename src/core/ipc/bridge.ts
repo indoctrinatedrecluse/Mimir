@@ -206,6 +206,26 @@ type SystemTelemetryListener = (event: SystemTelemetryPayload) => void;
 type MemoryReclaimedListener = (event: { bytesReclaimed: number }) => void;
 type PageClippedListener = (event: PageClippedPayload) => void;
 
+export interface NativeTabSyncItem {
+  id: string;
+  url: string;
+  title: string;
+  realm: string;
+}
+
+export interface NativeNavigationStateEvent {
+  tabId: string;
+  url: string;
+  title?: string;
+  isLoading: boolean;
+  canGoBack?: boolean;
+  canGoForward?: boolean;
+}
+
+type TabsSyncListener = (tabs: NativeTabSyncItem[], activeTabId: string) => void;
+type NavigationStateListener = (event: NativeNavigationStateEvent) => void;
+type LoadProgressListener = (progress: number) => void;
+
 class MimirIpcBridge {
   private downloadStartedListeners: Set<DownloadStartedListener> = new Set();
   private downloadProgressListeners: Set<DownloadProgressListener> = new Set();
@@ -223,6 +243,9 @@ class MimirIpcBridge {
   private systemTelemetryListeners: Set<SystemTelemetryListener> = new Set();
   private memoryReclaimedListeners: Set<MemoryReclaimedListener> = new Set();
   private pageClippedListeners: Set<PageClippedListener> = new Set();
+  private tabsSyncListeners: Set<TabsSyncListener> = new Set();
+  private navigationStateListeners: Set<NavigationStateListener> = new Set();
+  private loadProgressListeners: Set<LoadProgressListener> = new Set();
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -290,6 +313,18 @@ class MimirIpcBridge {
 
       win.__mimirOnPageClipped = (payload: PageClippedPayload) => {
         this.pageClippedListeners.forEach((l) => l(payload));
+      };
+
+      win.__mimirOnTabsSync = (tabs: NativeTabSyncItem[], activeTabId: string) => {
+        this.tabsSyncListeners.forEach((l) => l(tabs, activeTabId));
+      };
+
+      win.__mimirOnNavigationState = (payload: NativeNavigationStateEvent) => {
+        this.navigationStateListeners.forEach((l) => l(payload));
+      };
+
+      win.__mimirOnLoadProgress = (progress: number) => {
+        this.loadProgressListeners.forEach((l) => l(progress));
       };
     }
   }
@@ -526,6 +561,21 @@ class MimirIpcBridge {
   public onPageClipped(listener: PageClippedListener): () => void {
     this.pageClippedListeners.add(listener);
     return () => this.pageClippedListeners.delete(listener);
+  }
+
+  public onTabsSync(listener: TabsSyncListener): () => void {
+    this.tabsSyncListeners.add(listener);
+    return () => this.tabsSyncListeners.delete(listener);
+  }
+
+  public onNavigationState(listener: NavigationStateListener): () => void {
+    this.navigationStateListeners.add(listener);
+    return () => this.navigationStateListeners.delete(listener);
+  }
+
+  public onLoadProgress(listener: LoadProgressListener): () => void {
+    this.loadProgressListeners.add(listener);
+    return () => this.loadProgressListeners.delete(listener);
   }
 }
 

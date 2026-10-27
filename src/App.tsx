@@ -258,6 +258,7 @@ export const App: React.FC = () => {
 
   const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0];
   const splitTab = tabs.find((t) => t.id === splitTabId);
+  const isHome = !activeTab?.url || activeTab.url === 'mimir://newtab' || activeTab.url === 'about:blank';
 
   // Synchronize initial tab with native Rust host
   useEffect(() => {
@@ -543,6 +544,54 @@ const formatEtaSeconds = (secs: number): string => {
       );
     });
 
+    const unTabsSync = mimirIpc.onTabsSync((nativeTabs, activeId) => {
+      if (nativeTabs && nativeTabs.length > 0) {
+        setTabs((prev) => {
+          return nativeTabs.map((nt) => {
+            const existing = prev.find((p) => p.id === nt.id);
+            return {
+              id: nt.id,
+              url: nt.url,
+              title: nt.title || (nt.url === 'mimir://newtab' ? 'Mímisbrunnr (New Tab)' : nt.url),
+              isActive: nt.id === activeId,
+              isLoading: existing?.isLoading ?? false,
+              isMuted: existing?.isMuted ?? false,
+              isPinned: existing?.isPinned ?? false,
+              realm: (nt.realm || activeRealm) as RealmId,
+              rune: existing?.rune ?? 'ᛗ',
+              zoomLevel: existing?.zoomLevel ?? 100,
+              workspaceId: existing?.workspaceId || activeWorkspaceId,
+            };
+          });
+        });
+        if (activeId) {
+          setActiveTabId(activeId);
+        }
+      }
+    });
+
+    const unNavState = mimirIpc.onNavigationState((nav) => {
+      setTabs((prev) =>
+        prev.map((t) => {
+          if (t.id === nav.tabId) {
+            return {
+              ...t,
+              url: nav.url,
+              title: nav.title ?? (nav.url === 'mimir://newtab' ? 'Mímisbrunnr (New Tab)' : t.title),
+              isLoading: nav.isLoading,
+            };
+          }
+          return t;
+        })
+      );
+      if (nav.canGoBack !== undefined) setMobileCanGoBack(nav.canGoBack);
+      if (nav.canGoForward !== undefined) setMobileCanGoForward(nav.canGoForward);
+    });
+
+    const unLoadProgress = mimirIpc.onLoadProgress((_progress) => {
+      // Progress event from native Android WebView
+    });
+
     return () => {
       unDownloadStarted();
       unDownloadProgress();
@@ -552,6 +601,9 @@ const formatEtaSeconds = (secs: number): string => {
       unTorrentAdded();
       unTorrentProgress();
       unTorrentCompleted();
+      unTabsSync();
+      unNavState();
+      unLoadProgress();
     };
   }, []);
 
@@ -1311,7 +1363,7 @@ const formatEtaSeconds = (secs: number): string => {
   };
 
   return (
-    <div className="relative flex h-screen w-screen flex-col overflow-hidden bg-[#05070a] text-slate-100 font-sans">
+    <div className={`relative flex h-screen w-screen flex-col overflow-hidden text-slate-100 font-sans ${isMobile && !isHome ? 'bg-transparent' : 'bg-[#05070a]'}`}>
       {/* Cinematic Splash Screen */}
       <AnimatePresence>
         {showSplash && (
@@ -1319,8 +1371,8 @@ const formatEtaSeconds = (secs: number): string => {
         )}
       </AnimatePresence>
 
-      {/* Ambient Runic Particles */}
-      <RunicAtmosphere activeRealm={activeRealm} />
+      {/* Ambient Runic Particles (Hidden during web browsing on mobile) */}
+      {(!isMobile || isHome) && <RunicAtmosphere activeRealm={activeRealm} />}
 
       {/* Desktop Only Chrome: TitleBar, Omnibar, BookmarksBar */}
       {!isMobile && (
@@ -1483,6 +1535,7 @@ const formatEtaSeconds = (secs: number): string => {
         <ContentViewport
           activeTab={activeTab}
           activeRealm={activeRealm}
+          isMobile={isMobile}
           onNavigate={handleNavigate}
           onSelectRealm={handleSelectRealm}
           isSplitGaze={isSplitGaze}

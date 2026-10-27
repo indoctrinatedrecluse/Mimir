@@ -3,6 +3,7 @@ package io.github.mimir.browser
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -10,14 +11,20 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowInsets
 import android.view.WindowInsetsController
+import android.webkit.ConsoleMessage
 import android.webkit.CookieManager
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebStorage
 import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.webkit.WebViewAssetLoader
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -110,8 +117,30 @@ class MainActivity : AppCompatActivity(), MimirWebViewCallback {
     private fun setupChromeWebView() {
         bridge = MimirNativeBridge(this, chromeWebView)
 
+        val assetLoader = WebViewAssetLoader.Builder()
+            .setDomain("appassets.androidplatform.net")
+            .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
+            .addPathHandler("/realms/", object : WebViewAssetLoader.PathHandler {
+                override fun handle(path: String): WebResourceResponse? {
+                    return try {
+                        val inputStream = assets.open("dist/realms/$path")
+                        val mimeType = if (path.endsWith(".mp4")) "video/mp4" else "image/jpeg"
+                        val headers = mapOf(
+                            "Access-Control-Allow-Origin" to "*",
+                            "Access-Control-Allow-Methods" to "GET, OPTIONS",
+                            "Access-Control-Allow-Headers" to "*"
+                        )
+                        WebResourceResponse(mimeType, "UTF-8", 200, "OK", headers, inputStream)
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+            })
+            .build()
+
         chromeWebView.apply {
-            setBackgroundColor(0) // Transparent so viewport is visible behind if desired
+            setBackgroundColor(Color.TRANSPARENT)
+            setLayerType(View.LAYER_TYPE_HARDWARE, null)
             settings.apply {
                 javaScriptEnabled = true
                 domStorageEnabled = true
@@ -122,8 +151,80 @@ class MainActivity : AppCompatActivity(), MimirWebViewCallback {
             }
             addJavascriptInterface(bridge, "MimirNative")
 
-            // Load local bundled React build
-            loadUrl("file:///android_asset/dist/index.html")
+            webViewClient = object : WebViewClient() {
+                override fun shouldInterceptRequest(
+                    view: WebView,
+                    request: WebResourceRequest
+                ): WebResourceResponse? {
+                    val uri = request.url
+                    if (uri.host == "appassets.androidplatform.net") {
+                        val loaded = assetLoader.shouldInterceptRequest(uri)
+                        if (loaded != null) return loaded
+
+                        val path = uri.path?.trimStart('/') ?: ""
+                        val candidates = listOf(
+                            "dist/$path",
+                            path,
+                            "dist/${path.removePrefix("dist/")}",
+                            "dist/${path.removePrefix("assets/dist/")}"
+                        ).distinct()
+
+                        for (candidate in candidates) {
+                            try {
+                                val isStream = assets.open(candidate)
+                                val mime = when {
+                                    candidate.endsWith(".html") -> "text/html"
+                                    candidate.endsWith(".js") -> "application/javascript"
+                                    candidate.endsWith(".css") -> "text/css"
+                                    candidate.endsWith(".svg") -> "image/svg+xml"
+                                    candidate.endsWith(".png") -> "image/png"
+                                    candidate.endsWith(".jpg") || candidate.endsWith(".jpeg") -> "image/jpeg"
+                                    candidate.endsWith(".webp") -> "image/webp"
+                                    candidate.endsWith(".json") -> "application/json"
+                                    candidate.endsWith(".mp4") -> "video/mp4"
+                                    else -> "application/octet-stream"
+                                }
+                                val headers = mapOf(
+                                    "Access-Control-Allow-Origin" to "*",
+                                    "Access-Control-Allow-Methods" to "GET, OPTIONS",
+                                    "Access-Control-Allow-Headers" to "*"
+                                )
+                                return WebResourceResponse(mime, "UTF-8", 200, "OK", headers, isStream)
+                            } catch (_: Exception) {}
+                        }
+                    }
+                    return super.shouldInterceptRequest(view, request)
+                }
+
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    super.onPageFinished(view, url)
+                    Log.d("MimirChromeWebView", "Chrome UI mounted from $url")
+                    syncTabsToReact()
+                    sendSystemTelemetry()
+                    getProxyConfig()
+                }
+
+                override fun onReceivedError(
+                    view: WebView?,
+                    request: WebResourceRequest?,
+                    error: WebResourceError?
+                ) {
+                    super.onReceivedError(view, request, error)
+                    Log.e("MimirChromeWebView", "Failed to load ${request?.url}: ${error?.description}")
+                }
+            }
+
+            webChromeClient = object : WebChromeClient() {
+                override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
+                    consoleMessage?.let {
+                        Log.d("MimirChromeConsole", "[${it.messageLevel()}] ${it.message()} -- at ${it.sourceId()}:${it.lineNumber()}")
+                    }
+                    return true
+                }
+            }
+
+            // Load local bundled React build via secure HTTPS asset loader domain
+            loadUrl("https://appassets.androidplatform.net/assets/dist/index.html")
         }
 
         setupChromeTouchPassthrough()
