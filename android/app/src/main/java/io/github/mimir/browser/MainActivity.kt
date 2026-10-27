@@ -311,7 +311,7 @@ class MainActivity : AppCompatActivity(), MimirWebViewCallback {
 
     fun downloadUrl(url: String) {
         runOnUiThread {
-            MimirDownloadManager.enqueueDownload(this, url) { downloadId, filename ->
+            MimirDownloadManager.enqueueDownload(this, url) { downloadId: Long, filename: String ->
                 onDownloadStarted(tabManager.getActiveTab()?.id ?: "", downloadId, filename)
             }
         }

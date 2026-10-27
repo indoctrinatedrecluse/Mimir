@@ -17,7 +17,7 @@ object MimirDownloadManager {
         contentDisposition: String? = null,
         mimeType: String? = null,
         contentLength: Long = -1,
-        onStarted: (downloadId: Long, filename: String) -> Unit
+        onStarted: (downloadId: Long, filename: String) -> Unit = { _, _ -> }
     ) {
         try {
             val filename = URLUtil.guessFileName(url, contentDisposition, mimeType)
@@ -42,5 +42,21 @@ object MimirDownloadManager {
         } catch (e: Exception) {
             Toast.makeText(context, "Failed to acquire artifact: ${e.message}", Toast.LENGTH_LONG).show()
         }
+    }
+
+    fun enqueueDownload(
+        context: Context,
+        url: String,
+        onStarted: (downloadId: Long, filename: String) -> Unit
+    ) {
+        enqueueDownload(
+            context = context,
+            url = url,
+            userAgent = null,
+            contentDisposition = null,
+            mimeType = null,
+            contentLength = -1,
+            onStarted = onStarted
+        )
     }
 }
