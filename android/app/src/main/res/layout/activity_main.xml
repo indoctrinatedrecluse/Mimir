@@ -5,12 +5,20 @@
     android:layout_height="match_parent"
     android:background="@color/sanctum_bg">
 
-    <!-- Container where the native WebView of the active web tab lives -->
-    <FrameLayout
-        android:id="@+id/viewport_container"
+    <!-- Pull to Refresh wrapper for web viewports -->
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipe_refresh"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:visibility="gone" />
+        android:layout_height="match_parent">
+
+        <!-- Container where the native WebView of the active web tab lives -->
+        <FrameLayout
+            android:id="@+id/viewport_container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <!-- Chrome UI WebView rendering React bottom dock, omnibar, start page & modals -->
     <WebView
@@ -18,5 +26,13 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@android:color/transparent" />
+
+    <!-- Dedicated container for full-screen HTML5 / YouTube video -->
+    <FrameLayout
+        android:id="@+id/fullscreen_custom_view_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/black"
+        android:visibility="gone" />
 
 </FrameLayout>

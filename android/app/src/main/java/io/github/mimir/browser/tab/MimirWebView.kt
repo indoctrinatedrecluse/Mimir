@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.net.http.SslError
 import android.os.Build
+import android.view.View
 import android.webkit.SslErrorHandler
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
@@ -12,6 +13,7 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import io.github.mimir.browser.downloads.MimirDownloadManager
 import io.github.mimir.browser.privacy.SvalinnAdBlocker
 import java.io.ByteArrayInputStream
 
@@ -22,6 +24,9 @@ interface MimirWebViewCallback {
     fun onTitleChanged(tabId: String, title: String)
     fun onFaviconReceived(tabId: String, icon: Bitmap?)
     fun onTrackerBlocked(tabId: String, domain: String, url: String)
+    fun onDownloadStarted(tabId: String, id: Long, filename: String)
+    fun onShowCustomView(view: View, callback: WebChromeClient.CustomViewCallback)
+    fun onHideCustomView()
 }
 
 @SuppressLint("SetJavaScriptEnabled")
@@ -35,6 +40,7 @@ class MimirWebView(
     init {
         setupSettings()
         setupClients()
+        setupDownloads()
     }
 
     private fun setupSettings() {
@@ -108,6 +114,33 @@ class MimirWebView(
             override fun onReceivedIcon(view: WebView?, icon: Bitmap?) {
                 super.onReceivedIcon(view, icon)
                 callback?.onFaviconReceived(tabId, icon)
+            }
+
+            override fun onShowCustomView(view: View?, customCallback: CustomViewCallback?) {
+                super.onShowCustomView(view, customCallback)
+                if (view != null && customCallback != null) {
+                    callback?.onShowCustomView(view, customCallback)
+                }
+            }
+
+            override fun onHideCustomView() {
+                super.onHideCustomView()
+                callback?.onHideCustomView()
+            }
+        }
+    }
+
+    private fun setupDownloads() {
+        setDownloadListener { url, userAgent, contentDisposition, mimetype, contentLength ->
+            MimirDownloadManager.enqueueDownload(
+                context,
+                url,
+                userAgent,
+                contentDisposition,
+                mimetype,
+                contentLength
+            ) { downloadId, filename ->
+                callback?.onDownloadStarted(tabId, downloadId, filename)
             }
         }
     }

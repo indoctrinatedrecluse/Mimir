@@ -2,11 +2,15 @@ package io.github.mimir.browser
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowInsets
+import android.view.WindowInsetsController
 import android.webkit.CookieManager
+import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebStorage
 import android.webkit.WebView
@@ -15,7 +19,10 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import io.github.mimir.browser.bridge.MimirNativeBridge
+import io.github.mimir.browser.haptics.MimirHaptics
+import io.github.mimir.browser.privacy.SvalinnProxyController
 import io.github.mimir.browser.tab.MimirWebViewCallback
 import io.github.mimir.browser.tab.TabManager
 import org.json.JSONArray
@@ -24,19 +31,33 @@ import org.json.JSONObject
 class MainActivity : AppCompatActivity(), MimirWebViewCallback {
 
     private lateinit var rootLayout: FrameLayout
+    private lateinit var swipeRefresh: SwipeRefreshLayout
     private lateinit var viewportContainer: FrameLayout
     private lateinit var chromeWebView: WebView
+    private lateinit var fullscreenContainer: FrameLayout
     private lateinit var bridge: MimirNativeBridge
     private lateinit var tabManager: TabManager
+
+    private var customVideoView: View? = null
+    private var customViewCallback: WebChromeClient.CustomViewCallback? = null
+
+    // Proxy State Cache
+    private var isProxyEnabled = false
+    private var proxyType = "direct"
+    private var proxyServer = ""
+    private var proxyBypassList = "<local>;localhost;127.0.0.1"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         rootLayout = findViewById(R.id.root_layout)
+        swipeRefresh = findViewById(R.id.swipe_refresh)
         viewportContainer = findViewById(R.id.viewport_container)
         chromeWebView = findViewById(R.id.chrome_webview)
+        fullscreenContainer = findViewById(R.id.fullscreen_custom_view_container)
 
+        setupSwipeRefresh()
         setupTabManager()
         setupChromeWebView()
         setupBackNavigation()
@@ -45,6 +66,21 @@ class MainActivity : AppCompatActivity(), MimirWebViewCallback {
         intent?.dataString?.let { incomingUrl ->
             if (incomingUrl.isNotBlank()) {
                 tabManager.loadUrl(incomingUrl)
+            }
+        }
+    }
+
+    private fun setupSwipeRefresh() {
+        swipeRefresh.apply {
+            setColorSchemeColors(0xFF38BDF8.toInt(), 0xFFFBBF24.toInt()) // Bifröst Cyan & Valhalla Gold
+            setProgressBackgroundColorSchemeColor(0xFF090D14.toInt()) // Sanctum Surface
+            setOnRefreshListener {
+                val active = tabManager.getActiveTab()
+                if (active != null && active.url != "mimir://newtab") {
+                    active.webView.reload()
+                } else {
+                    isRefreshing = false
+                }
             }
         }
     }
@@ -78,13 +114,22 @@ class MainActivity : AppCompatActivity(), MimirWebViewCallback {
     private fun setupBackNavigation() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
+                // 1. If in HTML5 full-screen video, dismiss it first
+                if (customVideoView != null) {
+                    onHideCustomView()
+                    return
+                }
+
+                // 2. Active Tab Back navigation
                 val activeTab = tabManager.getActiveTab()
                 if (activeTab != null && activeTab.webView.canGoBack()) {
+                    MimirHaptics.performClick(this@MainActivity)
                     activeTab.webView.goBack()
                 } else if (activeTab != null && activeTab.url != "mimir://newtab") {
+                    MimirHaptics.performClick(this@MainActivity)
                     navigateTo("mimir://newtab")
                 } else {
-                    // Let default system back handle (minimizes app)
+                    // Let default system back minimize app
                     isEnabled = false
                     onBackPressedDispatcher.onBackPressed()
                     isEnabled = true
@@ -97,6 +142,7 @@ class MainActivity : AppCompatActivity(), MimirWebViewCallback {
 
     fun navigateTo(url: String) {
         runOnUiThread {
+            MimirHaptics.performClick(this)
             tabManager.loadUrl(url)
             syncTabsToReact()
         }
@@ -104,6 +150,7 @@ class MainActivity : AppCompatActivity(), MimirWebViewCallback {
 
     fun reloadActiveTab() {
         runOnUiThread {
+            MimirHaptics.performClick(this)
             tabManager.getActiveTab()?.webView?.reload()
         }
     }
@@ -111,7 +158,10 @@ class MainActivity : AppCompatActivity(), MimirWebViewCallback {
     fun goBackActiveTab() {
         runOnUiThread {
             tabManager.getActiveTab()?.webView?.let {
-                if (it.canGoBack()) it.goBack()
+                if (it.canGoBack()) {
+                    MimirHaptics.performClick(this)
+                    it.goBack()
+                }
             }
         }
     }
@@ -119,13 +169,17 @@ class MainActivity : AppCompatActivity(), MimirWebViewCallback {
     fun goForwardActiveTab() {
         runOnUiThread {
             tabManager.getActiveTab()?.webView?.let {
-                if (it.canGoForward()) it.goForward()
+                if (it.canGoForward()) {
+                    MimirHaptics.performClick(this)
+                    it.goForward()
+                }
             }
         }
     }
 
     fun createNewTab(url: String, realm: String) {
         runOnUiThread {
+            MimirHaptics.performClick(this)
             tabManager.createTab(url, realm)
             syncTabsToReact()
         }
@@ -133,6 +187,7 @@ class MainActivity : AppCompatActivity(), MimirWebViewCallback {
 
     fun closeTab(tabId: String) {
         runOnUiThread {
+            MimirHaptics.performClick(this)
             tabManager.closeTab(tabId)
             syncTabsToReact()
         }
@@ -140,6 +195,7 @@ class MainActivity : AppCompatActivity(), MimirWebViewCallback {
 
     fun switchTab(tabId: String) {
         runOnUiThread {
+            MimirHaptics.performClick(this)
             tabManager.switchTab(tabId)
             syncTabsToReact()
         }
@@ -147,11 +203,38 @@ class MainActivity : AppCompatActivity(), MimirWebViewCallback {
 
     fun clearBrowsingData() {
         runOnUiThread {
+            MimirHaptics.performRunicPulse(this)
             WebStorage.getInstance().deleteAllData()
             CookieManager.getInstance().removeAllCookies(null)
             chromeWebView.clearCache(true)
             tabManager.getTabs().forEach { it.webView.clearCache(true) }
             bridge.evaluateJs("window.__mimirOnBrowsingDataCleared && window.__mimirOnBrowsingDataCleared();")
+        }
+    }
+
+    fun setProxyConfig(enabled: Boolean, type: String, server: String, bypassList: String) {
+        runOnUiThread {
+            isProxyEnabled = enabled
+            proxyType = type
+            proxyServer = server
+            proxyBypassList = bypassList
+
+            SvalinnProxyController.applyProxy(this, enabled, type, server, bypassList) { success ->
+                MimirHaptics.performRunicPulse(this)
+                getProxyConfig()
+            }
+        }
+    }
+
+    fun getProxyConfig() {
+        runOnUiThread {
+            val json = JSONObject().apply {
+                put("enabled", isProxyEnabled)
+                put("proxy_type", proxyType)
+                put("server", proxyServer)
+                put("bypass_list", proxyBypassList)
+            }
+            bridge.evaluateJs("window.__mimirOnProxyConfig && window.__mimirOnProxyConfig($json);")
         }
     }
 
@@ -176,6 +259,7 @@ class MainActivity : AppCompatActivity(), MimirWebViewCallback {
             val executor = ContextCompat.getMainExecutor(this)
             val prompt = BiometricPrompt(this, executor, object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                    MimirHaptics.performRunicPulse(this@MainActivity)
                     bridge.evaluateJs("window.__mimirOnBiometricResult && window.__mimirOnBiometricResult(true, null);")
                 }
 
@@ -230,6 +314,7 @@ class MainActivity : AppCompatActivity(), MimirWebViewCallback {
     }
 
     override fun onPageFinished(tabId: String, url: String, title: String?) {
+        swipeRefresh.isRefreshing = false
         val active = tabManager.getActiveTab()
         if (active?.id == tabId) {
             active.url = url
@@ -260,15 +345,78 @@ class MainActivity : AppCompatActivity(), MimirWebViewCallback {
     }
 
     override fun onFaviconReceived(tabId: String, icon: Bitmap?) {
-        // Future: generate data URI or sync favicon
+        // Reserved for favicon synchronization
     }
 
     override fun onTrackerBlocked(tabId: String, domain: String, url: String) {
+        MimirHaptics.performRunicPulse(this)
         val json = JSONObject().apply {
             put("domain", domain)
             put("category", "advertising")
             put("url", url)
         }
         bridge.evaluateJs("window.__mimirOnTrackerBlocked && window.__mimirOnTrackerBlocked($json);")
+    }
+
+    override fun onDownloadStarted(tabId: String, id: Long, filename: String) {
+        MimirHaptics.performClick(this)
+        val json = JSONObject().apply {
+            put("id", id.toString())
+            put("filename", filename)
+            put("url", "")
+            put("path", filename)
+        }
+        bridge.evaluateJs("window.__mimirOnDownloadStarted && window.__mimirOnDownloadStarted($json);")
+    }
+
+    // --- HTML5 Fullscreen Video Handling ---
+
+    override fun onShowCustomView(view: View, callback: WebChromeClient.CustomViewCallback) {
+        if (customVideoView != null) {
+            callback.onCustomViewHidden()
+            return
+        }
+
+        customVideoView = view
+        customViewCallback = callback
+
+        swipeRefresh.visibility = View.GONE
+        chromeWebView.visibility = View.GONE
+        fullscreenContainer.visibility = View.VISIBLE
+        fullscreenContainer.addView(view, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+
+        // Enter immersive mode
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            window.insetsController?.hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
+            window.insetsController?.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        } else {
+            @Suppress("DEPRECATION")
+            window.decorView.systemUiVisibility = (
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                or View.SYSTEM_UI_FLAG_FULLSCREEN
+                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+            )
+        }
+    }
+
+    override fun onHideCustomView() {
+        if (customVideoView == null) return
+
+        fullscreenContainer.removeView(customVideoView)
+        fullscreenContainer.visibility = View.GONE
+        customVideoView = null
+        customViewCallback?.onCustomViewHidden()
+        customViewCallback = null
+
+        swipeRefresh.visibility = View.VISIBLE
+        chromeWebView.visibility = View.VISIBLE
+
+        // Exit immersive mode
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            window.insetsController?.show(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
+        } else {
+            @Suppress("DEPRECATION")
+            window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+        }
     }
 }

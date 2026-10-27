@@ -28,6 +28,7 @@ export interface DecryptedCredential extends Omit<VaultCredential, 'passwordCiph
 }
 
 const STORAGE_KEY = 'mimir_fafnir_vault_v1';
+const BIO_STORAGE_KEY = 'mimir_fafnir_bio_secret';
 const AUTH_SENTINEL = 'FAFNIR_TREASURY_VALIDATED';
 const PBKDF2_ITERATIONS = 100000;
 
@@ -184,6 +185,7 @@ class FafnirVaultEngine {
     this.derivedKey = key;
     this.saveEnvelope();
     this.resetLockTimer();
+    this.enableBiometric(masterPassphrase);
     return true;
   }
 
@@ -208,6 +210,7 @@ class FafnirVaultEngine {
       if (decryptedAuth === AUTH_SENTINEL) {
         this.derivedKey = candidateKey;
         this.resetLockTimer();
+        this.enableBiometric(masterPassphrase);
         this.notify();
         return true;
       }
@@ -215,6 +218,35 @@ class FafnirVaultEngine {
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Biometric Unlock Helpers (Android & Mobile)
+   */
+  public hasBiometricSecret(): boolean {
+    if (typeof window === 'undefined') return false;
+    return !!localStorage.getItem(BIO_STORAGE_KEY);
+  }
+
+  public enableBiometric(passphrase: string) {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(BIO_STORAGE_KEY, passphrase);
+    } catch (e) {
+      console.error('Failed to store biometric secret', e);
+    }
+  }
+
+  public disableBiometric() {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem(BIO_STORAGE_KEY);
+  }
+
+  public async unlockWithBiometric(): Promise<boolean> {
+    if (typeof window === 'undefined') return false;
+    const secret = localStorage.getItem(BIO_STORAGE_KEY);
+    if (!secret) return false;
+    return this.unlock(secret);
   }
 
   /**

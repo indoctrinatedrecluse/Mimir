@@ -210,7 +210,7 @@ export const SvalinnCloakModal: React.FC<SvalinnCloakModalProps> = ({
               <div className="text-xs font-mono uppercase tracking-wider text-slate-300 mb-2">
                 Routing Profiles
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* 1. Direct Mode */}
                 <button
                   type="button"
@@ -253,7 +253,7 @@ export const SvalinnCloakModal: React.FC<SvalinnCloakModalProps> = ({
                     )}
                   </div>
                   <p className="text-[10px] text-slate-400">
-                    Routes through local Tor daemon (<code className="text-emerald-300 font-mono">127.0.0.1:9050</code>).
+                    Routes through local Tor daemon or Android Orbot (<code className="text-emerald-300 font-mono">127.0.0.1:9050</code>).
                   </p>
                   <button
                     type="button"

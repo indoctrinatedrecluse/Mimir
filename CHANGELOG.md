@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased] - 2026-10-27 *(Mímir Mobile: Android Native Shell, Norse Touch Chrome, Svalinn Mobile AdBlock, Proxy Routing & Biometrics)*
+
+This milestone debuts the mobile edition of Mímir Browser (**Mímir Mobile**):
+- **Native Android Shell (Kotlin + AndroidX WebKit)**: Scaffolding a monorepo architecture under `android/` sharing the React frontend bundle (`android/app/src/main/assets/dist/index.html`) via a two-way `@JavascriptInterface` bridge (`MimirNative`).
+- **Norse Mobile Chrome UI**:
+  - Obsidian Glass `MobileBottomDock` with Elder Futhark rune actions: Back (`ᚢ`), Forward (`ᚦ`), Omnibar (`ᛗ`), Tab Switcher (`ᛏ`), and Realm Menu (`☰`).
+  - Slide-down `MobileOmnibarModal` supporting query routing, search oracle selection (DuckDuckGo, Brave, Startpage, Google), and quick portals.
+  - Visual 2-column card grid `MobileTabSwitcher` with realm badges, workspace pills, and active branch indication.
+  - Slide-up `MobileDrawerMenu` providing instant access to the Nine Realms carousel, Mímir's Eye Vault, Fafnir's Treasury, Svalinn Cloak, Huginn AI, ambient music, and Sanctum settings.
+- **Svalinn Mobile AdBlocker & Tracker Shield**: Native network interception (`shouldInterceptRequest`) blocking advertising networks, fingerprinting trackers, and telemetry scripts at sub-millisecond speeds.
+- **Svalinn Mobile Proxy Cloak (`ProxyController`)**: Dynamic OS-level proxy routing on Android 10+ supporting Tor Orbot (`socks://127.0.0.1:9050`), custom SOCKS5, and HTTP conduits.
+- **Runic Biometric Authentication (`BiometricPrompt`)**: Hardware-backed fingerprint and biometric authentication in `FafnirVaultEngine` for fast, secure unlocking of AES-256-GCM encrypted credentials.
+- **Native Download Manager & HTML5 Video**: Android system `DownloadManager` piping to `Environment.DIRECTORY_DOWNLOADS` with progress notifications, plus `onShowCustomView` / `onHideCustomView` full-screen video playback.
+- **Runic Haptics & Gesture Navigation**: Tactile feedback on clicks and tracker drops (`MimirHaptics`), pull-to-refresh (`SwipeRefreshLayout`), and full predictive back button dispatching.
+
+---
+
 ## [0.9.0] - 2026-10-26 *(Sovereign Citadels, Cloak & Cosmic Navigation: Yggdrasil Workspaces, Svalinn Proxy, Heimdall's Watch, Mímir's Eye, Valkyrie Gestures & Bifröst Start)*
 
 This major release elevates Mímir Browser to a full sovereign desktop citadel:

@@ -54,8 +54,15 @@ class MimirNativeBridge(
                     "CLEAR_BROWSING_DATA" -> {
                         activity.clearBrowsingData()
                     }
-                    "GET_SYSTEM_TELEMETRY" -> {
-                        activity.sendSystemTelemetry()
+                    "SET_PROXY_CONFIG" -> {
+                        val enabled = payload?.optBoolean("enabled", false) ?: false
+                        val proxyType = payload?.optString("proxy_type", "direct") ?: "direct"
+                        val server = payload?.optString("server", "") ?: ""
+                        val bypassList = payload?.optString("bypass_list", "<local>;localhost;127.0.0.1") ?: "<local>;localhost;127.0.0.1"
+                        activity.setProxyConfig(enabled, proxyType, server, bypassList)
+                    }
+                    "GET_PROXY_CONFIG" -> {
+                        activity.getProxyConfig()
                     }
                     else -> {
                         Log.d("MimirNativeBridge", "Unhandled command type: $type")

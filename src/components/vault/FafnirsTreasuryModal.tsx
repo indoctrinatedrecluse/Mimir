@@ -27,11 +27,13 @@ import {
   Share2,
   DollarSign,
   User,
+  Fingerprint,
 } from 'lucide-react';
 import { RealmId } from '@/types';
 import { REALM_THEMES } from '@/components/themes/realmThemes';
 import { fafnirVault, DecryptedCredential } from '@/core/security/fafnirVault';
 import { runicAudio } from '@/core/audio/runicAudio';
+import { mimirIpc } from '@/core/ipc/bridge';
 
 interface FafnirsTreasuryModalProps {
   isOpen: boolean;
@@ -161,6 +163,45 @@ export const FafnirsTreasuryModal: React.FC<FafnirsTreasuryModalProps> = ({
       }
     } catch (err: any) {
       setUnlockError(err.message || 'Unlock failed');
+    }
+  };
+
+  useEffect(() => {
+    const prevHandler = (window as any).__mimirOnBiometricResult;
+    (window as any).__mimirOnBiometricResult = async (success: boolean, error?: string | null) => {
+      if (success) {
+        const ok = await fafnirVault.unlockWithBiometric();
+        if (ok) {
+          runicAudio.playChime();
+          const list = await fafnirVault.getCredentials();
+          setCredentials(list);
+          setUnlockError('');
+        } else {
+          setUnlockError('Biometric confirmed, but master rune not stored on device. Enter passphrase manually.');
+        }
+      } else if (error) {
+        setUnlockError(error);
+      }
+    };
+    return () => {
+      (window as any).__mimirOnBiometricResult = prevHandler;
+    };
+  }, []);
+
+  const handleBiometricAuth = () => {
+    setUnlockError('');
+    runicAudio.playClick(600);
+    if (mimirIpc.isAndroid()) {
+      mimirIpc.send({ type: 'REQUEST_BIOMETRIC_AUTH' });
+    } else {
+      fafnirVault.unlockWithBiometric().then((ok) => {
+        if (ok) {
+          runicAudio.playChime();
+          fafnirVault.getCredentials().then(setCredentials);
+        } else {
+          setUnlockError('Biometric credential not available.');
+        }
+      });
     }
   };
 
@@ -370,6 +411,24 @@ export const FafnirsTreasuryModal: React.FC<FafnirsTreasuryModalProps> = ({
                 >
                   {!isSetup ? 'Inscribe & Establish Treasury' : 'Unlock Dragon Hoard'}
                 </button>
+
+                {isSetup && (mimirIpc.isAndroid() || fafnirVault.hasBiometricSecret()) && (
+                  <button
+                    type="button"
+                    onClick={handleBiometricAuth}
+                    className="w-full h-10 rounded-lg font-bold text-xs tracking-wider uppercase border border-cyan-400/50 bg-gradient-to-r from-cyan-950/70 via-slate-900 to-cyan-950/70 text-cyan-300 shadow-[0_0_15px_rgba(34,211,238,0.15)] hover:border-cyan-400 hover:text-white active:scale-98 transition-all flex items-center justify-center space-x-2"
+                  >
+                    <Fingerprint className="h-4 w-4 text-cyan-400" />
+                    <span>Unlock with Biometrics (ᛒ)</span>
+                  </button>
+                )}
+
+                {!isSetup && mimirIpc.isAndroid() && (
+                  <div className="flex items-center space-x-2 text-[11px] text-cyan-300/80 bg-cyan-950/30 border border-cyan-500/20 rounded-lg px-3 py-2 text-left">
+                    <Fingerprint className="h-4 w-4 text-cyan-400 shrink-0" />
+                    <span>Runic Biometrics (Fingerprint/Face) will bond to this device automatically upon establishment.</span>
+                  </div>
+                )}
               </form>
             </div>
           ) : (
