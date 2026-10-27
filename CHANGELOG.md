@@ -26,6 +26,11 @@ This milestone debuts the mobile edition of Mímir Browser (**Mímir Mobile**):
   - **Swipe-to-Dismiss Tab Cards (`MobileTabSwitcher.tsx`)**: Integrated `framer-motion` horizontal drag physics (`drag="x"`) to dismiss tabs with a flick (> 85px threshold) accompanied by runic audio feedback, plus a 1-tap "Purge Inactive Tabs" (`Trash2`) quick action.
   - **Horizontal Dock Tab Cycling (`MobileBottomDock.tsx`)**: Added touch swipe detection on the center Omnibar capsule to smoothly cycle back and forth between open tabs.
   - **Bifröst Conduit Native Sharing (`SHARE_URL`)**: Native Android `Intent.ACTION_SEND` chooser integration enabling instant sharing of page and image URLs to any installed Android application.
+- **Phase 4: Norse Runic Header Strip, Web Intent Routing & Tab Search**:
+  - **Norse Runic Header Strip (`MobileHeaderStrip.tsx`)**: Lightweight obsidian glass top header with active realm rune pill (e.g. `ᛗ MIDGARD`), domain/title capsule with SSL ward indicator (`Lock` / `Globe`), ambient runic audio toggle, Svalinn proxy cloak status, and animated progress filament.
+  - **In-App Tab Search & History Filter (`MobileTabSwitcher.tsx`)**: Fast, responsive live search bar allowing filtering of open tabs by title, domain, or realm with empty-state indicators and quick clear.
+  - **Android Web Intent Filters & `onNewIntent` Routing**: Configured `AndroidManifest.xml` with `singleTask` and intent filters for `http`, `https`, and `mimir://` schemes; implemented `onNewIntent()` in `MainActivity.kt` to open incoming links directly into new tabs.
+  - **Dynamic Android System Bar Tinting**: Integrated dynamic status and navigation bar tinting in `MainActivity.kt` responding to `SET_REALM` IPC commands, dynamically shifting the Android system bar background to match the active Realm's accent hue.
 
 ---
 

@@ -69,6 +69,10 @@ class MimirNativeBridge(
                         val title = payload?.optString("title", "Mímir Browser") ?: "Mímir Browser"
                         activity.shareUrl(url, title)
                     }
+                    "SET_REALM" -> {
+                        val realm = payload?.optString("realm", "midgard") ?: "midgard"
+                        activity.updateSystemBars(realm)
+                    }
                     else -> {
                         Log.d("MimirNativeBridge", "Unhandled command type: $type")
                     }

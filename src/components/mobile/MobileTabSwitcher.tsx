@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Tab, YggdrasilWorkspace } from '@/types';
-import { Plus, X, Globe, Moon, Check, Sparkles, Trash2 } from 'lucide-react';
+import { Plus, X, Globe, Moon, Check, Sparkles, Trash2, Search } from 'lucide-react';
 import { runicAudio } from '@/core/audio/runicAudio';
 
 interface MobileTabSwitcherProps {
@@ -29,6 +29,8 @@ export const MobileTabSwitcher: React.FC<MobileTabSwitcherProps> = ({
   onNewTab,
   onClose,
 }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+
   if (!isOpen) return null;
 
   const handlePurgeInactive = () => {
@@ -39,6 +41,17 @@ export const MobileTabSwitcher: React.FC<MobileTabSwitcherProps> = ({
       }
     });
   };
+
+  const filteredTabs = useMemo(() => {
+    if (!searchQuery.trim()) return tabs;
+    const q = searchQuery.toLowerCase().trim();
+    return tabs.filter(
+      (t) =>
+        (t.title && t.title.toLowerCase().includes(q)) ||
+        (t.url && t.url.toLowerCase().includes(q)) ||
+        (t.realm && t.realm.toLowerCase().includes(q))
+    );
+  }, [tabs, searchQuery]);
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-[#05070a]/98 backdrop-blur-2xl text-slate-100 select-none">
@@ -84,7 +97,7 @@ export const MobileTabSwitcher: React.FC<MobileTabSwitcherProps> = ({
       </div>
 
       {/* Workspace Quick-Pills */}
-      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-slate-800/60 overflow-x-auto no-scrollbar">
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-slate-800/60 overflow-x-auto no-scrollbar">
         {workspaces.map((ws) => {
           const isActive = ws.id === activeWorkspaceId;
           return (
@@ -109,10 +122,47 @@ export const MobileTabSwitcher: React.FC<MobileTabSwitcherProps> = ({
         })}
       </div>
 
+      {/* Tab Search Filter */}
+      <div className="px-4 py-2 border-b border-slate-800/80 bg-slate-950/40">
+        <div className="relative flex items-center">
+          <Search className="absolute left-3 w-3.5 h-3.5 text-cyan-400 pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search branches by title, URL or realm (ᛋ)..."
+            className="w-full pl-9 pr-8 py-1.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 font-mono transition-colors"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2.5 p-0.5 rounded text-slate-500 hover:text-slate-300"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Grid of Tabs with Swipe to Dismiss */}
-      <div className="flex-1 overflow-y-auto p-4 grid grid-cols-2 gap-3">
+      <div className="flex-1 overflow-y-auto p-4 grid grid-cols-2 gap-3 content-start">
+        {filteredTabs.length === 0 && (
+          <div className="col-span-2 py-12 flex flex-col items-center justify-center text-center">
+            <Search className="w-8 h-8 text-slate-600 mb-2 animate-pulse" />
+            <span className="text-xs font-mono text-slate-400">No branches match &quot;{searchQuery}&quot; (ᚺ)</span>
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="mt-3 px-3 py-1 text-xs text-cyan-400 font-mono hover:underline"
+            >
+              Clear filter
+            </button>
+          </div>
+        )}
+
         <AnimatePresence mode="popLayout">
-          {tabs.map((tab) => {
+          {filteredTabs.map((tab) => {
             const isActive = tab.id === activeTabId;
             const isInternal = tab.url.startsWith('mimir://');
 

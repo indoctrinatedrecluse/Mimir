@@ -62,11 +62,23 @@ class MainActivity : AppCompatActivity(), MimirWebViewCallback {
         setupTabManager()
         setupChromeWebView()
         setupBackNavigation()
+        updateSystemBars("midgard")
 
         // Handle URL launched from intent
         intent?.dataString?.let { incomingUrl ->
             if (incomingUrl.isNotBlank()) {
                 tabManager.loadUrl(incomingUrl)
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        intent?.dataString?.let { incomingUrl ->
+            if (incomingUrl.isNotBlank()) {
+                tabManager.createTab(incomingUrl, "midgard")
+                syncTabsToReact()
             }
         }
     }
@@ -182,6 +194,7 @@ class MainActivity : AppCompatActivity(), MimirWebViewCallback {
         runOnUiThread {
             MimirHaptics.performClick(this)
             tabManager.createTab(url, realm)
+            updateSystemBars(realm)
             syncTabsToReact()
         }
     }
@@ -197,7 +210,8 @@ class MainActivity : AppCompatActivity(), MimirWebViewCallback {
     fun switchTab(tabId: String) {
         runOnUiThread {
             MimirHaptics.performClick(this)
-            tabManager.switchTab(tabId)
+            val active = tabManager.switchTab(tabId)
+            active?.let { updateSystemBars(it.realm) }
             syncTabsToReact()
         }
     }
@@ -441,6 +455,35 @@ class MainActivity : AppCompatActivity(), MimirWebViewCallback {
             }
             val shareIntent = Intent.createChooser(sendIntent, "Share with Bifröst Conduit")
             startActivity(shareIntent)
+        }
+    }
+
+    fun updateSystemBars(realmId: String) {
+        runOnUiThread {
+            val statusBarColor = when (realmId) {
+                "asgard" -> 0xFF141006.toInt()
+                "vanaheim" -> 0xFF05140A.toInt()
+                "alfheim" -> 0xFF0A1218.toInt()
+                "jotunheim" -> 0xFF06101E.toInt()
+                "muspelheim" -> 0xFF180A05.toInt()
+                "niflheim" -> 0xFF0E1016.toInt()
+                "nidavellir" -> 0xFF140D08.toInt()
+                "helheim" -> 0xFF16060E.toInt()
+                else -> 0xFF05070A.toInt()
+            }
+            window.statusBarColor = statusBarColor
+            window.navigationBarColor = 0xFF030508.toInt()
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                window.insetsController?.setSystemBarsAppearance(
+                    0,
+                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS or WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                window.decorView.systemUiVisibility = window.decorView.systemUiVisibility and
+                    (View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR).inv()
+            }
         }
     }
 }

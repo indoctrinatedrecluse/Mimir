@@ -54,6 +54,7 @@ import { MobileOmnibarModal } from '@/components/mobile/MobileOmnibarModal';
 import { MobileTabSwitcher } from '@/components/mobile/MobileTabSwitcher';
 import { MobileDrawerMenu } from '@/components/mobile/MobileDrawerMenu';
 import { MobileContextMenuSheet, MobileContextMenuData } from '@/components/mobile/MobileContextMenuSheet';
+import { MobileHeaderStrip } from '@/components/mobile/MobileHeaderStrip';
 
 const getInitialRealm = (): RealmId => {
   try {
@@ -796,6 +797,9 @@ const formatEtaSeconds = (secs: number): string => {
     setTabs((prev) =>
       prev.map((t) => (t.id === activeTabId ? { ...t, realm } : t))
     );
+    if (mimirIpc.isAndroid()) {
+      mimirIpc.send({ type: 'SET_REALM', payload: { realm } });
+    }
     runicAudio.playRunicHum();
   };
 
@@ -817,6 +821,9 @@ const formatEtaSeconds = (secs: number): string => {
     const target = tabs.find((t) => t.id === id);
     if (target?.realm) {
       setActiveRealm(target.realm);
+      if (mimirIpc.isAndroid()) {
+        mimirIpc.send({ type: 'SET_REALM', payload: { realm: target.realm } });
+      }
     }
     if (target?.workspaceId) {
       setWorkspaces((prev) =>
@@ -1366,6 +1373,26 @@ const formatEtaSeconds = (secs: number): string => {
         </>
       )}
 
+      {/* Mobile Only Chrome: Norse Runic Header Strip */}
+      {isMobile && (
+        <MobileHeaderStrip
+          activeRealm={activeRealm}
+          currentUrl={activeTab?.url || ''}
+          currentTitle={activeTab?.title}
+          isLoading={activeTab?.isLoading}
+          isAmbientPlaying={isAmbientPlaying}
+          isCloakActive={proxyConfig.enabled}
+          blockedTrackersCount={blockedTrackersCount}
+          onOpenRealmSelector={() => setIsRealmSelectorOpen(true)}
+          onOpenOmnibar={() => setIsMobileOmnibarOpen(true)}
+          onToggleAmbient={() => {
+            const nextState = runicAudio.toggleAmbient(activeRealm);
+            setIsAmbientPlaying(nextState);
+          }}
+          onOpenCloak={() => setIsCloakOpen(true)}
+        />
+      )}
+
       {/* Valhalla Revival Crash Sentinel Banner */}
       <ValhallaRevivalBanner
         session={pendingRevivalSession}
@@ -1378,7 +1405,7 @@ const formatEtaSeconds = (secs: number): string => {
       />
 
       {/* Layer 3: Main Workspace (Yggdrasil Tree + Content Viewport + Runic Sidecar) */}
-      <div className={`relative flex flex-1 overflow-hidden ${isMobile ? 'pb-14' : ''}`}>
+      <div className={`relative flex flex-1 overflow-hidden ${isMobile ? 'pt-10 pb-14' : ''}`}>
         {!isMobile && (
           <TabTree
             tabs={currentWorkspaceTabs}
