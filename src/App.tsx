@@ -48,6 +48,11 @@ import { ActiveMediaSession, YggdrasilWorkspace } from '@/types';
 import { workspaceManager } from '@/core/workspaces/workspaceManager';
 import { svalinnProxy, SvalinnProxyConfig } from '@/core/privacy/proxyManager';
 import { VALKYRIE_GESTURE_INJECTION_SCRIPT } from '@/core/navigation/valkyrieGestures';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { MobileBottomDock } from '@/components/mobile/MobileBottomDock';
+import { MobileOmnibarModal } from '@/components/mobile/MobileOmnibarModal';
+import { MobileTabSwitcher } from '@/components/mobile/MobileTabSwitcher';
+import { MobileDrawerMenu } from '@/components/mobile/MobileDrawerMenu';
 
 const getInitialRealm = (): RealmId => {
   try {
@@ -127,6 +132,12 @@ export const App: React.FC = () => {
   const [isAmbientPlaying, setIsAmbientPlaying] = useState(() => runicAudio.isAmbientEnabled());
   const [showSplash, setShowSplash] = useState(true);
   const [huginnPrompt, setHuginnPrompt] = useState<string>('');
+
+  // Mobile Adaptation & Viewport Mode
+  const isMobile = useIsMobile();
+  const [isMobileOmnibarOpen, setIsMobileOmnibarOpen] = useState(false);
+  const [isMobileTabsOpen, setIsMobileTabsOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Yggdrasil Realm Workspaces & Branches
   const [workspaces, setWorkspaces] = useState<YggdrasilWorkspace[]>(() => workspaceManager.getWorkspaces());
@@ -1216,87 +1227,92 @@ const formatEtaSeconds = (secs: number): string => {
       {/* Ambient Runic Particles */}
       <RunicAtmosphere activeRealm={activeRealm} />
 
-      {/* Layer 1: TitleBar */}
-      <TitleBar
-        activeRealm={activeRealm}
-        onOpenRealmSelector={() => setIsRealmSelectorOpen(true)}
-        onOpenSettings={() => setIsSettingsOpen(true)}
-        onToggleMediaHud={() => setIsMediaHudOpen((prev) => !prev)}
-        isMediaActive={Boolean(activeMediaSession?.isPlaying)}
-      />
+      {/* Desktop Only Chrome: TitleBar, Omnibar, BookmarksBar */}
+      {!isMobile && (
+        <>
+          {/* Layer 1: TitleBar */}
+          <TitleBar
+            activeRealm={activeRealm}
+            onOpenRealmSelector={() => setIsRealmSelectorOpen(true)}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+            onToggleMediaHud={() => setIsMediaHudOpen((prev) => !prev)}
+            isMediaActive={Boolean(activeMediaSession?.isPlaying)}
+          />
 
-      {/* Layer 2: Mímisbrunnr Omnibar */}
-      <Omnibar
-        currentUrl={activeTab?.url === 'mimir://newtab' ? '' : activeTab?.url || ''}
-        activeRealm={activeRealm}
-        onNavigate={handleNavigate}
-        isLoading={activeTab?.isLoading}
-        onToggleHuginn={() => setIsHuginnOpen((prev) => !prev)}
-        isHuginnOpen={isHuginnOpen}
-        onToggleMuninn={() => setIsMuninnOpen((prev) => !prev)}
-        isMuninnOpen={isMuninnOpen}
-        onToggleSplitGaze={() => setIsSplitGaze((prev) => !prev)}
-        isSplitGazeActive={isSplitGaze}
-        onToggleBifrost={() => setIsBifrostOpen(true)}
-        onToggleForge={() => setIsForgeOpen(true)}
-        isAmbientPlaying={isAmbientPlaying}
-        onToggleAmbient={() => {
-          const nextState = runicAudio.toggleAmbient(activeRealm);
-          setIsAmbientPlaying(nextState);
-        }}
-        onZoomIn={handleZoomIn}
-        onZoomOut={handleZoomOut}
-        onZoomReset={handleZoomReset}
-        zoomLevel={activeTab?.zoomLevel || 100}
-        onToggleDownloads={() => setIsDownloadsOpen((prev) => !prev)}
-        downloadCount={downloads.filter((d) => d.status === 'downloading').length || downloads.length}
-        onToggleFind={() => setIsFindOpen(true)}
-        onPrint={handlePrint}
-        onOpenClearData={() => setIsClearDataOpen(true)}
-        isDownloadsOpen={isDownloadsOpen}
-        onBookmarkCurrent={() => handleToggleBookmark(activeTab?.url || '')}
-        isCurrentBookmarked={bookmarks.includes(activeTab?.url || '')}
-        liveBlockedCount={blockedTrackersCount}
-        onUpgradeToHttps={handleUpgradeToHttps}
-        onToggleReader={() => setIsReaderSanctumOpen((prev) => !prev)}
-        isReaderOpen={isReaderSanctumOpen}
-        onToggleSidecar={() => setIsSidecarOpen((prev) => !prev)}
-        isSidecarOpen={isSidecarOpen}
-        onOpenSettings={() => setIsSettingsOpen(true)}
-        onOpenCanvas={() => setIsCanvasOpen(true)}
-        onToggleCloak={() => setIsCloakOpen((prev) => !prev)}
-        isCloakActive={proxyConfig.enabled}
-        cloakType={proxyConfig.proxyType}
-        onToggleHeimdallsWatch={() => setIsHeimdallsWatchOpen((prev) => !prev)}
-        isHeimdallsWatchOpen={isHeimdallsWatchOpen}
-      />
+          {/* Layer 2: Mímisbrunnr Omnibar */}
+          <Omnibar
+            currentUrl={activeTab?.url === 'mimir://newtab' ? '' : activeTab?.url || ''}
+            activeRealm={activeRealm}
+            onNavigate={handleNavigate}
+            isLoading={activeTab?.isLoading}
+            onToggleHuginn={() => setIsHuginnOpen((prev) => !prev)}
+            isHuginnOpen={isHuginnOpen}
+            onToggleMuninn={() => setIsMuninnOpen((prev) => !prev)}
+            isMuninnOpen={isMuninnOpen}
+            onToggleSplitGaze={() => setIsSplitGaze((prev) => !prev)}
+            isSplitGazeActive={isSplitGaze}
+            onToggleBifrost={() => setIsBifrostOpen(true)}
+            onToggleForge={() => setIsForgeOpen(true)}
+            isAmbientPlaying={isAmbientPlaying}
+            onToggleAmbient={() => {
+              const nextState = runicAudio.toggleAmbient(activeRealm);
+              setIsAmbientPlaying(nextState);
+            }}
+            onZoomIn={handleZoomIn}
+            onZoomOut={handleZoomOut}
+            onZoomReset={handleZoomReset}
+            zoomLevel={activeTab?.zoomLevel || 100}
+            onToggleDownloads={() => setIsDownloadsOpen((prev) => !prev)}
+            downloadCount={downloads.filter((d) => d.status === 'downloading').length || downloads.length}
+            onToggleFind={() => setIsFindOpen(true)}
+            onPrint={handlePrint}
+            onOpenClearData={() => setIsClearDataOpen(true)}
+            isDownloadsOpen={isDownloadsOpen}
+            onBookmarkCurrent={() => handleToggleBookmark(activeTab?.url || '')}
+            isCurrentBookmarked={bookmarks.includes(activeTab?.url || '')}
+            liveBlockedCount={blockedTrackersCount}
+            onUpgradeToHttps={handleUpgradeToHttps}
+            onToggleReader={() => setIsReaderSanctumOpen((prev) => !prev)}
+            isReaderOpen={isReaderSanctumOpen}
+            onToggleSidecar={() => setIsSidecarOpen((prev) => !prev)}
+            isSidecarOpen={isSidecarOpen}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+            onOpenCanvas={() => setIsCanvasOpen(true)}
+            onToggleCloak={() => setIsCloakOpen((prev) => !prev)}
+            isCloakActive={proxyConfig.enabled}
+            cloakType={proxyConfig.proxyType}
+            onToggleHeimdallsWatch={() => setIsHeimdallsWatchOpen((prev) => !prev)}
+            isHeimdallsWatchOpen={isHeimdallsWatchOpen}
+          />
 
-      {/* Runic Bookmarks Bar (Havamal Staves Ribbon) */}
-      <RunicBookmarksBar
-        activeRealm={activeRealm}
-        currentUrl={activeTab?.url}
-        currentTitle={activeTab?.title}
-        onNavigate={handleNavigate}
-        onOpenNewTab={(url) => handleNewTab(url)}
-        onOpenSplitGaze={(url) => {
-          const newId = `tab-${Date.now()}`;
-          const newTab: Tab = {
-            id: newId,
-            title: url.replace(/^https?:\/\//, ''),
-            url,
-            isActive: false,
-            isLoading: false,
-            isMuted: false,
-            isPinned: false,
-            realm: activeRealm,
-            rune: 'ᛗ',
-            zoomLevel: 100,
-          };
-          setTabs((prev) => [...prev, newTab]);
-          setSplitTabId(newId);
-          setIsSplitGaze(true);
-        }}
-      />
+          {/* Runic Bookmarks Bar (Havamal Staves Ribbon) */}
+          <RunicBookmarksBar
+            activeRealm={activeRealm}
+            currentUrl={activeTab?.url}
+            currentTitle={activeTab?.title}
+            onNavigate={handleNavigate}
+            onOpenNewTab={(url) => handleNewTab(url)}
+            onOpenSplitGaze={(url) => {
+              const newId = `tab-${Date.now()}`;
+              const newTab: Tab = {
+                id: newId,
+                title: url.replace(/^https?:\/\//, ''),
+                url,
+                isActive: false,
+                isLoading: false,
+                isMuted: false,
+                isPinned: false,
+                realm: activeRealm,
+                rune: 'ᛗ',
+                zoomLevel: 100,
+              };
+              setTabs((prev) => [...prev, newTab]);
+              setSplitTabId(newId);
+              setIsSplitGaze(true);
+            }}
+          />
+        </>
+      )}
 
       {/* Valhalla Revival Crash Sentinel Banner */}
       <ValhallaRevivalBanner
@@ -1310,42 +1326,44 @@ const formatEtaSeconds = (secs: number): string => {
       />
 
       {/* Layer 3: Main Workspace (Yggdrasil Tree + Content Viewport + Runic Sidecar) */}
-      <div className="relative flex flex-1 overflow-hidden">
-        <TabTree
-          tabs={currentWorkspaceTabs}
-          activeTabId={activeTabId}
-          activeRealm={activeRealm}
-          onSelectTab={handleSelectTab}
-          onCloseTab={handleCloseTab}
-          onNewTab={() => handleNewTab()}
-          isCollapsed={isTabTreeCollapsed}
-          onToggleCollapse={() => setIsTabTreeCollapsed(!isTabTreeCollapsed)}
-          onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
-          onTogglePinTab={handleTogglePinTab}
-          onDuplicateTab={handleDuplicateTab}
-          onReorderTabs={(newTabs) => {
-            const defaultWsId = workspaces[0]?.id || 'ws-midgard';
-            const otherTabs = tabs.filter(
-              (t) => (t.workspaceId || defaultWsId) !== activeWorkspaceId
-            );
-            setTabs([...newTabs, ...otherTabs]);
-          }}
-          onToggleMuteTab={handleToggleMuteTab}
-          onToggleSlumberTab={handleToggleSlumberTab}
-          workspaces={workspaces}
-          activeWorkspaceId={activeWorkspaceId}
-          onSelectWorkspace={handleSelectWorkspace}
-          onOpenCreateWorkspaceModal={() => {
-            setEditingWorkspace(null);
-            setIsWorkspaceModalOpen(true);
-          }}
-          onOpenEditWorkspaceModal={(ws) => {
-            setEditingWorkspace(ws);
-            setIsWorkspaceModalOpen(true);
-          }}
-          onDeleteWorkspace={handleDeleteWorkspace}
-          onHibernateWorkspaceTabs={handleHibernateWorkspaceTabs}
-        />
+      <div className={`relative flex flex-1 overflow-hidden ${isMobile ? 'pb-14' : ''}`}>
+        {!isMobile && (
+          <TabTree
+            tabs={currentWorkspaceTabs}
+            activeTabId={activeTabId}
+            activeRealm={activeRealm}
+            onSelectTab={handleSelectTab}
+            onCloseTab={handleCloseTab}
+            onNewTab={() => handleNewTab()}
+            isCollapsed={isTabTreeCollapsed}
+            onToggleCollapse={() => setIsTabTreeCollapsed(!isTabTreeCollapsed)}
+            onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+            onTogglePinTab={handleTogglePinTab}
+            onDuplicateTab={handleDuplicateTab}
+            onReorderTabs={(newTabs) => {
+              const defaultWsId = workspaces[0]?.id || 'ws-midgard';
+              const otherTabs = tabs.filter(
+                (t) => (t.workspaceId || defaultWsId) !== activeWorkspaceId
+              );
+              setTabs([...newTabs, ...otherTabs]);
+            }}
+            onToggleMuteTab={handleToggleMuteTab}
+            onToggleSlumberTab={handleToggleSlumberTab}
+            workspaces={workspaces}
+            activeWorkspaceId={activeWorkspaceId}
+            onSelectWorkspace={handleSelectWorkspace}
+            onOpenCreateWorkspaceModal={() => {
+              setEditingWorkspace(null);
+              setIsWorkspaceModalOpen(true);
+            }}
+            onOpenEditWorkspaceModal={(ws) => {
+              setEditingWorkspace(ws);
+              setIsWorkspaceModalOpen(true);
+            }}
+            onDeleteWorkspace={handleDeleteWorkspace}
+            onHibernateWorkspaceTabs={handleHibernateWorkspaceTabs}
+          />
+        )}
 
         <ContentViewport
           activeTab={activeTab}
@@ -1374,21 +1392,80 @@ const formatEtaSeconds = (secs: number): string => {
           onOpenTreasury={() => setIsVaultOpen(true)}
         />
 
-        {/* Persistent Runic Sidecar (Scratchpad, Huginn AI, Telemetry) */}
-        <Suspense fallback={null}>
-          <RunicSidecar
-            isOpen={isSidecarOpen}
-            onClose={() => setIsSidecarOpen(false)}
-            activeRealm={activeRealm}
-            activeTab={activeTab}
-            width={sidecarWidth}
-            onWidthChange={setSidecarWidth}
-          />
-        </Suspense>
+        {/* Persistent Runic Sidecar (Desktop Only) */}
+        {!isMobile && (
+          <Suspense fallback={null}>
+            <RunicSidecar
+              isOpen={isSidecarOpen}
+              onClose={() => setIsSidecarOpen(false)}
+              activeRealm={activeRealm}
+              activeTab={activeTab}
+              width={sidecarWidth}
+              onWidthChange={setSidecarWidth}
+            />
+          </Suspense>
+        )}
       </div>
 
-      {/* Layer 4: Status Telemetry HUD */}
-      <StatusBar activeRealm={activeRealm} />
+      {/* Layer 4: Status Telemetry HUD (Desktop Only) */}
+      {!isMobile && <StatusBar activeRealm={activeRealm} />}
+
+      {/* Mobile Navigation Dock & Overlays */}
+      {isMobile && (
+        <>
+          <MobileBottomDock
+            currentUrl={activeTab?.url || ''}
+            tabCount={tabs.length}
+            activeRealm={activeRealm}
+            canGoBack={true}
+            canGoForward={true}
+            onGoBack={() => mimirIpc.send({ type: 'GO_BACK' })}
+            onGoForward={() => mimirIpc.send({ type: 'GO_FORWARD' })}
+            onOpenOmnibar={() => setIsMobileOmnibarOpen(true)}
+            onOpenTabs={() => setIsMobileTabsOpen(true)}
+            onOpenMenu={() => setIsMobileMenuOpen(true)}
+            onOpenNewTab={() => handleNewTab('mimir://newtab')}
+          />
+
+          <MobileOmnibarModal
+            isOpen={isMobileOmnibarOpen}
+            currentUrl={activeTab?.url || ''}
+            onClose={() => setIsMobileOmnibarOpen(false)}
+            onNavigate={(url) => handleNavigate(url)}
+          />
+
+          <MobileTabSwitcher
+            isOpen={isMobileTabsOpen}
+            tabs={tabs}
+            activeTabId={activeTabId}
+            workspaces={workspaces}
+            activeWorkspaceId={activeWorkspaceId}
+            onSelectWorkspace={handleSelectWorkspace}
+            onSelectTab={handleSelectTab}
+            onCloseTab={handleCloseTab}
+            onNewTab={() => handleNewTab('mimir://newtab')}
+            onClose={() => setIsMobileTabsOpen(false)}
+          />
+
+          <MobileDrawerMenu
+            isOpen={isMobileMenuOpen}
+            activeRealm={activeRealm}
+            isAmbientPlaying={isAmbientPlaying}
+            onToggleAmbient={() => {
+              const nextState = runicAudio.toggleAmbient(activeRealm);
+              setIsAmbientPlaying(nextState);
+            }}
+            onSelectRealm={handleSelectRealm}
+            onOpenVault={() => setIsMimirsEyeOpen(true)}
+            onOpenTreasury={() => setIsVaultOpen(true)}
+            onOpenCloak={() => setIsCloakOpen(true)}
+            onOpenHuginn={() => setIsHuginnOpen(true)}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+            onOpenPurge={() => setIsClearDataOpen(true)}
+            onClose={() => setIsMobileMenuOpen(false)}
+          />
+        </>
+      )}
 
       {/* Lazy Overlays & Drawers Boundary */}
       <Suspense fallback={null}>

@@ -293,13 +293,25 @@ class MimirIpcBridge {
   public isNative(): boolean {
     if (typeof window === 'undefined') return false;
     const win = window as any;
-    return 'ipc' in win || '__TAURI__' in win || Boolean(win.chrome?.webview?.postMessage);
+    return 'ipc' in win || '__TAURI__' in win || Boolean(win.chrome?.webview?.postMessage) || Boolean(win.MimirNative?.postMessage);
+  }
+
+  public isAndroid(): boolean {
+    if (typeof window === 'undefined') return false;
+    const win = window as any;
+    return Boolean(win.MimirNative?.postMessage);
   }
 
   public send(cmd: IpcCommand) {
     if (typeof window === 'undefined') return;
 
     const win = window as any;
+
+    // 0. Android native JavascriptInterface channel
+    if (win.MimirNative && typeof win.MimirNative.postMessage === 'function') {
+      win.MimirNative.postMessage(JSON.stringify(cmd));
+      return;
+    }
 
     // 1. Wry standard IPC channel
     if (win.ipc && typeof win.ipc.postMessage === 'function') {

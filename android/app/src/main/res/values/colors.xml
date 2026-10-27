@@ -1,0 +1,9 @@
+<resources>
+    <color name="sanctum_bg">#05070A</color>
+    <color name="sanctum_surface">#090D14</color>
+    <color name="bifrost_cyan">#38BDF8</color>
+    <color name="valhalla_gold">#FBBF24</color>
+    <color name="rune_border">#1E293B</color>
+    <color name="text_primary">#F8FAFC</color>
+    <color name="text_secondary">#94A3B8</color>
+</resources>

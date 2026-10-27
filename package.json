@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build:ui": "tsc -b && vite build",
+    "build:android": "tsc -b && vite build --outDir android/app/src/main/assets/dist",
     "build:rust": "cargo build --manifest-path src-rust/Cargo.toml",
     "build:installer": "cargo build --release --manifest-path src-rust/Cargo.toml --bin mimir-installer",
     "build": "npm run build:ui && npm run build:rust",

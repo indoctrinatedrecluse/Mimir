@@ -1,0 +1,9 @@
+<resources>
+    <style name="Theme.Mimir.NoActionBar" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:statusBarColor">@color/sanctum_bg</item>
+        <item name="android:navigationBarColor">@color/sanctum_bg</item>
+        <item name="android:windowBackground">@color/sanctum_bg</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+</resources>
