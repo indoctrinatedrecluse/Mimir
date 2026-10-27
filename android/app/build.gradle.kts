@@ -11,8 +11,8 @@ android {
         applicationId = "io.github.mimir.browser"
         minSdk = 26
         targetSdk = 34
-        versionCode = 90
-        versionName = "0.9.0"
+        versionCode = 100
+        versionName = "0.10.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

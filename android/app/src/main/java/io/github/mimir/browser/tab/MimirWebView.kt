@@ -67,7 +67,7 @@ class MimirWebView(
 
             // Mobile User-Agent tuning
             val defaultUa = userAgentString
-            userAgentString = "$defaultUa MimirMobile/0.9.0 (Sovereign Citadel)"
+            userAgentString = "$defaultUa MimirMobile/0.10.0 (Sovereign Citadel)"
         }
     }
 

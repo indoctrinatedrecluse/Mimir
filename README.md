@@ -260,6 +260,22 @@ graph TD
 - [x] **Silent Background Installer**:
   - Pure Windows GUI subsystem (`windows_subsystem = "windows"`) and `CREATE_NO_WINDOW` execution eliminating background PowerShell console windows.
 
+### Phase 11: Mímir Mobile: Sovereign Android Edition *(v0.10.0)*
+- [x] **Native Android Shell (Kotlin + AndroidX WebKit)**:
+  - High-performance native Android container under `android/` hosting the shared React frontend bundle with two-way `@JavascriptInterface` bridge (`MimirNative`).
+- [x] **Norse Touch Chrome UI & Obsidian Glass Dock**:
+  - `MobileBottomDock` with Elder Futhark rune actions: Back (`ᚢ`), Forward (`ᚦ`), Omnibar (`ᛗ`), Tab Switcher (`ᛏ`), and Drawer Menu (`☰`).
+  - Slide-down `MobileOmnibarModal` supporting query routing and quick search oracles.
+  - Visual 2-column card grid `MobileTabSwitcher` with swipe-to-dismiss drag physics and live tab search.
+  - Norse runic top `MobileHeaderStrip` with dynamic realm badge, SSL lock ward, and progress filament.
+- [x] **Svalinn Mobile AdBlock & Tracker Shield**:
+  - High-speed native `shouldInterceptRequest` blocking advertising networks, fingerprinting trackers, and telemetry scripts.
+- [x] **Svalinn Mobile Proxy Cloak (`ProxyController`)**:
+  - Dynamic OS-level proxy routing on Android 10+ supporting Tor Orbot (`socks://127.0.0.1:9050`), custom SOCKS5, and HTTP conduits.
+- [x] **Runic Biometric Vault & Touch Sheet**:
+  - Hardware-backed fingerprint and biometric authentication in `FafnirVaultEngine` for fast, secure unlocking of credentials.
+  - Long-press obsidian context menu sheet (`MobileContextMenuSheet`) with runic actions, Bifröst native Android sharing (`Intent.ACTION_SEND`), and system bar tinting.
+
 ---
 
 ## ⌨️ Essential Keyboard Shortcuts
@@ -333,14 +349,14 @@ Mímir ships with the **Tri-Mode Sanctum Engine**, unifying live hardware-accele
 
 ### 👤 End-User Installation Guide
 
-#### Option 1: 1-Click Installer (Recommended)
-1. Download **`mimir-v0.9.0-windows-x64-setup.exe`**.
+#### Option 1: 1-Click Windows Installer (Recommended)
+1. Download **`mimir-v0.10.0-windows-x64-setup.exe`**.
 2. Run the installer and check the optional component:
    - `[x] Living Cinematic Video Realms Pack`
 3. The installer will automatically download `mimir-cinematic-realm-pack.zip` (~88 MB) and install it directly into your Mímir sanctuary!
 
-#### Option 2: Portable / Manual Installation
-1. Download `mimir-v0.9.0-windows-x64-portable.zip` (~12 MB).
+#### Option 2: Windows Portable / Manual Installation
+1. Download `mimir-v0.10.0-windows-x64-portable.zip` (~12 MB).
 2. Download `mimir-cinematic-realm-pack.zip` (~88 MB).
 3. Extract the 9 `.mp4` video files into your Mímir directory:
    ```text
@@ -356,6 +372,12 @@ Mímir ships with the **Tri-Mode Sanctum Engine**, unifying live hardware-accele
    └── helheim.mp4
    ```
 4. Launch Mímir! Click the **SANCTUM** mode button on the bottom bar of `mimir://newtab` or press `Ctrl+K` ➔ select `Sanctum Visuals`.
+
+#### Option 3: Android Mobile Edition
+1. Download **`mimir-v0.10.0-android-mobile.apk`**.
+2. Install the APK on your Android device (Android 8.0 Oreo or higher supported).
+3. Experience sovereign browsing with Svalinn Adblock, Tor/SOCKS5 proxy cloaking, biometric vault security, and touch-optimized Norse runes!
+
 > [!NOTE]
 > **Zero-Downtime Resilience**: If the video files are not installed, Mímir automatically falls back to **Option A** (`'particles'`) with zero interruptions or black screens.
 

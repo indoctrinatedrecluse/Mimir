@@ -1,6 +1,6 @@
 [package]
 name = "mimir-core"
-version = "0.9.0"
+version = "0.10.0"
 edition = "2021"
 authors = ["indoctrinatedrecluse"]
 description = "Native Rust core and WebView2 orchestration engine for Mímir Browser"

@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased] - 2026-10-27 *(Mímir Mobile: Android Native Shell, Norse Touch Chrome, Svalinn Mobile AdBlock, Proxy Routing & Biometrics)*
+## [0.10.0] - 2026-10-27 *(Mímir Mobile: Android Native Shell, Norse Touch Chrome, Svalinn Mobile AdBlock, Proxy Routing & Biometrics)*
 
 This milestone debuts the mobile edition of Mímir Browser (**Mímir Mobile**):
 - **Native Android Shell (Kotlin + AndroidX WebKit)**: Scaffolding a monorepo architecture under `android/` sharing the React frontend bundle (`android/app/src/main/assets/dist/index.html`) via a two-way `@JavascriptInterface` bridge (`MimirNative`).
@@ -794,6 +794,13 @@ The inaugural public alpha proof of concept (POC) for Mímir, the hypermodern, r
 
 ---
 
+[0.10.0]: https://github.com/indoctrinatedrecluse/Mimir/releases/tag/v0.10.0
+[0.9.0]: https://github.com/indoctrinatedrecluse/Mimir/releases/tag/v0.9.0
+[0.8.0]: https://github.com/indoctrinatedrecluse/Mimir/releases/tag/v0.8.0
+[0.7.0]: https://github.com/indoctrinatedrecluse/Mimir/releases/tag/v0.7.0
+[0.6.0]: https://github.com/indoctrinatedrecluse/Mimir/releases/tag/v0.6.0
+[0.5.0]: https://github.com/indoctrinatedrecluse/Mimir/releases/tag/v0.5.0
+[0.4.0]: https://github.com/indoctrinatedrecluse/Mimir/releases/tag/v0.4.0
 [0.3.0]: https://github.com/indoctrinatedrecluse/Mimir/releases/tag/v0.3.0
 [0.2.0]: https://github.com/indoctrinatedrecluse/Mimir/releases/tag/v0.2.0
 [0.1.0]: https://github.com/indoctrinatedrecluse/Mimir/releases/tag/v0.1.0

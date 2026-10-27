@@ -585,9 +585,13 @@ fn find_portable_zip() -> Option<PathBuf> {
     let cur = std::env::current_dir().ok()?;
     let candidates = [
         cur.join("mimir-portable.zip"),
+        cur.join("mimir-v0.10.0-windows-x64-portable.zip"),
         cur.join("mimir-v0.9.0-windows-x64-portable.zip"),
         cur.join("mimir-v0.8.0-windows-x64-portable.zip"),
         cur.join("mimir-v0.7.0-windows-x64-portable.zip"),
+        cur.parent()
+            .map(|p| p.join("mimir-v0.10.0-windows-x64-portable.zip"))
+            .unwrap_or_default(),
         cur.parent()
             .map(|p| p.join("mimir-v0.9.0-windows-x64-portable.zip"))
             .unwrap_or_default(),
@@ -805,7 +809,7 @@ fn execute_installation(
         "Consecrating System Registry...",
         "Registering uninstaller...",
     );
-    register_uninstaller(&install_path, "0.9.0");
+    register_uninstaller(&install_path, "0.10.0");
 
     // Copy installer as uninstaller
     if let Ok(current_exe) = std::env::current_exe() {
