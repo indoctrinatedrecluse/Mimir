@@ -1,4 +1,4 @@
-name: Release Mimir Desktop
+name: Release Mimir Desktop & Mobile
 
 on:
   push:
@@ -45,7 +45,7 @@ jobs:
         shell: pwsh
         run: |
           $TAG = "${{ github.ref_name }}"
-          if ([string]::IsNullOrEmpty($TAG)) { $TAG = "v0.6.0" }
+          if ([string]::IsNullOrEmpty($TAG) -or -not $TAG.StartsWith("v")) { $TAG = "v0.9.0" }
 
           # Download official Microsoft WebView2 Evergreen Bootstrapper for dependency-free distribution
           Write-Host "Downloading Microsoft Edge WebView2 Evergreen Bootstrapper..."
@@ -82,22 +82,102 @@ jobs:
           }
           Write-Host "Created setup installer: $SETUP_EXE"
 
-          # Export output variables for GitHub release step
-          echo "portable_zip=$PORTABLE_ZIP" >> $env:GITHUB_OUTPUT
-          echo "setup_exe=$SETUP_EXE" >> $env:GITHUB_OUTPUT
-          echo "tag_name=$TAG" >> $env:GITHUB_OUTPUT
+      - name: Upload Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-release-artifacts
+          path: |
+            mimir-*-windows-x64-portable.zip
+            mimir-*-windows-x64-setup.exe
+
+  build-android:
+    name: Build & Package Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.5'
+
+      - name: Install Frontend Dependencies
+        run: npm ci
+
+      - name: Build Android Web Assets
+        run: npm run build:android
+
+      - name: Build APK with Gradle
+        working-directory: android
+        env:
+          ANDROID_HOME: /usr/local/lib/android/sdk
+        run: gradle assembleDebug --stacktrace
+
+      - name: Package Android APK Artifact
+        shell: bash
+        run: |
+          TAG="${{ github.ref_name }}"
+          if [[ -z "$TAG" || "$TAG" != v* ]]; then TAG="v0.9.0"; fi
+          APK_SRC="android/app/build/outputs/apk/debug/app-debug.apk"
+          APK_DEST="mimir-$TAG-android-mobile.apk"
+          if [ -f "$APK_SRC" ]; then
+            cp "$APK_SRC" "$APK_DEST"
+            echo "Successfully prepared $APK_DEST"
+          else
+            echo "Error: $APK_SRC not found!"
+            exit 1
+          fi
+
+      - name: Upload Android Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-artifacts
+          path: mimir-*-android-mobile.apk
+
+  publish-release:
+    name: Publish Sovereign Multiplatform Release
+    needs: [build-windows, build-android]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download Windows Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-release-artifacts
+          path: release-dist
+
+      - name: Download Android Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: android-release-artifacts
+          path: release-dist
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "Mímir Browser ${{ steps.package.outputs.tag_name }}"
-          tag_name: ${{ steps.package.outputs.tag_name }}
+          name: "Mímir Browser ${{ github.ref_name }}"
+          tag_name: ${{ github.ref_name }}
           draft: false
           prerelease: false
           generate_release_notes: true
           files: |
-            mimir-*-windows-x64-portable.zip
-            mimir-*-windows-x64-setup.exe
+            release-dist/mimir-*-windows-x64-portable.zip
+            release-dist/mimir-*-windows-x64-setup.exe
+            release-dist/mimir-*-android-mobile.apk
             mimir-cinematic-realm-pack.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
