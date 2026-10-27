@@ -22,6 +22,7 @@ import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import io.github.mimir.browser.bridge.MimirNativeBridge
+import io.github.mimir.browser.downloads.MimirDownloadManager
 import io.github.mimir.browser.haptics.MimirHaptics
 import io.github.mimir.browser.privacy.SvalinnProxyController
 import io.github.mimir.browser.tab.MimirWebViewCallback
