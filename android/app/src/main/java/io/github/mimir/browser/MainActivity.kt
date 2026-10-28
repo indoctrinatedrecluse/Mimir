@@ -7,6 +7,7 @@ import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowInsets
@@ -24,6 +25,8 @@ import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.webkit.WebViewAssetLoader
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
@@ -69,6 +72,7 @@ class MainActivity : AppCompatActivity(), MimirWebViewCallback {
         fullscreenContainer = findViewById(R.id.fullscreen_custom_view_container)
 
         setupSwipeRefresh()
+        setupViewportBounds()
         setupTabManager()
         setupChromeWebView()
         setupBackNavigation()
@@ -230,36 +234,72 @@ class MainActivity : AppCompatActivity(), MimirWebViewCallback {
         setupChromeTouchPassthrough()
     }
 
+    private fun getHeaderHeight(): Int {
+        val density = resources.displayMetrics.density
+        val insets = ViewCompat.getRootWindowInsets(rootLayout)
+        val statusBarHeight = insets?.getInsets(WindowInsetsCompat.Type.statusBars())?.top ?: (24 * density).toInt()
+        return statusBarHeight + (40 * density).toInt()
+    }
+
+    private fun getDockHeight(): Int {
+        val density = resources.displayMetrics.density
+        val insets = ViewCompat.getRootWindowInsets(rootLayout)
+        val navBarHeight = insets?.getInsets(WindowInsetsCompat.Type.navigationBars())?.bottom ?: (24 * density).toInt()
+        return navBarHeight + (56 * density).toInt()
+    }
+
+    private fun updateViewportMargins() {
+        val headerHeight = getHeaderHeight()
+        val dockHeight = getDockHeight()
+        val params = swipeRefresh.layoutParams as? FrameLayout.LayoutParams
+        if (params != null) {
+            if (params.topMargin != headerHeight || params.bottomMargin != dockHeight) {
+                params.topMargin = headerHeight
+                params.bottomMargin = dockHeight
+                swipeRefresh.layoutParams = params
+                swipeRefresh.requestLayout()
+            }
+        }
+    }
+
+    private fun setupViewportBounds() {
+        ViewCompat.setOnApplyWindowInsetsListener(rootLayout) { _, insets ->
+            updateViewportMargins()
+            insets
+        }
+        updateViewportMargins()
+    }
+
+    private var isTrackingViewportTouch = false
+
     @SuppressLint("ClickableViewAccessibility")
     private fun setupChromeTouchPassthrough() {
         chromeWebView.setOnTouchListener { _, event ->
             // If viewing internal home (mimir://newtab) or an overlay is open, chrome handles all touches
             if (viewportContainer.visibility != View.VISIBLE || isOverlayOpen) {
+                isTrackingViewportTouch = false
                 return@setOnTouchListener false
             }
 
-            val density = resources.displayMetrics.density
-            val statusBarHeight = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                window.decorView.rootWindowInsets?.getInsets(WindowInsets.Type.statusBars())?.top ?: (24 * density).toInt()
-            } else {
-                (24 * density).toInt()
-            }
-            val navBarHeight = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                window.decorView.rootWindowInsets?.getInsets(WindowInsets.Type.navigationBars())?.bottom ?: (24 * density).toInt()
-            } else {
-                (24 * density).toInt()
+            val headerHeight = getHeaderHeight()
+            val dockHeight = getDockHeight()
+            val headerCutoff = headerHeight.toFloat()
+            val dockCutoff = (rootLayout.height - dockHeight).toFloat()
+
+            if (event.action == MotionEvent.ACTION_DOWN) {
+                isTrackingViewportTouch = (event.y in headerCutoff..dockCutoff)
             }
 
-            val headerCutoff = statusBarHeight + (44 * density)
-            val dockCutoff = rootLayout.height - (navBarHeight + (64 * density))
+            if (isTrackingViewportTouch) {
+                val localEvent = MotionEvent.obtain(event)
+                localEvent.offsetLocation(0f, -headerHeight.toFloat())
+                val handled = swipeRefresh.dispatchTouchEvent(localEvent)
+                localEvent.recycle()
 
-            // In the active viewport zone, forward touches directly to the active tab's native webview
-            if (event.y > headerCutoff && event.y < dockCutoff) {
-                val activeTab = tabManager.getActiveTab()
-                if (activeTab != null && activeTab.webView.visibility == View.VISIBLE) {
-                    activeTab.webView.dispatchTouchEvent(event)
-                    return@setOnTouchListener true
+                if (event.action == MotionEvent.ACTION_UP || event.action == MotionEvent.ACTION_CANCEL) {
+                    isTrackingViewportTouch = false
                 }
+                return@setOnTouchListener (handled || event.action == MotionEvent.ACTION_DOWN)
             }
 
             false

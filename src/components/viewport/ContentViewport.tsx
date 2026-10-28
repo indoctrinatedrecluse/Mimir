@@ -98,7 +98,7 @@ export const ContentViewport: React.FC<ContentViewportProps> = ({
   const isSplitHome = !splitTab?.url || splitTab.url === 'mimir://newtab' || splitTab.url === 'about:blank';
 
   const renderSanctum = (tab?: Tab, r = realm, th = theme, isPrimary = true) => (
-    <div className="relative flex h-full w-full flex-col items-center justify-between p-4 overflow-y-auto z-10">
+    <div className="relative flex h-full w-full flex-col items-center justify-between p-4 pb-10 overflow-y-auto z-10">
       {/* Sanctum Backdrop Layer: Tri-State Engine (Option B: Video / Option A: Particles / Static) */}
       {currentMode === 'video' ? (
         <RealmVideoBackdrop

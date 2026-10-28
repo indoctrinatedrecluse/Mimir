@@ -1493,7 +1493,7 @@ const formatEtaSeconds = (secs: number): string => {
       />
 
       {/* Layer 3: Main Workspace (Yggdrasil Tree + Content Viewport + Runic Sidecar) */}
-      <div className={`relative flex flex-1 overflow-hidden ${isMobile ? 'pt-[calc(2.5rem+env(safe-area-inset-top,0px))] pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))]' : ''}`}>
+      <div className={`relative flex flex-1 overflow-hidden ${isMobile ? 'pt-[calc(2.75rem+env(safe-area-inset-top,0px))] pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))]' : ''}`}>
         {!isMobile && (
           <TabTree
             tabs={currentWorkspaceTabs}
